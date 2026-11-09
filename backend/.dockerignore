@@ -2,7 +2,4 @@
 venv/
 __pycache__/
 *.pyc
-.git/
 .env
-data/
-*.db

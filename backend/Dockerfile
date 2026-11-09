@@ -4,19 +4,14 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DATA_DIR=/app/data
+    API_HOST=0.0.0.0 \
+    API_PORT=5001
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py .
-COPY templates/ ./templates/
+COPY config.py db.py app.py migrate_sqlite_to_mysql.py ./
 
-RUN mkdir -p /app/data
-
-EXPOSE 5000
+EXPOSE 5001
 
 CMD ["python", "app.py"]
-
-
