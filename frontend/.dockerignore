@@ -1,5 +1,19 @@
-.venv/
-venv/
-__pycache__/
-*.pyc
-.env
+# Môi trường ảo 
+.venv
+venv
+
+# Bytecode Python 
+**/__pycache__/
+**/*.py[cod]
+
+# Cấu hình môi trường chứa bảo mật MySQL và API_TOKEN
+**/.env
+.env.*
+!.env.example
+
+# File không cần cho việc build
+Dockerfile
+.dockerignore
+.gitignore
+*.md
+*.log
