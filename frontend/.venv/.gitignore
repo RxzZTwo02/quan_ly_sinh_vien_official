@@ -1,0 +1,11 @@
+# Môi trường ảo
+/.venv/
+/venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Cấu hình môi trường chứa bảo mật MySQL và API_TOKEN
+/.env
+!/.env.example
