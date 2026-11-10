@@ -25,6 +25,7 @@ services:
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-qlsv_root}
       DB_NAME: qlsv
       DB_CONNECT_RETRIES: 30
+      SEED_DATA: ${SEED_DATA:-yes}
       API_HOST: 0.0.0.0
       API_PORT: 5001
       API_TOKEN: ${API_TOKEN:-}

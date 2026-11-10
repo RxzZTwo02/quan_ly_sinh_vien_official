@@ -1,5 +1,7 @@
--- Dữ liệu mẫu QLSV. Chỉ chạy MỘT LẦN khi back-end phát hiện database chưa tồn tại
--- (hoặc tồn tại nhưng chưa có bảng nào). Database đã có dữ liệu sẽ không bị đụng tới.
+-- Dữ liệu mẫu QLSV. Back-end chỉ nạp file này khi database rỗng (cả 4 bảng chưa có dòng nào)
+-- và SEED_DATA=yes (mặc định). Database đã có dữ liệu thì file này không được đọc tới.
+-- Cả file chạy trong MỘT transaction nên chỉ được chứa lệnh INSERT: không CREATE/ALTER/DROP/TRUNCATE,
+-- không START TRANSACTION/COMMIT (các lệnh này làm MySQL commit giữa chừng).
 -- Thứ tự: bảng cha (students, subjects) trước bảng con (grades, tuition).
 
 INSERT INTO students (id, student_code, full_name, class_name, email) VALUES

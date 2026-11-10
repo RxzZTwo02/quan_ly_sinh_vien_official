@@ -72,9 +72,14 @@ Cột `DECIMAL` được chuyển sang `float` trước khi trả JSON (`db.to_j
 - Khởi động: thử kết nối `DB_CONNECT_RETRIES` lần, cách nhau `DB_CONNECT_DELAY` giây (Docker đặt 30 lần).
 
 ## 8. Seed dữ liệu mẫu
-Khi khởi động, `init_database()` kiểm tra `information_schema`:
-- Database `DB_NAME` **chưa tồn tại**, hoặc tồn tại nhưng **chưa có bảng nào** (vd database rỗng do `MYSQL_DATABASE` của Docker tạo) → tạo database, chạy `schema.sql`, rồi chạy `seed.sql`.
-- Database đã có bảng → chỉ chạy `schema.sql` (không đổi dữ liệu), **không seed**.
+Khi khởi động, `init_database()`:
+1. Tạo database `DB_NAME` nếu chưa có và chạy `schema.sql` (`IF NOT EXISTS`, không đổi dữ liệu đã có).
+2. Kiểm tra dữ liệu: database **rỗng** khi cả 4 bảng `students`, `subjects`, `grades`, `tuition` đều chưa có dòng nào (gồm cả database vừa tạo, hay database rỗng do `MYSQL_DATABASE` của Docker tạo). Bảng khác trong database không được tính.
+3. Database đã có dữ liệu → giữ nguyên, **không đọc** `seed.sql`, in `Dùng dữ liệu hiện có…`.
+4. Database rỗng → `SEED_DATA=yes` (mặc định) thì chạy `seed.sql`; `SEED_DATA=no` thì để trống. Giá trị khác `yes`/`no` → back-end dừng và báo lỗi.
+
 - Hai file được chạy nguyên khối nhờ cờ `CLIENT.MULTI_STATEMENTS` (chỉ bật cho kết nối khởi tạo).
-- Seed chạy trong một transaction; nếu lỗi thì rollback và xóa các bảng vừa tạo để lần khởi động sau seed lại.
-- Muốn seed lại từ đầu: xóa database `qlsv` (hoặc `docker compose down -v`) rồi khởi động back-end.
+- `seed.sql` chạy trong **một** transaction: lỗi hay bị ngắt giữa chừng (Ctrl+C, mất kết nối) thì không dòng nào được lưu, database vẫn rỗng và lần khởi động sau nạp lại. Vì vậy file chỉ được chứa lệnh `INSERT` (bảng cha trước bảng con), không có DDL hay `START TRANSACTION` / `COMMIT`.
+- Nạp vào bảng rỗng nên các `id` cố định trong `seed.sql` không thể trùng dữ liệu có sẵn.
+- Với `SEED_DATA=yes`, xóa hết dữ liệu rồi khởi động lại thì dữ liệu mẫu được nạp lại.
+- Quay về trạng thái gốc: dừng back-end, xóa database `qlsv` (hoặc `docker compose down -v`), khởi động lại; có dữ liệu mẫu hay không tùy `SEED_DATA`.

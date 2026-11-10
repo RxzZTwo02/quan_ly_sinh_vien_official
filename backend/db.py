@@ -17,8 +17,8 @@ ER_NO_REFERENCED_ROW = 1452  # khóa ngoại trỏ tới bản ghi không tồn 
 SQL_DIR = config.BASE_DIR / "sql"
 SCHEMA_FILE = SQL_DIR / "schema.sql"
 SEED_FILE = SQL_DIR / "seed.sql"
-# Bảng do schema.sql tạo, thứ tự bảng con trước để DROP không vướng khóa ngoại.
-SEEDED_TABLES = ["tuition", "grades", "subjects", "students"]
+# Bảng do schema.sql tạo. Database được coi là "rỗng" khi cả 4 bảng đều chưa có dòng nào.
+APP_TABLES = ["students", "subjects", "grades", "tuition"]
 
 
 def _connect(database=None, multi_statements=False):
@@ -70,18 +70,22 @@ def _run_sql_file(cur, path):
         pass
 
 
-def _database_state(cur):
-    """Trả về (database đã tồn tại?, số bảng hiện có)."""
-    cur.execute("SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=%s", (config.DB_NAME,))
-    exists = cur.fetchone() is not None
-    cur.execute("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=%s",
-                (config.DB_NAME,))
-    return exists, cur.fetchone()["n"]
+def _has_data(cur):
+    """True nếu ít nhất một bảng của ứng dụng có dữ liệu."""
+    checks = " OR ".join(f"EXISTS(SELECT 1 FROM `{t}`)" for t in APP_TABLES)
+    cur.execute(f"SELECT {checks} AS has_data")
+    return bool(cur.fetchone()["has_data"])
+
+
+def _row_counts(cur):
+    cur.execute("SELECT " + ", ".join(f"(SELECT COUNT(*) FROM `{t}`) AS `{t}`" for t in APP_TABLES))
+    return cur.fetchone()
 
 
 def init_database():
-    """Tạo database và bảng từ sql/schema.sql; nếu database chưa tồn tại (hoặc chưa có
-    bảng nào) thì seed dữ liệu mẫu từ sql/seed.sql. Thử lại nhiều lần nếu MySQL chưa sẵn sàng."""
+    """Tạo database và bảng từ sql/schema.sql nếu chưa có. Nếu database rỗng (cả 4 bảng chưa
+    có dòng nào) và SEED_DATA=yes thì nạp dữ liệu mẫu từ sql/seed.sql; database đã có dữ liệu
+    thì giữ nguyên, không đọc seed.sql. Thử lại nhiều lần nếu MySQL chưa sẵn sàng."""
     retries = max(config.DB_CONNECT_RETRIES, 1)
     for attempt in range(1, retries + 1):
         try:
@@ -98,31 +102,37 @@ def init_database():
             time.sleep(config.DB_CONNECT_DELAY)
     try:
         with conn.cursor() as cur:
-            exists, table_count = _database_state(cur)
-            # Database do Docker (MYSQL_DATABASE) hoặc người dùng tạo sẵn nhưng còn rỗng
-            # cũng được coi là "chưa có" để seed.
-            needs_seed = table_count == 0
             cur.execute(
                 f"CREATE DATABASE IF NOT EXISTS `{config.DB_NAME}` "
                 "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
             )
             cur.execute(f"USE `{config.DB_NAME}`")
-            _run_sql_file(cur, SCHEMA_FILE)
+            _run_sql_file(cur, SCHEMA_FILE)  # IF NOT EXISTS: không đụng tới dữ liệu đã có
             conn.commit()
 
-            if not needs_seed:
+            name = config.DB_NAME
+            if _has_data(cur):
+                students = _row_counts(cur)["students"]
+                print(f"Dùng dữ liệu hiện có trong database '{name}' ({students} sinh viên), "
+                      "không nạp dữ liệu mẫu.", flush=True)
                 return
-            reason = "chưa tồn tại" if not exists else "chưa có bảng nào"
-            print(f"Database '{config.DB_NAME}' {reason}, đang seed từ {SEED_FILE.name}...", flush=True)
+            if not config.SEED_DATA:
+                print(f"Database '{name}' đang trống, không nạp dữ liệu mẫu (SEED_DATA=no).", flush=True)
+                return
+
+            print(f"Database '{name}' đang trống, đang nạp dữ liệu mẫu từ {SEED_FILE.name}...", flush=True)
+            # Cả file chạy trong MỘT transaction: lỗi hay bị ngắt giữa chừng thì không dòng nào
+            # được lưu, database vẫn rỗng và lần khởi động sau sẽ nạp lại.
             try:
                 _run_sql_file(cur, SEED_FILE)
                 conn.commit()
             except Exception:
                 conn.rollback()
-                # Bảng vừa được tạo trống; xóa đi để lần khởi động sau còn seed lại.
-                cur.execute("DROP TABLE IF EXISTS " + ", ".join(SEEDED_TABLES))
                 raise
-            print("Seed dữ liệu mẫu hoàn tất.", flush=True)
+            n = _row_counts(cur)
+            print(f"Đã nạp dữ liệu mẫu: {n['students']} sinh viên, {n['subjects']} môn học, "
+                  f"{n['grades']} bản ghi điểm, {n['tuition']} bản ghi học phí. "
+                  "(Không muốn dữ liệu mẫu: đặt SEED_DATA=no, xem README.)", flush=True)
     finally:
         conn.close()
 

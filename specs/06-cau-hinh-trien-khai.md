@@ -13,6 +13,7 @@
 | `DB_NAME` | `qlsv` | Tên database (tự tạo) |
 | `DB_CONNECT_RETRIES` | `1` | Số lần thử kết nối khi khởi động |
 | `DB_CONNECT_DELAY` | `2` | Số giây giữa các lần thử |
+| `SEED_DATA` | `yes` | Database rỗng thì nạp dữ liệu mẫu (`yes`) hay để trống (`no`) |
 | `API_HOST` | `127.0.0.1` | Địa chỉ lắng nghe |
 | `API_PORT` | `5001` | Cổng lắng nghe |
 | `API_TOKEN` | *(rỗng)* | Nếu đặt, bắt buộc header `X-API-Key` |
@@ -38,7 +39,7 @@ Hướng dẫn chi tiết từng lệnh (tạo/kích hoạt/xóa venv, kiểm tr
    .\.venv\Scripts\python.exe -m pip install -r requirements.txt   # chỉ lần đầu
    .\.venv\Scripts\python.exe app.py
    ```
-   Kiểm tra: `http://127.0.0.1:5001/api/health`. Lần chạy đầu, back-end tự seed dữ liệu mẫu nếu database `qlsv` chưa có.
+   Kiểm tra: `http://127.0.0.1:5001/api/health`. Database `qlsv` còn rỗng thì back-end tự nạp dữ liệu mẫu (đặt `SEED_DATA=no` trong `backend/.env` trước lần chạy đầu nếu không muốn).
 3. Front-end (terminal 2): như bước 2 trong thư mục `frontend`, rồi mở `http://127.0.0.1:5000`.
 
 **Thứ tự khởi động**: MySQL → back-end → front-end. Back-end dừng ngay khi không kết nối được MySQL (in hướng dẫn bật Laragon).
@@ -59,9 +60,9 @@ docker compose down -v     # xóa cả volume dữ liệu
 | `backend` | `qlsv-backend:2.0` (build `./backend`) | Chờ `mysql` healthy; thử kết nối 30 lần; chỉ truy cập nội bộ |
 | `frontend` | `qlsv-frontend:2.0` (build `./frontend`) | Mở `127.0.0.1:5000` trên host; gọi `http://backend:5001` |
 
-Biến tùy chọn trong `.env` cạnh `compose.yaml`: `MYSQL_ROOT_PASSWORD` (mặc định `qlsv_root`), `SECRET_KEY`, `API_TOKEN`.
+Biến tùy chọn trong `.env` cạnh `compose.yaml`: `MYSQL_ROOT_PASSWORD` (mặc định `qlsv_root`), `SECRET_KEY`, `API_TOKEN`, `SEED_DATA` (mặc định `yes`).
 
-Dockerfile của cả hai app dựa trên `python:3.12-slim`, cài `requirements.txt`, chạy `python app.py` bằng Waitress.
+Dockerfile của cả hai app dựa trên `python:3.14-slim`, cài `requirements.txt`, chạy `python app.py` bằng Waitress.
 
 ## 4. Bảo mật
 | Biện pháp | Vị trí |

@@ -15,7 +15,7 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 - Nhập, sửa, xóa điểm; tự tính điểm tổng kết.
 - Nhập, sửa, xóa học phí theo học kỳ; tự tính số còn nợ.
 - Dashboard: 4 thẻ KPI, 3 biểu đồ.
-- Tự seed dữ liệu mẫu khi database chưa tồn tại.
+- Tự nạp dữ liệu mẫu khi database rỗng (tắt bằng `SEED_DATA=no`).
 
 **Ngoài phạm vi** (chưa có trong mã)
 - Đăng nhập, phân quyền người dùng.
@@ -59,7 +59,7 @@ backend/
   app.py                    # route REST API, kiểm tra dữ liệu, xử lý lỗi
   db.py                     # kết nối, transaction, khởi tạo/seed DB
   sql/schema.sql            # lược đồ bảng
-  sql/seed.sql              # dữ liệu mẫu (seed khi DB chưa tồn tại)
+  sql/seed.sql              # dữ liệu mẫu (nạp khi DB rỗng)
   config.py                 # đọc biến môi trường / .env
 frontend/
   app.py                    # route giao diện, CSRF

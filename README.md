@@ -6,7 +6,7 @@ Trình duyệt ──HTTP──▶ Front-end Flask (:5000) ──REST/JSON──
                       frontend/                               backend/                      Laragon hoặc Docker
 ```
 - **frontend/**: giao diện (Jinja + Chart.js), form, CSRF. Không truy cập DB; mọi dữ liệu lấy qua API của back-end (gọi phía server bằng `requests`, nên trình duyệt không gọi thẳng API).
-- **backend/**: REST API JSON, kiểm tra dữ liệu, truy vấn MySQL bằng PyMySQL. Tự tạo database `qlsv`, các bảng (`backend/sql/schema.sql`) và nạp dữ liệu mẫu (`backend/sql/seed.sql`) khi khởi động lần đầu.
+- **backend/**: REST API JSON, kiểm tra dữ liệu, truy vấn MySQL bằng PyMySQL. Tự tạo database `qlsv`, các bảng (`backend/sql/schema.sql`) và nạp dữ liệu mẫu (`backend/sql/seed.sql`) khi database còn rỗng (tắt bằng `SEED_DATA=no`).
 
 ## Công nghệ
 - Python 3.12+ · Flask · Waitress
@@ -24,7 +24,7 @@ py -0           # liệt kê các phiên bản Python đã cài
 Nếu máy có nhiều phiên bản và muốn dùng đúng bản giống Docker, thay `py` bằng `py -3.12` ở bước tạo venv.
 
 ### Bước 1 — Bật MySQL
-Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Mặc định Laragon dùng `root` / mật khẩu rỗng / cổng 3306; ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**. Database `qlsv`, các bảng và dữ liệu mẫu được back-end tạo tự động (xem [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed)).
+Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Mặc định Laragon dùng `root` / mật khẩu rỗng / cổng 3306; ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**. Database `qlsv`, các bảng và dữ liệu mẫu được back-end tạo tự động; không muốn dữ liệu mẫu thì xem [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed) **trước** khi chạy back-end lần đầu.
 
 ### Bước 2 — Tạo môi trường ảo (venv) và cài thư viện (chỉ làm lần đầu)
 Back-end và front-end dùng thư viện khác nhau nên **mỗi app có một `.venv` riêng** nằm trong thư mục của app đó.
@@ -59,12 +59,13 @@ Terminal 1 — back-end:
 cd backend
 .\.venv\Scripts\python.exe app.py
 ```
-Nếu chạy được sẽ in ra (hai dòng "seed" chỉ xuất hiện ở lần chạy đầu, khi database `qlsv` chưa có):
+Nếu chạy được sẽ in ra (lần chạy đầu, khi database `qlsv` còn rỗng):
 ```
-Database 'qlsv' chưa tồn tại, đang seed từ seed.sql...
-Seed dữ liệu mẫu hoàn tất.
+Database 'qlsv' đang trống, đang nạp dữ liệu mẫu từ seed.sql...
+Đã nạp dữ liệu mẫu: 10 sinh viên, 5 môn học, 18 bản ghi điểm, 10 bản ghi học phí. (Không muốn dữ liệu mẫu: đặt SEED_DATA=no, xem README.)
 Back-end API: http://127.0.0.1:5001  (MySQL root@127.0.0.1:3306/qlsv)
 ```
+Các lần chạy sau, khi database đã có dữ liệu, dòng đầu đổi thành `Dùng dữ liệu hiện có trong database 'qlsv' (… sinh viên), không nạp dữ liệu mẫu.`
 Nếu không kết nối được MySQL, back-end dừng ngay và in hướng dẫn bật Laragon.
 
 Terminal 2 — front-end:
@@ -91,33 +92,41 @@ Có thể dùng `curl.exe` thay cho `Invoke-RestMethod`, ví dụ `curl.exe http
 Xem dữ liệu trực tiếp: dùng HeidiSQL/phpMyAdmin của Laragon, mở database `qlsv`.
 
 ### Dữ liệu mẫu (seed)
-Không cần lệnh hay tham số riêng: mỗi lần khởi động, back-end kiểm tra database `qlsv`:
+Không cần lệnh riêng. Mỗi lần khởi động, back-end tạo các bảng nếu chưa có (`backend/sql/schema.sql`) rồi kiểm tra dữ liệu trong database `qlsv`:
 
-| Tình trạng database | Back-end làm gì |
+| Tình trạng database | `SEED_DATA=yes` (mặc định) | `SEED_DATA=no` |
+|---|---|---|
+| **Rỗng**: chưa tồn tại, chưa có bảng, hoặc cả 4 bảng đều chưa có dòng nào | Nạp dữ liệu mẫu từ `backend/sql/seed.sql` | Để trống |
+| **Đã có dữ liệu** (dù chỉ 1 dòng ở bất kỳ bảng nào) | Giữ nguyên, **không** đọc `seed.sql` | Giữ nguyên |
+
+Dữ liệu mẫu gồm 10 sinh viên (`SV001`–`SV010`), 5 môn học, 18 bản ghi điểm, 10 bản ghi học phí. Sau khi nạp, mọi thao tác thêm / sửa / xóa (trên giao diện hay trong phpMyAdmin / HeidiSQL) chỉ lưu vào MySQL, **không** ghi ngược vào file `.sql`, nên `seed.sql` luôn là bản gốc. Back-end đọc thẳng MySQL ở mỗi request: sửa dữ liệu trong phpMyAdmin xong chỉ cần tải lại trang.
+
+**Không muốn dữ liệu mẫu** — làm một lần, **trước** khi chạy back-end lần đầu: sao chép `backend\.env.example` → `backend\.env` và đặt `SEED_DATA=no`. Nếu lỡ chạy rồi thì làm thêm bước "quay về database trống" bên dưới.
+
+> Với `SEED_DATA=yes`, nếu xóa hết dữ liệu (cả 4 bảng trống) rồi khởi động lại, dữ liệu mẫu sẽ được nạp lại. Muốn dùng database trống thì đặt `SEED_DATA=no`.
+
+**Quay về trạng thái gốc** (⚠️ mất toàn bộ dữ liệu đang có trong `qlsv`; muốn giữ thì vào phpMyAdmin chọn `qlsv` → **Export** trước):
+
+| Muốn về | Đặt trong `backend\.env` |
 |---|---|
-| Chưa tồn tại, hoặc tồn tại nhưng chưa có bảng nào | Tạo bảng từ `backend/sql/schema.sql`, nạp dữ liệu mẫu từ `backend/sql/seed.sql` |
-| Đã có bảng | Giữ nguyên dữ liệu, **không** seed |
+| Dữ liệu mẫu ban đầu | `SEED_DATA=yes` (hoặc không có file `.env`) |
+| Database trống | `SEED_DATA=no` |
 
-Dữ liệu mẫu gồm 10 sinh viên (`SV001`–`SV010`), 5 môn học, 18 bản ghi điểm, 10 bản ghi học phí. Seed chỉ chạy một lần; sau đó mọi thao tác thêm / sửa / xóa chỉ lưu vào MySQL, **không** ghi ngược vào file `.sql`.
+1. Dừng back-end (Ctrl+C). Nếu không dừng, back-end vẫn chạy nhưng mọi request sẽ lỗi cho tới khi khởi động lại.
+2. Xóa database `qlsv`: trong phpMyAdmin chọn `qlsv` → tab **Operations** → **Drop the database (DROP)**. Hoặc dùng lệnh (MySQL của Laragon thường không nằm trong PATH; đổi `mysql-8.4.3-winx64` cho đúng phiên bản trên máy):
+   ```powershell
+   & "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "DROP DATABASE qlsv"
+   ```
+3. Chạy lại back-end: database và các bảng được tạo lại, có hoặc không có dữ liệu mẫu theo `SEED_DATA`.
 
-**Kiểm tra `qlsv` đã có chưa** (MySQL của Laragon thường không nằm trong PATH nên gọi bằng đường dẫn đầy đủ; đổi `mysql-8.4.3-winx64` cho đúng phiên bản trên máy):
-```powershell
-& "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "SHOW DATABASES LIKE 'qlsv'"
-```
-Không in ra gì → lần chạy back-end tới sẽ seed. In ra `qlsv` → database đã có, back-end sẽ không seed; muốn có dữ liệu mẫu thì chọn một trong hai cách:
+**Giữ database cũ, thử dữ liệu mẫu ở database khác:** trong `backend\.env` đặt `DB_NAME=qlsv_demo` rồi chạy lại back-end. `qlsv` cũ giữ nguyên; đổi lại `DB_NAME=qlsv` để quay về.
 
-- **Cách A — Xóa database cũ rồi seed lại** (⚠️ mất toàn bộ dữ liệu đang có trong `qlsv`). Dừng back-end, chạy lệnh dưới (hoặc Drop database `qlsv` trong phpMyAdmin/HeidiSQL), rồi chạy lại back-end:
-  ```powershell
-  & "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "DROP DATABASE qlsv"
-  ```
-- **Cách B — Giữ database cũ, seed vào database khác.** Sao chép `backend\.env.example` → `backend\.env`, đổi `DB_NAME=qlsv_demo`, rồi chạy lại back-end. `qlsv` cũ giữ nguyên; đổi lại `DB_NAME=qlsv` để quay về.
-
-**Kiểm tra seed thành công:** mở http://127.0.0.1:5000 thấy 10 sinh viên và biểu đồ có số liệu, hoặc:
+**Kiểm tra đã nạp dữ liệu mẫu:** mở http://127.0.0.1:5000 thấy 10 sinh viên và biểu đồ có số liệu, hoặc:
 ```powershell
 (Invoke-RestMethod http://127.0.0.1:5001/api/students).Count    # 10
 ```
 
-> Không import `seed.sql` thủ công bằng phpMyAdmin vào database đã có dữ liệu: id trùng sẽ báo lỗi. Muốn đổi dữ liệu mẫu, sửa `backend/sql/seed.sql` rồi làm lại Cách A.
+> Không import `seed.sql` thủ công vào database đã có dữ liệu: id trùng sẽ báo lỗi. Muốn đổi dữ liệu mẫu thì sửa `backend/sql/seed.sql` rồi quay về trạng thái gốc như trên. File này chạy trong một transaction nên chỉ được chứa lệnh `INSERT` (bảng cha `students`, `subjects` trước bảng con), không có `CREATE` / `ALTER` / `DROP` hay `START TRANSACTION` / `COMMIT`. Lưu ý điều này nếu thay bằng file xuất từ phpMyAdmin, vì file xuất mặc định có các lệnh đó.
 
 ### Cách khác: kích hoạt venv rồi gọi `python`
 Thay vì gõ `.\.venv\Scripts\python.exe` mỗi lần, có thể kích hoạt venv để dùng lệnh `python` / `pip` ngắn gọn:
@@ -154,7 +163,8 @@ Sao chép `backend/.env.example` → `backend/.env`, `frontend/.env.example` →
 |---|---|---|---|
 | backend | `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | địa chỉ MySQL |
 | backend | `DB_USER` / `DB_PASSWORD` | `root` / *(rỗng)* | tài khoản MySQL |
-| backend | `DB_NAME` | `qlsv` | tên database (tự tạo và seed dữ liệu mẫu nếu chưa có) |
+| backend | `DB_NAME` | `qlsv` | tên database (tự tạo nếu chưa có) |
+| backend | `SEED_DATA` | `yes` | database rỗng thì nạp dữ liệu mẫu; `no` để bắt đầu với database trống |
 | backend | `API_HOST` / `API_PORT` | `127.0.0.1` / `5001` | nơi API lắng nghe |
 | cả hai | `API_TOKEN` | *(rỗng)* | nếu đặt, front-end gửi header `X-API-Key`; hai bên phải trùng nhau |
 | frontend | `BACKEND_URL` | `http://127.0.0.1:5001` | địa chỉ back-end |
@@ -186,9 +196,9 @@ docker compose logs -f backend frontend
 ```
 Truy cập http://localhost:5000. Gồm 3 service: `mysql`, `backend`, `frontend`. MySQL trong Docker **không mở cổng 3306** ra máy host nên chạy song song với Laragon không bị xung đột. Dữ liệu nằm trong volume `mysql_data` (`docker compose down` không xóa volume; `docker compose down -v` thì có).
 
-Dữ liệu mẫu: lần đầu chạy (volume còn trống) back-end tự seed như khi chạy trực tiếp. Đây là database riêng trong Docker, không dùng chung với `qlsv` của Laragon. Muốn seed lại từ đầu (⚠️ mất dữ liệu trong Docker): `docker compose down -v` rồi `docker compose up --build -d`. Luôn dùng `--build` sau khi sửa `backend/sql/*.sql` vì các file này được chép vào image.
+Dữ liệu mẫu: lần đầu chạy (volume còn trống) back-end tự nạp như khi chạy trực tiếp; không muốn thì đặt `SEED_DATA=no` trong file `.env` cạnh `compose.yaml` trước lần chạy đầu. Đây là database riêng trong Docker, không dùng chung với `qlsv` của Laragon. Muốn quay về trạng thái gốc (⚠️ mất dữ liệu trong Docker): `docker compose down -v` rồi `docker compose up --build -d`. Luôn dùng `--build` sau khi sửa `backend/sql/*.sql` vì các file này được chép vào image.
 
-Có thể đặt `MYSQL_ROOT_PASSWORD`, `SECRET_KEY`, `API_TOKEN` trong file `.env` cạnh `compose.yaml`.
+Có thể đặt `MYSQL_ROOT_PASSWORD`, `SECRET_KEY`, `API_TOKEN`, `SEED_DATA` trong file `.env` cạnh `compose.yaml`.
 
 ## Dashboard
 - Thẻ KPI: tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ.
