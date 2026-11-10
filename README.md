@@ -6,7 +6,7 @@ Trình duyệt ──HTTP──▶ Front-end Flask (:5000) ──REST/JSON──
                       frontend/                               backend/                      Laragon hoặc Docker
 ```
 - **frontend/**: giao diện (Jinja + Chart.js), form, CSRF. Không truy cập DB; mọi dữ liệu lấy qua API của back-end (gọi phía server bằng `requests`, nên trình duyệt không gọi thẳng API).
-- **backend/**: REST API JSON, kiểm tra dữ liệu, truy vấn MySQL bằng PyMySQL. Tự tạo database `qlsv` và các bảng khi khởi động.
+- **backend/**: REST API JSON, kiểm tra dữ liệu, truy vấn MySQL bằng PyMySQL. Tự tạo database `qlsv`, các bảng (`backend/sql/schema.sql`) và nạp dữ liệu mẫu (`backend/sql/seed.sql`) khi khởi động lần đầu.
 
 ## Công nghệ
 - Python 3.12+ · Flask · Waitress
@@ -24,7 +24,7 @@ py -0           # liệt kê các phiên bản Python đã cài
 Nếu máy có nhiều phiên bản và muốn dùng đúng bản giống Docker, thay `py` bằng `py -3.12` ở bước tạo venv.
 
 ### Bước 1 — Bật MySQL
-Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Mặc định Laragon dùng `root` / mật khẩu rỗng / cổng 3306; ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**. Database `qlsv` và các bảng được back-end tạo tự động.
+Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Mặc định Laragon dùng `root` / mật khẩu rỗng / cổng 3306; ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**. Database `qlsv`, các bảng và dữ liệu mẫu được back-end tạo tự động (xem [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed)).
 
 ### Bước 2 — Tạo môi trường ảo (venv) và cài thư viện (chỉ làm lần đầu)
 Back-end và front-end dùng thư viện khác nhau nên **mỗi app có một `.venv` riêng** nằm trong thư mục của app đó.
@@ -59,8 +59,10 @@ Terminal 1 — back-end:
 cd backend
 .\.venv\Scripts\python.exe app.py
 ```
-Nếu chạy được sẽ in ra:
+Nếu chạy được sẽ in ra (hai dòng "seed" chỉ xuất hiện ở lần chạy đầu, khi database `qlsv` chưa có):
 ```
+Database 'qlsv' chưa tồn tại, đang seed từ seed.sql...
+Seed dữ liệu mẫu hoàn tất.
 Back-end API: http://127.0.0.1:5001  (MySQL root@127.0.0.1:3306/qlsv)
 ```
 Nếu không kết nối được MySQL, back-end dừng ngay và in hướng dẫn bật Laragon.
@@ -87,6 +89,35 @@ Invoke-RestMethod http://127.0.0.1:5001/api/stats     # số liệu cho dashboar
 Có thể dùng `curl.exe` thay cho `Invoke-RestMethod`, ví dụ `curl.exe http://127.0.0.1:5001/api/health`. Nếu đã đặt `API_TOKEN`, thêm header: `curl.exe -H "X-API-Key: <token>" http://127.0.0.1:5001/api/students`.
 
 Xem dữ liệu trực tiếp: dùng HeidiSQL/phpMyAdmin của Laragon, mở database `qlsv`.
+
+### Dữ liệu mẫu (seed)
+Không cần lệnh hay tham số riêng: mỗi lần khởi động, back-end kiểm tra database `qlsv`:
+
+| Tình trạng database | Back-end làm gì |
+|---|---|
+| Chưa tồn tại, hoặc tồn tại nhưng chưa có bảng nào | Tạo bảng từ `backend/sql/schema.sql`, nạp dữ liệu mẫu từ `backend/sql/seed.sql` |
+| Đã có bảng | Giữ nguyên dữ liệu, **không** seed |
+
+Dữ liệu mẫu gồm 10 sinh viên (`SV001`–`SV010`), 5 môn học, 18 bản ghi điểm, 10 bản ghi học phí. Seed chỉ chạy một lần; sau đó mọi thao tác thêm / sửa / xóa chỉ lưu vào MySQL, **không** ghi ngược vào file `.sql`.
+
+**Kiểm tra `qlsv` đã có chưa** (MySQL của Laragon thường không nằm trong PATH nên gọi bằng đường dẫn đầy đủ; đổi `mysql-8.4.3-winx64` cho đúng phiên bản trên máy):
+```powershell
+& "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "SHOW DATABASES LIKE 'qlsv'"
+```
+Không in ra gì → lần chạy back-end tới sẽ seed. In ra `qlsv` → database đã có, back-end sẽ không seed; muốn có dữ liệu mẫu thì chọn một trong hai cách:
+
+- **Cách A — Xóa database cũ rồi seed lại** (⚠️ mất toàn bộ dữ liệu đang có trong `qlsv`). Dừng back-end, chạy lệnh dưới (hoặc Drop database `qlsv` trong phpMyAdmin/HeidiSQL), rồi chạy lại back-end:
+  ```powershell
+  & "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "DROP DATABASE qlsv"
+  ```
+- **Cách B — Giữ database cũ, seed vào database khác.** Sao chép `backend\.env.example` → `backend\.env`, đổi `DB_NAME=qlsv_demo`, rồi chạy lại back-end. `qlsv` cũ giữ nguyên; đổi lại `DB_NAME=qlsv` để quay về.
+
+**Kiểm tra seed thành công:** mở http://127.0.0.1:5000 thấy 10 sinh viên và biểu đồ có số liệu, hoặc:
+```powershell
+(Invoke-RestMethod http://127.0.0.1:5001/api/students).Count    # 10
+```
+
+> Không import `seed.sql` thủ công bằng phpMyAdmin vào database đã có dữ liệu: id trùng sẽ báo lỗi. Muốn đổi dữ liệu mẫu, sửa `backend/sql/seed.sql` rồi làm lại Cách A.
 
 ### Cách khác: kích hoạt venv rồi gọi `python`
 Thay vì gõ `.\.venv\Scripts\python.exe` mỗi lần, có thể kích hoạt venv để dùng lệnh `python` / `pip` ngắn gọn:
@@ -123,7 +154,7 @@ Sao chép `backend/.env.example` → `backend/.env`, `frontend/.env.example` →
 |---|---|---|---|
 | backend | `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | địa chỉ MySQL |
 | backend | `DB_USER` / `DB_PASSWORD` | `root` / *(rỗng)* | tài khoản MySQL |
-| backend | `DB_NAME` | `qlsv` | tên database (tự tạo) |
+| backend | `DB_NAME` | `qlsv` | tên database (tự tạo và seed dữ liệu mẫu nếu chưa có) |
 | backend | `API_HOST` / `API_PORT` | `127.0.0.1` / `5001` | nơi API lắng nghe |
 | cả hai | `API_TOKEN` | *(rỗng)* | nếu đặt, front-end gửi header `X-API-Key`; hai bên phải trùng nhau |
 | frontend | `BACKEND_URL` | `http://127.0.0.1:5001` | địa chỉ back-end |
@@ -154,6 +185,8 @@ docker compose ps
 docker compose logs -f backend frontend
 ```
 Truy cập http://localhost:5000. Gồm 3 service: `mysql`, `backend`, `frontend`. MySQL trong Docker **không mở cổng 3306** ra máy host nên chạy song song với Laragon không bị xung đột. Dữ liệu nằm trong volume `mysql_data` (`docker compose down` không xóa volume; `docker compose down -v` thì có).
+
+Dữ liệu mẫu: lần đầu chạy (volume còn trống) back-end tự seed như khi chạy trực tiếp. Đây là database riêng trong Docker, không dùng chung với `qlsv` của Laragon. Muốn seed lại từ đầu (⚠️ mất dữ liệu trong Docker): `docker compose down -v` rồi `docker compose up --build -d`. Luôn dùng `--build` sau khi sửa `backend/sql/*.sql` vì các file này được chép vào image.
 
 Có thể đặt `MYSQL_ROOT_PASSWORD`, `SECRET_KEY`, `API_TOKEN` trong file `.env` cạnh `compose.yaml`.
 
