@@ -3,7 +3,7 @@
 - Hệ quản trị: MySQL 8, engine InnoDB, bảng mã `utf8mb4` / `utf8mb4_unicode_ci`.
 - Database mặc định: `qlsv`, do back-end tự tạo (`CREATE DATABASE IF NOT EXISTS`) khi khởi động.
 - Lược đồ khai báo trong `backend/sql/schema.sql`, dùng `CREATE TABLE IF NOT EXISTS`, chạy mỗi lần back-end khởi động; **không có cơ chế migration** nên đổi cột phải sửa DB thủ công.
-- Dữ liệu mẫu trong `backend/sql/seed.sql` (10 sinh viên, 5 môn, 18 điểm, 10 học phí), xem mục 7a.
+- Dữ liệu mẫu trong `backend/sql/seed.sql` (10 sinh viên, 5 môn, 18 điểm, 10 học phí), xem mục 8.
 
 ## 1. Sơ đồ quan hệ
 ```
@@ -71,20 +71,10 @@ Cột `DECIMAL` được chuyển sang `float` trước khi trả JSON (`db.to_j
 - Mỗi request mở một kết nối mới qua `db.transaction()`: commit khi thành công, rollback khi lỗi, luôn đóng kết nối. Không dùng connection pool.
 - Khởi động: thử kết nối `DB_CONNECT_RETRIES` lần, cách nhau `DB_CONNECT_DELAY` giây (Docker đặt 30 lần).
 
-## 7a. Seed dữ liệu mẫu
+## 8. Seed dữ liệu mẫu
 Khi khởi động, `init_database()` kiểm tra `information_schema`:
 - Database `DB_NAME` **chưa tồn tại**, hoặc tồn tại nhưng **chưa có bảng nào** (vd database rỗng do `MYSQL_DATABASE` của Docker tạo) → tạo database, chạy `schema.sql`, rồi chạy `seed.sql`.
 - Database đã có bảng → chỉ chạy `schema.sql` (không đổi dữ liệu), **không seed**.
 - Hai file được chạy nguyên khối nhờ cờ `CLIENT.MULTI_STATEMENTS` (chỉ bật cho kết nối khởi tạo).
 - Seed chạy trong một transaction; nếu lỗi thì rollback và xóa các bảng vừa tạo để lần khởi động sau seed lại.
 - Muốn seed lại từ đầu: xóa database `qlsv` (hoặc `docker compose down -v`) rồi khởi động back-end.
-
-## 8. Chép dữ liệu từ SQLite (`backend/migrate_sqlite_to_mysql.py`)
-```powershell
-.\.venv\Scripts\python.exe migrate_sqlite_to_mysql.py                    # mặc định data/students.db
-.\.venv\Scripts\python.exe migrate_sqlite_to_mysql.py --sqlite D:\path\students.db
-```
-- Mở file SQLite ở chế độ **chỉ đọc**.
-- Gọi `init_database(seed=False)` để bảo đảm bảng đích tồn tại mà **không** seed dữ liệu mẫu (id mẫu sẽ trùng và chặn dữ liệu thật).
-- Chép theo thứ tự `students → subjects → grades → tuition` (bảng cha trước) bằng `INSERT IGNORE`, **giữ nguyên `id`**; dòng trùng khóa bị bỏ qua nên chạy lại an toàn.
-- Toàn bộ chạy trong một transaction; in số dòng đọc / chép mới / bỏ qua cho mỗi bảng.

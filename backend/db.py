@@ -79,7 +79,7 @@ def _database_state(cur):
     return exists, cur.fetchone()["n"]
 
 
-def init_database(seed=True):
+def init_database():
     """Tạo database và bảng từ sql/schema.sql; nếu database chưa tồn tại (hoặc chưa có
     bảng nào) thì seed dữ liệu mẫu từ sql/seed.sql. Thử lại nhiều lần nếu MySQL chưa sẵn sàng."""
     retries = max(config.DB_CONNECT_RETRIES, 1)
@@ -101,7 +101,7 @@ def init_database(seed=True):
             exists, table_count = _database_state(cur)
             # Database do Docker (MYSQL_DATABASE) hoặc người dùng tạo sẵn nhưng còn rỗng
             # cũng được coi là "chưa có" để seed.
-            needs_seed = seed and table_count == 0
+            needs_seed = table_count == 0
             cur.execute(
                 f"CREATE DATABASE IF NOT EXISTS `{config.DB_NAME}` "
                 "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"

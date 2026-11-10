@@ -38,9 +38,8 @@ Hướng dẫn chi tiết từng lệnh (tạo/kích hoạt/xóa venv, kiểm tr
    .\.venv\Scripts\python.exe -m pip install -r requirements.txt   # chỉ lần đầu
    .\.venv\Scripts\python.exe app.py
    ```
-   Kiểm tra: `http://127.0.0.1:5001/api/health`.
-3. (Tùy chọn, một lần) `.\.venv\Scripts\python.exe migrate_sqlite_to_mysql.py`.
-4. Front-end (terminal 2): như bước 2 trong thư mục `frontend`, rồi mở `http://127.0.0.1:5000`.
+   Kiểm tra: `http://127.0.0.1:5001/api/health`. Lần chạy đầu, back-end tự seed dữ liệu mẫu nếu database `qlsv` chưa có.
+3. Front-end (terminal 2): như bước 2 trong thư mục `frontend`, rồi mở `http://127.0.0.1:5000`.
 
 **Thứ tự khởi động**: MySQL → back-end → front-end. Back-end dừng ngay khi không kết nối được MySQL (in hướng dẫn bật Laragon).
 

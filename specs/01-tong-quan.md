@@ -15,7 +15,7 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 - Nhập, sửa, xóa điểm; tự tính điểm tổng kết.
 - Nhập, sửa, xóa học phí theo học kỳ; tự tính số còn nợ.
 - Dashboard: 4 thẻ KPI, 3 biểu đồ.
-- Chép dữ liệu cũ từ SQLite sang MySQL.
+- Tự seed dữ liệu mẫu khi database chưa tồn tại.
 
 **Ngoài phạm vi** (chưa có trong mã)
 - Đăng nhập, phân quyền người dùng.
@@ -61,11 +61,9 @@ backend/
   sql/schema.sql            # lược đồ bảng
   sql/seed.sql              # dữ liệu mẫu (seed khi DB chưa tồn tại)
   config.py                 # đọc biến môi trường / .env
-  migrate_sqlite_to_mysql.py
 frontend/
   app.py                    # route giao diện, CSRF
   api_client.py             # gọi back-end bằng requests
   templates/index.html      # giao diện một trang + Chart.js
-data/students.db            # dữ liệu SQLite cũ (nguồn để chép sang MySQL)
 compose.yaml                # mysql + backend + frontend
 ```

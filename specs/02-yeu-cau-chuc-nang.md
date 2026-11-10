@@ -73,7 +73,7 @@
 |---|---|
 | FR-18 | Sau mỗi thao tác ghi, hiển thị thông báo thành công (xanh) hoặc lỗi (đỏ) nổi ở đầu màn hình, nhìn thấy được dù đang cuộn ở bất kỳ đâu. Thông báo thành công tự ẩn sau 4 giây; thông báo lỗi giữ lại tới khi người dùng bấm ×. |
 | FR-19 | Endpoint health cho cả back-end (`/api/health`) và front-end (`/health`). |
-| FR-20 | Công cụ dòng lệnh chép dữ liệu từ SQLite sang MySQL, chạy lại không tạo bản trùng. |
+| FR-20 | Khi khởi động, nếu database chưa tồn tại (hoặc chưa có bảng) thì tự tạo bảng từ `schema.sql` và nạp dữ liệu mẫu từ `seed.sql`; database đã có dữ liệu thì không bị thay đổi. |
 | FR-22 | Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: chỉ các vùng dữ liệu (thẻ KPI, bảng, ô chọn) và biểu đồ được cập nhật; vị trí cuộn được giữ nguyên. Khi thao tác bị lỗi, form giữ nguyên dữ liệu đã nhập để sửa lại. |
 
 ## 7. Yêu cầu phi chức năng

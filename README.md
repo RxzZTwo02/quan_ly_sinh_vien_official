@@ -116,14 +116,6 @@ Sau đó làm lại **Bước 2**.
 
 > Nếu `py -m venv .venv` báo *Unable to copy … venvlauncher.exe*: `.venv` vẫn còn và `python.exe` bên trong đang bị VS Code hoặc một terminal khác dùng. Đóng chương trình đó rồi xóa `.venv` và tạo lại.
 
-### (Tùy chọn) Chép dữ liệu cũ từ SQLite sang MySQL
-Chỉ cần nếu còn file `students.db` của phiên bản cũ. Chạy một lần trong thư mục `backend`:
-```powershell
-cd backend
-.\.venv\Scripts\python.exe migrate_sqlite_to_mysql.py --sqlite D:\duong\dan\students.db
-```
-Nếu bỏ `--sqlite`, script tìm file ở `data\students.db` (cạnh `backend\`). Script giữ nguyên id và bỏ qua dòng đã có, nên chạy lại không bị trùng.
-
 ## Biến môi trường
 Sao chép `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env` nếu cần đổi.
 
