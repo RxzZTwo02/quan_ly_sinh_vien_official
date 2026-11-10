@@ -20,7 +20,7 @@
 |---|---|
 | FR-06 | Hiển thị danh mục môn học, sắp xếp theo tên môn. |
 | FR-07 | Thêm môn học gồm: mã môn, tên môn, số tín chỉ (mặc định 3). |
-| FR-20 | Xóa môn học sau khi người dùng xác nhận; hộp xác nhận báo số bản ghi điểm của môn sẽ bị xóa theo. |
+| FR-21 | Xóa môn học sau khi người dùng xác nhận; hộp xác nhận báo số bản ghi điểm của môn sẽ bị xóa theo. |
 
 **Quy tắc**
 - BR-05: Mã môn in hoa, ≤ 20 ký tự, duy nhất; tên môn ≤ 120 ký tự.
@@ -65,9 +65,10 @@
 ## 6. Hệ thống
 | Mã | Yêu cầu |
 |---|---|
-| FR-18 | Sau mỗi thao tác ghi, hiển thị thông báo thành công (xanh) hoặc lỗi (đỏ) trên đầu trang. |
+| FR-18 | Sau mỗi thao tác ghi, hiển thị thông báo thành công (xanh) hoặc lỗi (đỏ) nổi ở đầu màn hình, nhìn thấy được dù đang cuộn ở bất kỳ đâu. Thông báo thành công tự ẩn sau 4 giây; thông báo lỗi giữ lại tới khi người dùng bấm ×. |
 | FR-19 | Endpoint health cho cả back-end (`/api/health`) và front-end (`/health`). |
 | FR-20 | Công cụ dòng lệnh chép dữ liệu từ SQLite sang MySQL, chạy lại không tạo bản trùng. |
+| FR-22 | Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: chỉ các vùng dữ liệu (thẻ KPI, bảng, ô chọn) và biểu đồ được cập nhật; vị trí cuộn được giữ nguyên. Khi thao tác bị lỗi, form giữ nguyên dữ liệu đã nhập để sửa lại. |
 
 ## 7. Yêu cầu phi chức năng
 | Mã | Yêu cầu |
@@ -79,3 +80,4 @@
 | NFR-05 | Khi back-end hoặc MySQL không chạy, front-end vẫn hiển thị trang với thông báo lỗi rõ ràng (HTTP 502/503) thay vì sập. |
 | NFR-06 | Giao diện dùng được trên màn hình điện thoại (CSS responsive). |
 | NFR-07 | Front-end gọi back-end có timeout (mặc định 5 giây, biến `API_TIMEOUT`). |
+| NFR-08 | Trình duyệt tắt JavaScript vẫn dùng được đầy đủ chức năng (form gửi theo cách truyền thống, tải lại trang). |

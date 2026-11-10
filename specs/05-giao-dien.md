@@ -3,6 +3,7 @@
 - Địa chỉ mặc định: `http://127.0.0.1:5000`
 - Mã nguồn: `frontend/app.py`, `frontend/api_client.py`, `frontend/templates/index.html`.
 - Ứng dụng **một trang**: mọi chức năng nằm ở `/`; form POST xong chuyển hướng về `/` (Post/Redirect/Get).
+- Trên trình duyệt có JavaScript, form và các nút Sửa / Hủy / Tất cả được gửi bằng `fetch` và **cập nhật trang tại chỗ, không tải lại** (xem mục 6).
 
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
@@ -30,7 +31,7 @@
 
 ## 3. Bố cục trang (từ trên xuống)
 1. **Đầu trang**: tiêu đề "🎓 Quản lý sinh viên" và mô tả.
-2. **Thông báo**: hộp xanh (`message`) / đỏ (`error`).
+2. **Thông báo** (`#notices`): hộp xanh (`message`) / đỏ (`error`), nổi cố định ở giữa phía trên màn hình, có nút × để đóng; hộp xanh tự ẩn sau 4 giây.
 3. **Thẻ KPI** (4 thẻ): Tổng sinh viên · Môn học · Bản ghi điểm · Học phí còn nợ (định dạng `1,234,567 đ`).
 4. **Dashboard** (3 biểu đồ Chart.js):
    | Biểu đồ | Loại | Dữ liệu |
@@ -58,4 +59,26 @@ Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc 
 ## 5. Biểu đồ
 - Dữ liệu nhúng vào trang qua `<script type="application/json" id="dashboard-data">` (Jinja `tojson`).
 - Chart.js 4.4.9 tải từ `cdn.jsdelivr.net`; không tải được thì mỗi vùng biểu đồ hiện "Không tải được thư viện biểu đồ. Kiểm tra kết nối Internet."
-- Biểu đồ không tự làm mới; dữ liệu cập nhật khi tải lại trang.
+- Sau mỗi thao tác, biểu đồ được cập nhật tại chỗ (`chart.update()`) từ dữ liệu `dashboard-data` của trang mới, có hiệu ứng chuyển.
+
+## 6. Cập nhật tại chỗ (không tải lại trang)
+Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía server **không đổi**: vẫn là Post/Redirect/Get, nên khi tắt JavaScript trang hoạt động như cũ (tải lại trang).
+
+**Luồng xử lý**
+1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy, Tất cả). Nếu người dùng bấm Hủy ở hộp xác nhận xóa (`onsubmit="return confirm(...)"`) thì không gửi gì.
+2. Gửi bằng `fetch` (form POST gửi `FormData` kèm `csrf_token`; form GET và link thì gửi GET). Với POST, `fetch` tự đi theo redirect về `/?message=…` hoặc `/?error=…`.
+3. Phân tích HTML trả về bằng `DOMParser`, rồi:
+   - luôn thay vùng thông báo `#notices`;
+   - nếu **thành công**: thay các vùng `#stats`, `#students`, `#subjects`, `#grades`, `#tuition` và cập nhật 3 biểu đồ;
+   - nếu **có lỗi** (trang mới có `.notice.error`): chỉ hiện thông báo, **không** thay các vùng khác, nên form giữ nguyên dữ liệu đã nhập.
+4. Giữ vị trí cuộn: đo vị trí của vùng (`section`) chứa form/link vừa dùng trước và sau khi thay nội dung rồi `scrollBy` phần chênh lệch.
+5. Địa chỉ trình duyệt: luôn bỏ `message`/`error` (F5 không hiện lại thông báo cũ). Tìm kiếm, Sửa, Hủy, Tất cả dùng `history.pushState` nên nút Back/Forward vẫn quay lại đúng trạng thái (sự kiện `popstate` tải lại nội dung tại chỗ); thao tác ghi dùng `replaceState`.
+6. Con trỏ: lưu thành công thì đặt vào ô đầu tiên của form vừa dùng để nhập tiếp; bấm Sửa thì cuộn tới form sinh viên và đặt vào ô Mã sinh viên; tìm kiếm thì giữ con trỏ ở ô tìm kiếm.
+
+**Trường hợp đặc biệt**
+| Tình huống | Hiển thị |
+|---|---|
+| Đang gửi yêu cầu | Nút của form mờ đi (`aria-busy`), con trỏ chuột dạng chờ; bấm thêm lần nữa bị bỏ qua (chống gửi trùng). |
+| Sai/thiếu CSRF (phiên hết hạn) | Thông báo đỏ lấy từ trang lỗi 400: "Phiên làm việc hết hạn. Hãy tải lại trang." |
+| Back-end/MySQL tắt | Thông báo đỏ từ front-end; dữ liệu đang hiển thị được giữ nguyên. |
+| Front-end tắt (không gọi được `fetch`) | "Không kết nối được máy chủ front-end. Hãy kiểm tra frontend/app.py còn đang chạy." |

@@ -168,3 +168,4 @@ Có thể đặt `MYSQL_ROOT_PASSWORD`, `SECRET_KEY`, `API_TOKEN` trong file `.e
 - Thẻ KPI: tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ.
 - Biểu đồ học phí phải đóng / đã đóng / còn nợ, phân loại kết quả học tập, số sinh viên theo lớp — dữ liệu truy vấn trực tiếp từ MySQL.
 - Chart.js tải từ CDN nên trình duyệt cần Internet để hiển thị biểu đồ.
+- Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn giữ nguyên; thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được (tải lại trang như cũ).

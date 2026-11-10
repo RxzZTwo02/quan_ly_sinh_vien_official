@@ -279,10 +279,51 @@
     }
 
     /* ===== Thông báo và tiện ích ===== */
+    /* Thông báo nổi ở đầu màn hình để luôn nhìn thấy dù đang cuộn ở bảng nào */
+    .notices {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      width: min(560px, calc(100% - 32px));
+      display: grid;
+      gap: 8px;
+    }
+
     .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
       padding: 12px;
       border-radius: 8px;
-      margin-bottom: 15px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, .15);
+      transition: opacity .3s, transform .3s;
+    }
+
+    .notice.hiding {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    .notice-close {
+      margin-left: auto;
+      padding: 0 4px;
+      background: transparent;
+      color: inherit;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* Đang gửi yêu cầu: làm mờ nút của form đang gửi, đổi con trỏ chuột */
+    form[aria-busy="true"] button {
+      opacity: .6;
+    }
+
+    body.loading,
+    body.loading button,
+    body.loading .button {
+      cursor: progress;
     }
 
     .success {
@@ -378,15 +419,17 @@
     </header>
 
     <!-- Thông báo -->
-    {% if message %}
-    <div class="notice success" role="status">{{ message }}</div>
-    {% endif %}
-    {% if error %}
-    <div class="notice error" role="alert">{{ error }}</div>
-    {% endif %}
+    <div id="notices" class="notices">
+      {% if message %}
+      <div class="notice success" role="status">{{ message }}</div>
+      {% endif %}
+      {% if error %}
+      <div class="notice error" role="alert">{{ error }}</div>
+      {% endif %}
+    </div>
 
     <!-- Thẻ thống kê -->
-    <section class="stats">
+    <section class="stats" id="stats">
       <div class="stat">
         Tổng sinh viên
         <strong>{{ total }}</strong>
@@ -427,7 +470,7 @@
         <h2>Sinh viên theo lớp</h2>
         <p>Tối đa 8 lớp có nhiều sinh viên nhất</p>
         <div class="chart-area"><canvas id="classChart" aria-label="Biểu đồ sinh viên theo lớp"></canvas></div>
-        <div class="chart-note">Biểu đồ tự cập nhật khi tải lại trang sau khi dữ liệu thay đổi.</div>
+        <div class="chart-note">Biểu đồ tự cập nhật ngay khi dữ liệu thay đổi.</div>
       </div>
     </section>
 
@@ -469,7 +512,7 @@
         </div>
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing else "Thêm sinh viên" }}</button>
-          {% if editing %}<a class="button secondary" href="{{ url_for('index') }}">Hủy</a>{% endif %}
+          {% if editing %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="students">Hủy</a>{% endif %}
         </div>
       </form>
 
@@ -479,7 +522,7 @@
       <form class="search" method="get">
         <input name="q" value="{{ keyword }}" placeholder="Tìm theo mã, họ tên hoặc lớp...">
         <button>Tìm kiếm</button>
-        <a class="button secondary" href="{{ url_for('index') }}">Tất cả</a>
+        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
       </form>
       <div class="table-wrap">
         <table>
@@ -500,7 +543,7 @@
               <td>{{ s.class_name }}</td>
               <td>{{ s.email }}</td>
               <td>
-                <a class="button" href="{{ url_for('index', edit=s.id) }}">Sửa</a>
+                <a class="button" href="{{ url_for('index', edit=s.id) }}" data-ajax="students">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_student', student_id=s.id) }}"
                       onsubmit="return confirm('Xóa sinh viên và dữ liệu liên quan?')">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -756,105 +799,300 @@
   <script id="dashboard-data" type="application/json">{{ chart_data|tojson }}</script>
   <script>
     (() => {
-      const data = JSON.parse(document.getElementById('dashboard-data').textContent);
+      /* Các vùng được thay bằng bản mới từ máy chủ sau mỗi thao tác (không tải lại trang). */
+      const REGIONS = ['stats', 'students', 'subjects', 'grades', 'tuition'];
+      const notices = document.getElementById('notices');
+      const charts = {};
+      let busy = false;
 
-      if (typeof Chart === 'undefined') {
-        document.querySelectorAll('.chart-area').forEach(el => {
-          el.innerHTML = '<p class="muted">Không tải được thư viện biểu đồ. Kiểm tra kết nối Internet.</p>';
-        });
-        return;
-      }
+      // ===================================================== Biểu đồ
+      const readChartData = doc => JSON.parse(doc.getElementById('dashboard-data').textContent);
 
-      Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
-      Chart.defaults.color = '#64748b';
-
-      const tooltipMoney = value => new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-        maximumFractionDigits: 0
-      }).format(value);
-
-      // Biểu đồ học phí
-      new Chart(document.getElementById('tuitionChart'), {
-        type: 'bar',
-        data: {
+      const series = d => ({
+        tuitionChart: {
           labels: ['Phải đóng', 'Đã đóng', 'Còn nợ'],
-          datasets: [{
-            data: [data.tuitionDue, data.tuitionPaid, data.tuitionBalance],
-            backgroundColor: ['#93c5fd', '#34d399', '#fbbf24'],
-            borderRadius: 8,
-            borderSkipped: false
-          }]
+          values: [d.tuitionDue, d.tuitionPaid, d.tuitionBalance]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: { label: ctx => tooltipMoney(ctx.raw) }
-            }
+        gradeChart: {
+          labels: d.gradeLabels.length ? d.gradeLabels : ['Chưa có dữ liệu'],
+          values: d.gradeValues.length ? d.gradeValues : [1]
+        },
+        classChart: {
+          labels: d.classLabels.length ? d.classLabels : ['Chưa có dữ liệu'],
+          values: d.classValues.length ? d.classValues : [0]
+        }
+      });
+
+      function initCharts(data) {
+        if (typeof Chart === 'undefined') {
+          document.querySelectorAll('.chart-area').forEach(el => {
+            el.innerHTML = '<p class="muted">Không tải được thư viện biểu đồ. Kiểm tra kết nối Internet.</p>';
+          });
+          return;
+        }
+
+        Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+        Chart.defaults.color = '#64748b';
+
+        const tooltipMoney = value => new Intl.NumberFormat('vi-VN', {
+          style: 'currency',
+          currency: 'VND',
+          maximumFractionDigits: 0
+        }).format(value);
+        const s = series(data);
+
+        // Biểu đồ học phí
+        charts.tuitionChart = new Chart(document.getElementById('tuitionChart'), {
+          type: 'bar',
+          data: {
+            labels: s.tuitionChart.labels,
+            datasets: [{
+              data: s.tuitionChart.values,
+              backgroundColor: ['#93c5fd', '#34d399', '#fbbf24'],
+              borderRadius: 8,
+              borderSkipped: false
+            }]
           },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: v => new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(v)
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: { label: ctx => tooltipMoney(ctx.raw) }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: v => new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(v)
+                }
               }
             }
           }
-        }
-      });
+        });
 
-      // Biểu đồ phân loại kết quả học tập
-      new Chart(document.getElementById('gradeChart'), {
-        type: 'doughnut',
-        data: {
-          labels: data.gradeLabels.length ? data.gradeLabels : ['Chưa có dữ liệu'],
-          datasets: [{
-            data: data.gradeValues.length ? data.gradeValues : [1],
-            backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#f87171'],
-            borderWidth: 0,
-            hoverOffset: 5
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '66%',
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { usePointStyle: true, boxWidth: 8, padding: 14 }
+        // Biểu đồ phân loại kết quả học tập
+        charts.gradeChart = new Chart(document.getElementById('gradeChart'), {
+          type: 'doughnut',
+          data: {
+            labels: s.gradeChart.labels,
+            datasets: [{
+              data: s.gradeChart.values,
+              backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#f87171'],
+              borderWidth: 0,
+              hoverOffset: 5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '66%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { usePointStyle: true, boxWidth: 8, padding: 14 }
+              }
             }
           }
+        });
+
+        // Biểu đồ sinh viên theo lớp
+        charts.classChart = new Chart(document.getElementById('classChart'), {
+          type: 'bar',
+          data: {
+            labels: s.classChart.labels,
+            datasets: [{
+              label: 'Sinh viên',
+              data: s.classChart.values,
+              backgroundColor: '#818cf8',
+              borderRadius: 7,
+              borderSkipped: false
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { beginAtZero: true, ticks: { precision: 0 } },
+              y: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      function updateCharts(data) {
+        const s = series(data);
+        for (const [id, chart] of Object.entries(charts)) {
+          chart.data.labels = s[id].labels;
+          chart.data.datasets[0].data = s[id].values;
+          chart.update();
         }
+      }
+
+      // ===================================================== Thông báo
+      function dismiss(notice) {
+        notice.classList.add('hiding');
+        setTimeout(() => notice.remove(), 300);
+      }
+
+      function decorateNotices() {
+        notices.querySelectorAll('.notice:not([data-ready])').forEach(notice => {
+          notice.dataset.ready = '1';
+          const close = document.createElement('button');
+          close.type = 'button';
+          close.className = 'notice-close';
+          close.setAttribute('aria-label', 'Đóng thông báo');
+          close.textContent = '×';
+          close.addEventListener('click', () => dismiss(notice));
+          notice.append(close);
+          // Thông báo thành công tự ẩn; thông báo lỗi giữ lại tới khi người dùng đóng.
+          if (notice.classList.contains('success')) setTimeout(() => dismiss(notice), 4000);
+        });
+      }
+
+      function showNotice(text, kind) {
+        const notice = document.createElement('div');
+        notice.className = `notice ${kind}`;
+        notice.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+        notice.textContent = text;
+        notices.replaceChildren(notice);
+        decorateNotices();
+      }
+
+      // ===================================================== Gửi yêu cầu, thay nội dung tại chỗ
+      /* Bỏ ?message=/?error= khỏi địa chỉ để F5 không hiện lại thông báo cũ. */
+      function cleanUrl(href) {
+        const url = new URL(href, location.href);
+        url.searchParams.delete('message');
+        url.searchParams.delete('error');
+        return url.pathname + url.search;
+      }
+
+      /*
+       * Gửi request tới front-end (POST thì Flask redirect về trang chính, fetch tự đi theo),
+       * nhận HTML trang mới và chỉ thay các vùng dữ liệu. Nếu trang mới báo lỗi thì chỉ hiện
+       * thông báo, giữ nguyên các form để người dùng sửa lại mà không phải nhập lại từ đầu.
+       * Trả về URL trang kết quả khi thành công, null khi lỗi.
+       */
+      async function load(url, init, anchorEl) {
+        let response;
+        let doc;
+        try {
+          response = await fetch(url, { ...init, credentials: 'same-origin' });
+          doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        } catch {
+          showNotice('Không kết nối được máy chủ front-end. Hãy kiểm tra frontend/app.py còn đang chạy.', 'error');
+          return null;
+        }
+
+        const freshNotices = doc.getElementById('notices');
+        if (!freshNotices) {
+          // Không phải trang chính, ví dụ lỗi 400 khi phiên làm việc hết hạn (sai CSRF).
+          const detail = doc.querySelector('p')?.textContent.trim();
+          showNotice(detail || `Máy chủ trả về lỗi HTTP ${response.status}.`, 'error');
+          return null;
+        }
+
+        // Kiểm tra lỗi trước khi chuyển node sang trang hiện tại (chuyển xong freshNotices sẽ rỗng).
+        const failed = freshNotices.querySelector('.notice.error') !== null;
+        notices.replaceChildren(...freshNotices.children);
+        decorateNotices();
+        if (failed) return null;
+
+        // Giữ vùng người dùng đang thao tác đứng yên trên màn hình sau khi thay nội dung.
+        const anchorId = anchorEl?.closest('section[id]')?.id;
+        const before = anchorId && document.getElementById(anchorId).getBoundingClientRect().top;
+
+        for (const id of REGIONS) {
+          const current = document.getElementById(id);
+          const fresh = doc.getElementById(id);
+          if (current && fresh) current.replaceWith(fresh);
+        }
+        updateCharts(readChartData(doc));
+
+        if (anchorId) {
+          window.scrollBy(0, document.getElementById(anchorId).getBoundingClientRect().top - before);
+        }
+        return response.url;
+      }
+
+      async function run(task) {
+        if (busy) return;  // chặn bấm liên tiếp gửi trùng yêu cầu
+        busy = true;
+        document.body.classList.add('loading');
+        try {
+          await task();
+        } finally {
+          busy = false;
+          document.body.classList.remove('loading');
+        }
+      }
+
+      function focusAfterNavigation(target) {
+        if (target === 'students') {
+          document.getElementById('students').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('student_code').focus({ preventScroll: true });
+        } else if (target === 'search') {
+          const box = document.querySelector('#students form.search input[name="q"]');
+          box.focus({ preventScroll: true });
+          box.setSelectionRange(box.value.length, box.value.length);
+        }
+      }
+
+      /* Điều hướng GET (tìm kiếm, Sửa, Hủy, Tất cả): cập nhật địa chỉ để nút Back vẫn dùng được. */
+      async function navigate(url, focusTarget, anchorEl) {
+        const finalUrl = await load(url, { method: 'GET' }, anchorEl);
+        if (finalUrl === null) return;
+        history.pushState(null, '', cleanUrl(finalUrl));
+        focusAfterNavigation(focusTarget);
+      }
+
+      document.addEventListener('submit', event => {
+        const form = event.target;
+        // defaultPrevented: người dùng bấm "Hủy" ở hộp xác nhận xóa (onsubmit="return confirm(...)").
+        if (event.defaultPrevented || !form.closest('main')) return;
+        event.preventDefault();
+        if (busy) return;
+
+        if (form.method.toLowerCase() === 'get') {
+          const url = new URL(form.action);
+          url.search = new URLSearchParams(new FormData(form)).toString();
+          run(() => navigate(url.href, 'search', form));
+          return;
+        }
+
+        const action = form.getAttribute('action');
+        run(async () => {
+          form.setAttribute('aria-busy', 'true');
+          const finalUrl = await load(form.action, { method: 'POST', body: new FormData(form) }, form);
+          form.removeAttribute('aria-busy');
+          if (finalUrl === null) return;
+          history.replaceState(null, '', cleanUrl(finalUrl));
+          // Lưu xong: đặt con trỏ vào ô đầu của form vừa dùng để nhập tiếp bản ghi khác.
+          document.querySelector(`main form[action="${CSS.escape(action)}"]`)
+            ?.querySelector('input:not([type="hidden"]), select')
+            ?.focus({ preventScroll: true });
+        });
       });
 
-      // Biểu đồ sinh viên theo lớp
-      new Chart(document.getElementById('classChart'), {
-        type: 'bar',
-        data: {
-          labels: data.classLabels.length ? data.classLabels : ['Chưa có dữ liệu'],
-          datasets: [{
-            label: 'Sinh viên',
-            data: data.classValues.length ? data.classValues : [0],
-            backgroundColor: '#818cf8',
-            borderRadius: 7,
-            borderSkipped: false
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { beginAtZero: true, ticks: { precision: 0 } },
-            y: { grid: { display: false } }
-          }
-        }
+      document.addEventListener('click', event => {
+        const link = event.target.closest('a[data-ajax]');
+        if (!link || event.defaultPrevented || event.button !== 0
+            || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        run(() => navigate(link.href, link.dataset.ajax, link));
       });
+
+      window.addEventListener('popstate', () => run(() => load(location.href, { method: 'GET' })));
+
+      // ===================================================== Khởi động
+      initCharts(readChartData(document));
+      decorateNotices();
+      history.replaceState(null, '', cleanUrl(location.href) + location.hash);
     })();
   </script>
 </body>

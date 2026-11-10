@@ -18,6 +18,7 @@ Các điểm dưới đây được ghi nhận khi đọc mã nguồn hiện t�
 | L-11 | Không có đăng nhập / phân quyền. | Ai truy cập được trang đều có toàn quyền. | — |
 | L-12 | Chart.js tải từ CDN. | Không có Internet thì không có biểu đồ (phần còn lại vẫn dùng được). | `index.html` |
 | L-13 | Chưa có kiểm thử tự động. | Sửa mã cần kiểm tra thủ công. | — |
+| L-14 | Sau một thao tác ghi **thành công**, các vùng dữ liệu được thay bằng bản mới từ máy chủ; mỗi lần vẫn tải lại toàn bộ HTML của trang chính (6 lần gọi API). | Dữ liệu đang gõ dở ở form **khác** bị xóa; đang ở chế độ Sửa hoặc đang lọc tìm kiếm thì bị thoát (giống hành vi trước đây khi tải lại trang). | `index.html` (script), `frontend/app.py` |
 
 ## 2. Hướng cải tiến đề xuất
 1. Tách danh sách sinh viên cho ô chọn khỏi kết quả tìm kiếm (L-01).
