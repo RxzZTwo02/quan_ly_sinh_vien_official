@@ -11,7 +11,7 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 ## 2. Phạm vi
 **Trong phạm vi**
 - Thêm / sửa / xóa / tìm kiếm sinh viên.
-- Thêm môn học, xem danh mục môn học.
+- Thêm / xóa môn học, xem danh mục môn học.
 - Nhập, cập nhật, xóa điểm; tự tính điểm tổng kết.
 - Nhập, cập nhật học phí theo học kỳ; tự tính số còn nợ.
 - Dashboard: 4 thẻ KPI, 3 biểu đồ.
@@ -19,7 +19,7 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 
 **Ngoài phạm vi** (chưa có trong mã)
 - Đăng nhập, phân quyền người dùng.
-- Sửa / xóa môn học, xóa bản ghi học phí.
+- Sửa môn học, xóa bản ghi học phí.
 - Phân trang, xuất Excel/PDF, nhập dữ liệu hàng loạt.
 
 ## 3. Người dùng

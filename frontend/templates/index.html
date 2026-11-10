@@ -546,18 +546,27 @@
               <th>Mã môn</th>
               <th>Tên môn</th>
               <th>Tín chỉ</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for sub in subjects %}
+            {% set sub_grade_count = grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
             <tr>
               <td>{{ sub.subject_code }}</td>
               <td>{{ sub.subject_name }}</td>
               <td>{{ sub.credits }}</td>
+              <td>
+                <form class="inline" method="post" action="{{ url_for('delete_subject', subject_id=sub.id) }}"
+                      onsubmit="return confirm('{% if sub_grade_count %}Môn này có {{ sub_grade_count }} bản ghi điểm, sẽ bị xóa theo. {% endif %}Xóa môn học?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="danger">Xóa</button>
+                </form>
+              </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="3">Chưa có môn học. Hãy thêm môn trước khi nhập điểm.</td>
+              <td colspan="4">Chưa có môn học. Hãy thêm môn trước khi nhập điểm.</td>
             </tr>
             {% endfor %}
           </tbody>

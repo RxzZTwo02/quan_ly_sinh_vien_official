@@ -20,10 +20,12 @@
 |---|---|
 | FR-06 | Hiển thị danh mục môn học, sắp xếp theo tên môn. |
 | FR-07 | Thêm môn học gồm: mã môn, tên môn, số tín chỉ (mặc định 3). |
+| FR-20 | Xóa môn học sau khi người dùng xác nhận; hộp xác nhận báo số bản ghi điểm của môn sẽ bị xóa theo. |
 
 **Quy tắc**
 - BR-05: Mã môn in hoa, ≤ 20 ký tự, duy nhất; tên môn ≤ 120 ký tự.
 - BR-06: Số tín chỉ là số nguyên từ **1 đến 10**.
+- BR-16: Xóa môn học thì xóa kèm toàn bộ điểm của môn đó (cascade); thông báo kết quả nêu số bản ghi điểm đã xóa.
 
 ## 3. Bảng điểm
 | Mã | Yêu cầu |

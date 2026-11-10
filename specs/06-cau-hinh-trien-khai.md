@@ -28,6 +28,8 @@
 | `SECRET_KEY` | ngẫu nhiên mỗi lần chạy | Khóa ký session/CSRF; nên đặt cố định |
 
 ## 2. Chạy trực tiếp (Windows + Laragon)
+Hướng dẫn chi tiết từng lệnh (tạo/kích hoạt/xóa venv, kiểm tra bằng CLI) nằm ở mục *Chạy trực tiếp với Laragon* trong [README.md](../README.md). Tóm tắt:
+
 1. Laragon → **Start All** (cần MySQL ở cổng 3306).
 2. Back-end (terminal 1):
    ```powershell

@@ -11,7 +11,7 @@ Các điểm dưới đây được ghi nhận khi đọc mã nguồn hiện t�
 | L-04 | Kiểm tra email chỉ yêu cầu có ký tự `@`. | Có thể lưu email sai định dạng khi gọi API trực tiếp. | `backend/app.py` (`validate_student`) |
 | L-05 | `due_date` chỉ giới hạn độ dài, không kiểm tra định dạng ngày. | Gọi API trực tiếp có thể lưu chuỗi bất kỳ ≤ 10 ký tự. | `backend/app.py` (`save_tuition`) |
 | L-06 | Giá trị `NaN` lọt qua kiểm tra khoảng điểm/học phí (so sánh với NaN luôn sai). | Gọi API với `"nan"` gây lỗi 500 thay vì 400. Giao diện web không bị vì ô `type="number"`. | `backend/app.py` |
-| L-07 | Không có sửa/xóa môn học, không có xóa học phí trên giao diện lẫn API. | Nhập sai phải sửa trực tiếp trong DB (HeidiSQL/phpMyAdmin). | — |
+| L-07 | Không có sửa môn học, không có xóa học phí trên giao diện lẫn API. | Nhập sai phải sửa trực tiếp trong DB (HeidiSQL/phpMyAdmin). | — |
 | L-08 | Không phân trang; trang chính tải toàn bộ sinh viên, điểm, học phí trong mỗi lần mở. | Chậm dần khi dữ liệu lớn (hàng nghìn bản ghi). | `frontend/app.py` |
 | L-09 | Mỗi request mở kết nối MySQL mới, không dùng pool. | Đủ cho quy mô đồ án; tải cao sẽ tốn kết nối. | `backend/db.py` |
 | L-10 | Không có migration lược đồ (`CREATE TABLE IF NOT EXISTS`). | Thêm/đổi cột không tự áp dụng cho DB đã tồn tại. | `backend/db.py` |
@@ -23,7 +23,7 @@ Các điểm dưới đây được ghi nhận khi đọc mã nguồn hiện t�
 1. Tách danh sách sinh viên cho ô chọn khỏi kết quả tìm kiếm (L-01).
 2. Trả `gradeLabels` theo thứ tự cố định Giỏi → Khá → Trung bình → Cần cố gắng (L-02).
 3. Kiểm tra email bằng biểu thức chính quy, `due_date` bằng `date.fromisoformat`, chặn NaN/vô cực bằng `math.isfinite` (L-04…L-06).
-4. Bổ sung `PUT`/`DELETE` cho môn học và `DELETE` cho học phí (L-07).
+4. Bổ sung `PUT` cho môn học và `DELETE` cho học phí (L-07).
 5. Thêm phân trang cho `/api/students`, `/api/grades`, `/api/tuition` (L-08).
 6. Thêm đăng nhập cho front-end (Flask-Login hoặc session tự viết) trước khi đưa lên mạng (L-11).
 7. Đóng gói Chart.js cùng ứng dụng để chạy offline (L-12).

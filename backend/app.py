@@ -191,6 +191,19 @@ def create_subject():
     return ok("Đã thêm môn học.", 201, id=new_id)
 
 
+@app.delete("/api/subjects/<int:subject_id>")
+def delete_subject(subject_id):
+    with transaction() as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM grades WHERE subject_id=%s", (subject_id,))
+        grade_count = cur.fetchone()["n"]
+        affected = cur.execute("DELETE FROM subjects WHERE id=%s", (subject_id,))
+    if not affected:
+        raise ApiError("Không tìm thấy môn học.", 404)
+    if grade_count:
+        return ok(f"Đã xóa môn học và {grade_count} bản ghi điểm liên quan.", deleted_grades=grade_count)
+    return ok("Đã xóa môn học.", deleted_grades=0)
+
+
 # ---------------------------------------------------------------- bảng điểm
 
 @app.get("/api/grades")

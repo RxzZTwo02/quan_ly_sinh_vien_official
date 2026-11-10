@@ -111,6 +111,11 @@ def save_subject():
                              form_data("subject_code", "subject_name", "credits"))
 
 
+@app.post("/subjects/delete/<int:subject_id>")
+def delete_subject(subject_id):
+    return call_and_redirect(api.delete, f"/api/subjects/{subject_id}")
+
+
 @app.post("/grades/save")
 def save_grade():
     return call_and_redirect(api.post, "/api/grades",

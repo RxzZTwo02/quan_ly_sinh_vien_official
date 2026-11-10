@@ -78,6 +78,12 @@ Danh sách môn học, sắp xếp theo `subject_name`.
 - `400 "Môn học cần có mã, tên và số tín chỉ từ 1 đến 10."`
 - `409 "Mã môn học đã tồn tại."`
 
+### `DELETE /api/subjects/<id>`
+Xóa môn học và (cascade) mọi bản ghi điểm của môn đó. `deleted_grades` là số bản ghi điểm bị xóa theo.
+- `200 {"message": "Đã xóa môn học.", "deleted_grades": 0}`
+- `200 {"message": "Đã xóa môn học và 3 bản ghi điểm liên quan.", "deleted_grades": 3}`
+- `404 "Không tìm thấy môn học."`
+
 ---
 
 ### `GET /api/grades`

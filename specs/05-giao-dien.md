@@ -11,6 +11,7 @@
 | POST | `/save` | Thêm sinh viên (không có `id`) hoặc sửa (có `id`) | `POST /api/students` / `PUT /api/students/<id>` |
 | POST | `/delete/<id>` | Xóa sinh viên | `DELETE /api/students/<id>` |
 | POST | `/subjects/save` | Thêm môn học | `POST /api/subjects` |
+| POST | `/subjects/delete/<id>` | Xóa môn học | `DELETE /api/subjects/<id>` |
 | POST | `/grades/save` | Lưu điểm | `POST /api/grades` |
 | POST | `/grades/delete/<id>` | Xóa điểm | `DELETE /api/grades/<id>` |
 | POST | `/tuition/save` | Lưu học phí | `POST /api/tuition` |
@@ -42,7 +43,7 @@
    - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`); khi sửa có nút **Hủy**.
    - Ô tìm kiếm + nút **Tất cả**.
    - Bảng: Mã SV · Họ tên · Lớp · Email · Thao tác (**Sửa**, **Xóa** có hộp xác nhận).
-7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); bảng Mã môn · Tên môn · Tín chỉ.
+7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); bảng Mã môn · Tên môn · Tín chỉ · Thao tác (**Xóa** có hộp xác nhận; nếu môn đã có điểm, hộp xác nhận nêu số bản ghi điểm sẽ bị xóa theo).
 8. **Bảng điểm** (`#grades`)
    - Form: chọn sinh viên, chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8).
    - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết (2 chữ số) · nút **Xóa** có xác nhận.
