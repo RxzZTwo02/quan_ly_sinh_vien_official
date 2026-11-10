@@ -12,53 +12,19 @@ import config
 # Mã lỗi MySQL dùng để phân loại IntegrityError.
 ER_NO_REFERENCED_ROW = 1452
 
-SCHEMA = [
-    """CREATE TABLE IF NOT EXISTS students (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        student_code VARCHAR(20) NOT NULL UNIQUE,
-        full_name VARCHAR(100) NOT NULL,
-        class_name VARCHAR(50) NOT NULL,
-        email VARCHAR(120) NOT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
-    """CREATE TABLE IF NOT EXISTS subjects (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        subject_code VARCHAR(20) NOT NULL UNIQUE,
-        subject_name VARCHAR(120) NOT NULL,
-        credits INT NOT NULL DEFAULT 3,
-        CONSTRAINT chk_subjects_credits CHECK (credits > 0)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
-    """CREATE TABLE IF NOT EXISTS grades (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        student_id INT NOT NULL,
-        subject_id INT NOT NULL,
-        semester VARCHAR(20) NOT NULL,
-        attendance DOUBLE NOT NULL DEFAULT 0,
-        midterm DOUBLE NOT NULL DEFAULT 0,
-        final DOUBLE NOT NULL DEFAULT 0,
-        UNIQUE KEY uq_grades (student_id, subject_id, semester),
-        CONSTRAINT chk_grades_attendance CHECK (attendance BETWEEN 0 AND 10),
-        CONSTRAINT chk_grades_midterm CHECK (midterm BETWEEN 0 AND 10),
-        CONSTRAINT chk_grades_final CHECK (final BETWEEN 0 AND 10),
-        CONSTRAINT fk_grades_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-        CONSTRAINT fk_grades_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
-    """CREATE TABLE IF NOT EXISTS tuition (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        student_id INT NOT NULL,
-        semester VARCHAR(20) NOT NULL,
-        amount_due DECIMAL(15,2) NOT NULL,
-        amount_paid DECIMAL(15,2) NOT NULL DEFAULT 0,
-        due_date VARCHAR(10) NOT NULL DEFAULT '',
-        note VARCHAR(200) NOT NULL DEFAULT '',
-        UNIQUE KEY uq_tuition (student_id, semester),
-        CONSTRAINT chk_tuition_due CHECK (amount_due >= 0),
-        CONSTRAINT chk_tuition_paid CHECK (amount_paid >= 0),
-        CONSTRAINT fk_tuition_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
-]
+# Lược đồ và dữ liệu mẫu nằm trong file SQL (backend/sql/).
+SQL_DIR = config.BASE_DIR / "sql"
+SCHEMA_FILE = SQL_DIR / "schema.sql"
+SEED_FILE = SQL_DIR / "seed.sql"
+# Bảng do schema.sql tạo, thứ tự bảng con trước để DROP không vướng khóa ngoại.
+SEEDED_TABLES = ["tuition", "grades", "subjects", "students"]
 
 
-def _connect(database=None):
+def _connect(database=None, multi_statements=False):
+    flags = CLIENT.FOUND_ROWS
+    if multi_statements:
+        # Cho phép một lần execute() chạy cả file .sql nhiều câu lệnh.
+        flags |= CLIENT.MULTI_STATEMENTS
     return pymysql.connect(
         host=config.DB_HOST,
         port=config.DB_PORT,
@@ -70,7 +36,7 @@ def _connect(database=None):
         autocommit=False,
         # FOUND_ROWS: UPDATE trả về số dòng khớp điều kiện, không phải số dòng
         # thực sự thay đổi -> lưu sinh viên mà không đổi gì vẫn được coi là thành công.
-        client_flag=CLIENT.FOUND_ROWS,
+        client_flag=flags,
         connect_timeout=5,
     )
 
@@ -94,12 +60,31 @@ def transaction():
         conn.close()
 
 
-def init_database():
-    """Tạo database (nếu chưa có) và các bảng. Thử lại nhiều lần nếu MySQL chưa sẵn sàng."""
+def _run_sql_file(cur, path):
+    """Chạy toàn bộ câu lệnh trong một file .sql (cần kết nối MULTI_STATEMENTS)."""
+    sql = path.read_text(encoding="utf-8")
+    cur.execute(sql)
+    # Phải đọc hết kết quả của từng câu; lỗi ở câu sau được ném ra tại nextset().
+    while cur.nextset():
+        pass
+
+
+def _database_state(cur):
+    """Trả về (database đã tồn tại?, số bảng hiện có)."""
+    cur.execute("SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=%s", (config.DB_NAME,))
+    exists = cur.fetchone() is not None
+    cur.execute("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=%s",
+                (config.DB_NAME,))
+    return exists, cur.fetchone()["n"]
+
+
+def init_database(seed=True):
+    """Tạo database và bảng từ sql/schema.sql; nếu database chưa tồn tại (hoặc chưa có
+    bảng nào) thì seed dữ liệu mẫu từ sql/seed.sql. Thử lại nhiều lần nếu MySQL chưa sẵn sàng."""
     retries = max(config.DB_CONNECT_RETRIES, 1)
     for attempt in range(1, retries + 1):
         try:
-            conn = _connect()
+            conn = _connect(multi_statements=True)
             break
         except pymysql.err.OperationalError as exc:
             if attempt == retries:
@@ -112,14 +97,31 @@ def init_database():
             time.sleep(config.DB_CONNECT_DELAY)
     try:
         with conn.cursor() as cur:
+            exists, table_count = _database_state(cur)
+            # Database do Docker (MYSQL_DATABASE) hoặc người dùng tạo sẵn nhưng còn rỗng
+            # cũng được coi là "chưa có" để seed.
+            needs_seed = seed and table_count == 0
             cur.execute(
                 f"CREATE DATABASE IF NOT EXISTS `{config.DB_NAME}` "
                 "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
             )
             cur.execute(f"USE `{config.DB_NAME}`")
-            for statement in SCHEMA:
-                cur.execute(statement)
-        conn.commit()
+            _run_sql_file(cur, SCHEMA_FILE)
+            conn.commit()
+
+            if not needs_seed:
+                return
+            reason = "chưa tồn tại" if not exists else "chưa có bảng nào"
+            print(f"Database '{config.DB_NAME}' {reason}, đang seed từ {SEED_FILE.name}...", flush=True)
+            try:
+                _run_sql_file(cur, SEED_FILE)
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                # Bảng vừa được tạo trống; xóa đi để lần khởi động sau còn seed lại.
+                cur.execute("DROP TABLE IF EXISTS " + ", ".join(SEEDED_TABLES))
+                raise
+            print("Seed dữ liệu mẫu hoàn tất.", flush=True)
     finally:
         conn.close()
 

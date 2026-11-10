@@ -58,7 +58,9 @@ Trình duyệt ──HTTP (HTML form)──▶ Front-end Flask :5000 ──REST/
 ```
 backend/
   app.py                    # route REST API, kiểm tra dữ liệu, xử lý lỗi
-  db.py                     # kết nối, transaction, lược đồ bảng
+  db.py                     # kết nối, transaction, khởi tạo/seed DB
+  sql/schema.sql            # lược đồ bảng
+  sql/seed.sql              # dữ liệu mẫu (seed khi DB chưa tồn tại)
   config.py                 # đọc biến môi trường / .env
   migrate_sqlite_to_mysql.py
 frontend/

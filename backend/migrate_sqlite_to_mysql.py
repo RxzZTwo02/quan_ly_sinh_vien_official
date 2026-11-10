@@ -33,7 +33,8 @@ def main():
     if not args.sqlite.is_file():
         sys.exit(f"Không tìm thấy file SQLite: {args.sqlite}")
 
-    init_database()
+    # Không seed dữ liệu mẫu: id mẫu sẽ trùng và chặn dữ liệu thật (INSERT IGNORE).
+    init_database(seed=False)
     source = sqlite3.connect(f"file:{args.sqlite.as_posix()}?mode=ro", uri=True)
     print(f"Nguồn: {args.sqlite}")
     print(f"Đích : MySQL {config.DB_USER}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}\n")

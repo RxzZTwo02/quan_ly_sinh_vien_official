@@ -11,6 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY config.py db.py app.py migrate_sqlite_to_mysql.py ./
+COPY sql/ ./sql/
 
 EXPOSE 5001
 
