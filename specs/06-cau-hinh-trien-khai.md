@@ -29,8 +29,9 @@
 | `SECRET_KEY` | ngẫu nhiên mỗi lần chạy | Khóa ký session/CSRF; nên đặt cố định |
 
 ## 2. Chạy trực tiếp (Windows + Laragon)
-Hướng dẫn chi tiết từng lệnh (tạo/kích hoạt/xóa venv, kiểm tra bằng CLI) nằm ở mục *Chạy trực tiếp với Laragon* trong [README.md](../README.md). Tóm tắt:
+Hướng dẫn chi tiết từng lệnh (clone, tạo/kích hoạt/xóa venv, kiểm tra bằng CLI) nằm ở các mục *Lấy mã nguồn về máy* và *Chạy trực tiếp với Laragon* trong [README.md](../README.md). Tóm tắt:
 
+0. Máy mới: `git clone https://github.com/RxzZTwo02/quan_ly_sinh_vien_official.git`, rồi `cd quan_ly_sinh_vien_official`. Lệnh này tải đầy đủ lịch sử commit. Không có trong repo, phải tạo lại: `.venv`, `.env`, dữ liệu MySQL.
 1. Laragon → **Start All** (cần MySQL ở cổng 3306).
 2. Back-end (terminal 1):
    ```powershell

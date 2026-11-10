@@ -2,10 +2,13 @@
 
 Ứng dụng web một trang để quản lý **sinh viên, môn học, bảng điểm và học phí**, kèm dashboard thống kê. Hệ thống gồm hai ứng dụng Flask (giao diện và REST API) dùng chung một database MySQL. Có thể chạy trực tiếp với **Laragon** hoặc chạy bằng **Docker**.
 
+Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
+
 ## Mục lục
 - [Tính năng](#tính-năng)
 - [Kiến trúc và công nghệ](#kiến-trúc-và-công-nghệ)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
+- [Lấy mã nguồn về máy](#lấy-mã-nguồn-về-máy)
 - [Chạy trực tiếp với Laragon](#chạy-trực-tiếp-với-laragon)
 - [Chạy bằng Docker](#chạy-bằng-docker)
 - [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed)
@@ -64,8 +67,80 @@ specs/                      tài liệu đặc tả hệ thống
 compose.yaml                chạy mysql + backend + frontend bằng Docker
 ```
 
+## Lấy mã nguồn về máy
+Phần này dành cho việc cài dự án trên một máy khác. Sau khi clone, máy mới có **toàn bộ mã nguồn và toàn bộ lịch sử commit**, giống hệt repo trên GitHub.
+
+### Phần mềm cần cài
+| Phần mềm | Dùng để | Kiểm tra sau khi cài |
+|---|---|---|
+| [Git for Windows](https://git-scm.com/download/win) | Clone mã nguồn và lịch sử commit, cập nhật bản mới | `git --version` |
+| [Python 3.12+](https://www.python.org/downloads/) | Chạy back-end và front-end | `py --version` |
+| [Laragon](https://laragon.org/download/) | Cung cấp MySQL 8 khi chạy trực tiếp | Mở Laragon → **Start All** |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) *(tùy chọn)* | Chạy bằng Docker, thay cho Python + Laragon | `docker compose version` |
+
+### Clone kèm đầy đủ lịch sử commit
+Mở PowerShell tại thư mục muốn đặt dự án, rồi chạy:
+```powershell
+cd D:\                                                                  # thư mục chứa dự án, đổi tùy ý
+git clone https://github.com/RxzZTwo02/quan_ly_sinh_vien_official.git    # tải mã nguồn + toàn bộ commit
+cd quan_ly_sinh_vien_official                                           # thư mục gốc của dự án
+```
+- `git clone` không kèm tùy chọn nào sẽ tải **toàn bộ** lịch sử commit và checkout nhánh `main`. Thư mục `quan_ly_sinh_vien_official` vừa tạo là *thư mục gốc của dự án* được nhắc tới ở các phần sau.
+- Clone bằng VS Code (**Ctrl+Shift+P** → *Git: Clone*, dán địa chỉ repo) cũng tải đầy đủ lịch sử.
+
+Nếu cần đầy đủ commit thì **không** dùng các cách sau:
+
+| Cách | Kết quả | Khắc phục |
+|---|---|---|
+| GitHub → **Code** → **Download ZIP** | Chỉ có file của commit mới nhất, **không có** thư mục `.git`. Không xem được lịch sử, không `git pull` được | Xóa thư mục đó và clone lại bằng lệnh trên |
+| `git clone --depth 1 …` (shallow clone) | Chỉ có commit mới nhất | Chạy `git fetch --unshallow` trong thư mục dự án để tải phần lịch sử còn thiếu |
+
+### Kiểm tra đã có đủ lịch sử
+Chạy trong thư mục gốc của dự án:
+```powershell
+git rev-parse --is-shallow-repository   # false = có đầy đủ lịch sử
+git rev-list --count HEAD               # tổng số commit, khớp số "commits" trên trang GitHub
+git log --oneline                       # danh sách commit, mới nhất ở trên (nhấn q để thoát)
+```
+
+### Những gì không có trong repo
+Các thứ sau không được đưa lên Git, nên máy mới phải tự tạo:
+
+| Thứ | Vì sao không có | Trên máy mới |
+|---|---|---|
+| `backend\.venv`, `frontend\.venv` | Phụ thuộc từng máy, đã nằm trong `.gitignore` | Tạo lại ở [Bước 3](#bước-3--tạo-môi-trường-ảo-venv-và-cài-thư-viện-chỉ-làm-lần-đầu) |
+| `backend\.env`, `frontend\.env` | Có thể chứa mật khẩu, đã nằm trong `.gitignore` | Không cần nếu dùng Laragon mặc định. Cần đổi thì sao chép từ `.env.example` (xem [Biến môi trường](#biến-môi-trường)) |
+| Dữ liệu trong MySQL (database `qlsv`) | Dữ liệu nằm trong MySQL của từng máy, không nằm trong thư mục dự án | Back-end tự tạo database và nạp dữ liệu mẫu ở lần chạy đầu. Muốn mang dữ liệu từ máy cũ sang, xem [bên dưới](#mang-dữ-liệu-từ-máy-cũ-sang-tùy-chọn) |
+
+### Cập nhật bản mới nhất
+Khi repo trên GitHub có commit mới, chạy trong thư mục gốc của dự án:
+```powershell
+git pull        # tải các commit mới và cập nhật nhánh main
+```
+`git pull` in ra danh sách file thay đổi. Dựa vào đó:
+- **`requirements.txt` thay đổi**: chạy lại lệnh `pip install -r requirements.txt` của app đó ([Bước 3](#bước-3--tạo-môi-trường-ảo-venv-và-cài-thư-viện-chỉ-làm-lần-đầu)).
+- **`backend/sql/schema.sql` thay đổi**: database đã có không tự cập nhật theo, vì hệ thống không có migration. Hãy [quay về trạng thái gốc](#quay-về-trạng-thái-gốc), hoặc tự sửa bảng trong phpMyAdmin.
+- **Luôn luôn**: dừng rồi chạy lại cả hai app. Với Docker, chạy `docker compose up --build -d`.
+
+Dữ liệu đang có trong database không bị ảnh hưởng, vì dữ liệu mẫu chỉ nạp khi database rỗng.
+
+Nếu đã sửa file trong máy và `git pull` báo *Your local changes … would be overwritten*:
+1. `git stash` để cất tạm thay đổi;
+2. `git pull`;
+3. `git stash pop` để lấy lại thay đổi đã cất.
+
+### Mang dữ liệu từ máy cũ sang (tùy chọn)
+Clone chỉ chép mã nguồn. Muốn máy mới có đúng dữ liệu đang dùng ở máy cũ:
+1. **Máy cũ — xuất dữ liệu**: phpMyAdmin → chọn database `qlsv` → tab **Export** → định dạng **SQL** → **Export**. Lưu file (ví dụ `qlsv.sql`) rồi chép sang máy mới.
+2. **Máy mới — nhập dữ liệu, *trước* khi chạy back-end lần đầu**:
+   1. phpMyAdmin → **New** → tạo database tên `qlsv`, collation `utf8mb4_unicode_ci`.
+   2. Chọn `qlsv` → tab **Import** → chọn file `qlsv.sql` → **Import**.
+3. **Chạy back-end** như bình thường. Database đã có dữ liệu nên back-end giữ nguyên và không nạp dữ liệu mẫu; log in ra `Dùng dữ liệu hiện có trong database 'qlsv' (… sinh viên)…`.
+
+Nếu đã lỡ chạy back-end trên máy mới (database đã có dữ liệu mẫu), hãy xóa database `qlsv` trước. Cách xóa xem bước 1–2 của [Quay về trạng thái gốc](#quay-về-trạng-thái-gốc). Sau đó làm lại bước 2 ở trên.
+
 ## Chạy trực tiếp với Laragon
-Cần có Windows, **Python 3.12+** và **Laragon** (có sẵn MySQL 8). Các lệnh dưới đây dùng **PowerShell** và chạy từ thư mục gốc của dự án (thư mục chứa `compose.yaml`).
+Cần đã [lấy mã nguồn về máy](#lấy-mã-nguồn-về-máy) và cài **Python 3.12+**, **Laragon** (có sẵn MySQL 8). Các lệnh dưới đây dùng **PowerShell** và chạy từ thư mục gốc của dự án (thư mục `quan_ly_sinh_vien_official` vừa clone, chứa `compose.yaml`).
 
 ### Bước 1 — Kiểm tra Python
 ```powershell
@@ -176,6 +251,7 @@ Remove-Item -Recurse -Force backend\.venv, frontend\.venv
 Sau đó làm lại **Bước 3**.
 
 ## Chạy bằng Docker
+Cần đã [lấy mã nguồn về máy](#lấy-mã-nguồn-về-máy) và cài **Docker Desktop** (đang chạy). Các lệnh chạy từ thư mục gốc của dự án; không cần cài Python hay Laragon.
 ```powershell
 docker compose up --build -d             # build image và chạy nền
 docker compose ps                        # trạng thái 3 service
