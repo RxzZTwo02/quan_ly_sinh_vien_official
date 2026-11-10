@@ -504,22 +504,22 @@
         <div class="grid">
           <div>
             <label for="student_code">Mã sinh viên</label>
-            <input id="student_code" name="student_code" maxlength="20" placeholder="SV001" required
+            <input id="student_code" name="student_code" maxlength="20" placeholder="Ví dụ: SV001" required
                    value="{{ editing['student_code'] if editing else '' }}">
           </div>
           <div>
             <label for="full_name">Họ và tên</label>
-            <input id="full_name" name="full_name" maxlength="100" placeholder="Nguyễn Văn An" required
+            <input id="full_name" name="full_name" maxlength="100" placeholder="Ví dụ: Nguyễn Văn An" required
                    value="{{ editing['full_name'] if editing else '' }}">
           </div>
           <div>
             <label for="class_name">Lớp</label>
-            <input id="class_name" name="class_name" maxlength="50" placeholder="CNTT01" required
+            <input id="class_name" name="class_name" maxlength="50" placeholder="Ví dụ: NTT01" required
                    value="{{ editing['class_name'] if editing else '' }}">
           </div>
           <div>
             <label for="email">Email</label>
-            <input id="email" name="email" type="email" maxlength="120" placeholder="an@example.com" required
+            <input id="email" name="email" type="email" maxlength="120" placeholder="Ví dụ: an@example.com" required
                    value="{{ editing['email'] if editing else '' }}">
           </div>
         </div>
@@ -586,12 +586,12 @@
         <div class="grid">
           <div>
             <label>Mã môn</label>
-            <input name="subject_code" required maxlength="20" placeholder="CS101"
+            <input name="subject_code" required maxlength="20" placeholder="Ví dụ: VCS101"
                    value="{{ editing_subject.subject_code if editing_subject else '' }}">
           </div>
           <div>
             <label>Tên môn học</label>
-            <input name="subject_name" required maxlength="120" placeholder="Cơ sở dữ liệu"
+            <input name="subject_name" required maxlength="120" placeholder="Ví dụ: Cơ sở dữ liệu"
                    value="{{ editing_subject.subject_name if editing_subject else '' }}">
           </div>
           <div>
@@ -678,7 +678,7 @@
           </div>
           <div>
             <label>Học kỳ</label>
-            <input name="semester" required maxlength="20" placeholder="2026-1"
+            <input name="semester" required maxlength="20" placeholder="Ví dụ: HK1-2026"
                    value="{{ editing_grade.semester if editing_grade else '' }}">
           </div>
           <div>
@@ -775,12 +775,12 @@
           </div>
           <div>
             <label>Học kỳ</label>
-            <input name="semester" required maxlength="20" placeholder="2026-1"
+            <input name="semester" required maxlength="20" placeholder="Ví dụ: HK1-2026"
                    value="{{ editing_tuition.semester if editing_tuition else '' }}">
           </div>
           <div>
             <label>Học phí phải đóng (VNĐ)</label>
-            <input type="number" name="amount_due" min="0" step="1000" required placeholder="8000000"
+            <input type="number" name="amount_due" min="0" step="1000" required placeholder="Ví dụ: 8000000"
                    value="{{ editing_tuition.amount_due | plain_number if editing_tuition else '' }}">
           </div>
           <div>
