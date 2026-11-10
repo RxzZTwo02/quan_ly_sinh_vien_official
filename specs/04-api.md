@@ -26,7 +26,7 @@ Thiếu hoặc sai → `401 {"error": "Thiếu hoặc sai API key."}`. So sánh 
 | 401 | Sai API key |
 | 404 | Không tìm thấy bản ghi hoặc route |
 | 405 | Sai method |
-| 409 | Trùng mã sinh viên / mã môn học |
+| 409 | Trùng mã sinh viên / mã môn học; khi sửa, trùng (SV, môn, học kỳ) của điểm hoặc (SV, học kỳ) của học phí |
 | 503 | Không kết nối được MySQL |
 
 ## 3. Endpoint
@@ -78,6 +78,16 @@ Danh sách môn học, sắp xếp theo `subject_name`.
 - `400 "Môn học cần có mã, tên và số tín chỉ từ 1 đến 10."`
 - `409 "Mã môn học đã tồn tại."`
 
+### `GET /api/subjects/<id>`
+Một môn học. `404 "Không tìm thấy môn học."`
+
+### `PUT /api/subjects/<id>`
+Body và kiểm tra giống `POST /api/subjects`.
+- `200 "Đã cập nhật môn học."` (kể cả khi dữ liệu không đổi)
+- `400 "Môn học cần có mã, tên và số tín chỉ từ 1 đến 10."`
+- `404 "Không tìm thấy môn học."`
+- `409 "Mã môn học đã tồn tại."`
+
 ### `DELETE /api/subjects/<id>`
 Xóa môn học và (cascade) mọi bản ghi điểm của môn đó. `deleted_grades` là số bản ghi điểm bị xóa theo.
 - `200 {"message": "Đã xóa môn học.", "deleted_grades": 0}`
@@ -107,6 +117,17 @@ Thêm mới, hoặc cập nhật nếu đã có bộ (`student_id`, `subject_id`
 - `400 "Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ."`
 - `400 "Sinh viên hoặc môn học không tồn tại."`
 
+### `GET /api/grades/<id>`
+Một bản ghi điểm, cùng các trường như một phần tử của `GET /api/grades`. `404 "Không tìm thấy bản ghi điểm."`
+
+### `PUT /api/grades/<id>`
+Sửa bản ghi điểm theo `id`; body và kiểm tra giống `POST /api/grades`. Khác `POST`: được đổi cả `student_id`, `subject_id`, `semester`, và **không** gộp vào bản ghi khác.
+- `200 "Đã cập nhật bản ghi điểm."`
+- `400 "Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ."`
+- `400 "Sinh viên hoặc môn học không tồn tại."`
+- `404 "Không tìm thấy bản ghi điểm."`
+- `409 "Sinh viên này đã có điểm của môn học này trong học kỳ này."` (bộ ba mới trùng với bản ghi khác)
+
 ### `DELETE /api/grades/<id>`
 `200 "Đã xóa bản ghi điểm."` · `404 "Không tìm thấy bản ghi điểm."`
 
@@ -132,6 +153,20 @@ Thêm mới, hoặc cập nhật nếu đã có bộ (`student_id`, `semester`).
 - `200 "Đã lưu thông tin học phí."`
 - `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng."`
 - `400 "Sinh viên không tồn tại."`
+
+### `GET /api/tuition/<id>`
+Một bản ghi học phí, cùng các trường như một phần tử của `GET /api/tuition`. `404 "Không tìm thấy bản ghi học phí."`
+
+### `PUT /api/tuition/<id>`
+Sửa bản ghi học phí theo `id`; body và kiểm tra giống `POST /api/tuition`, được đổi cả `student_id`, `semester`.
+- `200 "Đã cập nhật thông tin học phí."`
+- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng."`
+- `400 "Sinh viên không tồn tại."`
+- `404 "Không tìm thấy bản ghi học phí."`
+- `409 "Sinh viên này đã có bản ghi học phí cho học kỳ này."`
+
+### `DELETE /api/tuition/<id>`
+`200 "Đã xóa bản ghi học phí."` · `404 "Không tìm thấy bản ghi học phí."`
 
 ---
 

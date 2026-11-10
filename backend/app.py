@@ -7,7 +7,7 @@ from waitress import serve
 from werkzeug.exceptions import HTTPException
 
 import config
-from db import ER_NO_REFERENCED_ROW, init_database, to_jsonable, transaction
+from db import ER_DUP_ENTRY, ER_NO_REFERENCED_ROW, init_database, to_jsonable, transaction
 
 app = Flask(__name__)
 app.json.ensure_ascii = False  # trả tiếng Việt có dấu nguyên vẹn
@@ -163,16 +163,7 @@ def delete_student(student_id):
 
 # ---------------------------------------------------------------- môn học
 
-@app.get("/api/subjects")
-def list_subjects():
-    with transaction() as cur:
-        cur.execute("SELECT * FROM subjects ORDER BY subject_name")
-        return jsonify(rows(cur))
-
-
-@app.post("/api/subjects")
-def create_subject():
-    data = payload()
+def validate_subject(data):
     code = text(data, "subject_code").upper()
     name = text(data, "subject_name")
     try:
@@ -181,14 +172,51 @@ def create_subject():
         credits = 0
     if not code or not name or len(code) > 20 or len(name) > 120 or credits < 1 or credits > 10:
         raise ApiError("Môn học cần có mã, tên và số tín chỉ từ 1 đến 10.")
+    return code, name, credits
+
+
+@app.get("/api/subjects")
+def list_subjects():
+    with transaction() as cur:
+        cur.execute("SELECT * FROM subjects ORDER BY subject_name")
+        return jsonify(rows(cur))
+
+
+@app.get("/api/subjects/<int:subject_id>")
+def get_subject(subject_id):
+    with transaction() as cur:
+        cur.execute("SELECT * FROM subjects WHERE id=%s", (subject_id,))
+        subject = cur.fetchone()
+    if not subject:
+        raise ApiError("Không tìm thấy môn học.", 404)
+    return jsonify(to_jsonable(subject))
+
+
+@app.post("/api/subjects")
+def create_subject():
+    values = validate_subject(payload())
     try:
         with transaction() as cur:
-            cur.execute("INSERT INTO subjects(subject_code,subject_name,credits) VALUES(%s,%s,%s)",
-                        (code, name, credits))
+            cur.execute("INSERT INTO subjects(subject_code,subject_name,credits) VALUES(%s,%s,%s)", values)
             new_id = cur.lastrowid
     except pymysql.err.IntegrityError:
         raise ApiError("Mã môn học đã tồn tại.", 409)
     return ok("Đã thêm môn học.", 201, id=new_id)
+
+
+@app.put("/api/subjects/<int:subject_id>")
+def update_subject(subject_id):
+    values = validate_subject(payload())
+    try:
+        with transaction() as cur:
+            affected = cur.execute(
+                "UPDATE subjects SET subject_code=%s,subject_name=%s,credits=%s WHERE id=%s",
+                (*values, subject_id))
+    except pymysql.err.IntegrityError:
+        raise ApiError("Mã môn học đã tồn tại.", 409)
+    if not affected:
+        raise ApiError("Không tìm thấy môn học.", 404)
+    return ok("Đã cập nhật môn học.")
 
 
 @app.delete("/api/subjects/<int:subject_id>")
@@ -206,20 +234,13 @@ def delete_subject(subject_id):
 
 # ---------------------------------------------------------------- bảng điểm
 
-@app.get("/api/grades")
-def list_grades():
-    with transaction() as cur:
-        cur.execute("""SELECT g.*, s.student_code, s.full_name, sub.subject_code, sub.subject_name,
-            sub.credits, ROUND(g.attendance*0.1 + g.midterm*0.3 + g.final*0.6, 2) AS total
-            FROM grades g JOIN students s ON s.id=g.student_id
-            JOIN subjects sub ON sub.id=g.subject_id
-            ORDER BY g.semester DESC, s.student_code, sub.subject_name""")
-        return jsonify(rows(cur))
+GRADE_SELECT = """SELECT g.*, s.student_code, s.full_name, sub.subject_code, sub.subject_name,
+    sub.credits, ROUND(g.attendance*0.1 + g.midterm*0.3 + g.final*0.6, 2) AS total
+    FROM grades g JOIN students s ON s.id=g.student_id
+    JOIN subjects sub ON sub.id=g.subject_id"""
 
 
-@app.post("/api/grades")
-def save_grade():
-    data = payload()
+def validate_grade(data):
     try:
         student_id = int(text(data, "student_id"))
         subject_id = int(text(data, "subject_id"))
@@ -231,17 +252,60 @@ def save_grade():
             raise ValueError()
     except ValueError:
         raise ApiError("Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ.")
+    return student_id, subject_id, semester, attendance, midterm, final
+
+
+def grade_integrity_error(exc):
+    code = exc.args[0] if exc.args else None
+    if code == ER_NO_REFERENCED_ROW:
+        return ApiError("Sinh viên hoặc môn học không tồn tại.")
+    if code == ER_DUP_ENTRY:
+        return ApiError("Sinh viên này đã có điểm của môn học này trong học kỳ này.", 409)
+    return ApiError("Dữ liệu điểm không hợp lệ.")
+
+
+@app.get("/api/grades")
+def list_grades():
+    with transaction() as cur:
+        cur.execute(GRADE_SELECT + " ORDER BY g.semester DESC, s.student_code, sub.subject_name")
+        return jsonify(rows(cur))
+
+
+@app.get("/api/grades/<int:grade_id>")
+def get_grade(grade_id):
+    with transaction() as cur:
+        cur.execute(GRADE_SELECT + " WHERE g.id=%s", (grade_id,))
+        grade = cur.fetchone()
+    if not grade:
+        raise ApiError("Không tìm thấy bản ghi điểm.", 404)
+    return jsonify(to_jsonable(grade))
+
+
+@app.post("/api/grades")
+def save_grade():
+    values = validate_grade(payload())
     try:
         with transaction() as cur:
             cur.execute("""INSERT INTO grades(student_id,subject_id,semester,attendance,midterm,final)
                 VALUES(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
-                attendance=VALUES(attendance), midterm=VALUES(midterm), final=VALUES(final)""",
-                        (student_id, subject_id, semester, attendance, midterm, final))
+                attendance=VALUES(attendance), midterm=VALUES(midterm), final=VALUES(final)""", values)
     except pymysql.err.IntegrityError as exc:
-        if exc.args and exc.args[0] == ER_NO_REFERENCED_ROW:
-            raise ApiError("Sinh viên hoặc môn học không tồn tại.")
-        raise ApiError("Dữ liệu điểm không hợp lệ.")
+        raise grade_integrity_error(exc)
     return ok("Đã lưu điểm. Điểm tổng kết được tính theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ.")
+
+
+@app.put("/api/grades/<int:grade_id>")
+def update_grade(grade_id):
+    values = validate_grade(payload())
+    try:
+        with transaction() as cur:
+            affected = cur.execute("""UPDATE grades SET student_id=%s, subject_id=%s, semester=%s,
+                attendance=%s, midterm=%s, final=%s WHERE id=%s""", (*values, grade_id))
+    except pymysql.err.IntegrityError as exc:
+        raise grade_integrity_error(exc)
+    if not affected:
+        raise ApiError("Không tìm thấy bản ghi điểm.", 404)
+    return ok("Đã cập nhật bản ghi điểm.")
 
 
 @app.delete("/api/grades/<int:grade_id>")
@@ -255,19 +319,12 @@ def delete_grade(grade_id):
 
 # ---------------------------------------------------------------- học phí
 
-@app.get("/api/tuition")
-def list_tuition():
-    with transaction() as cur:
-        cur.execute("""SELECT t.*, s.student_code, s.full_name,
-            GREATEST(t.amount_due-t.amount_paid, 0) AS balance
-            FROM tuition t JOIN students s ON s.id=t.student_id
-            ORDER BY t.semester DESC, s.student_code""")
-        return jsonify(rows(cur))
+TUITION_SELECT = """SELECT t.*, s.student_code, s.full_name,
+    GREATEST(t.amount_due-t.amount_paid, 0) AS balance
+    FROM tuition t JOIN students s ON s.id=t.student_id"""
 
 
-@app.post("/api/tuition")
-def save_tuition():
-    data = payload()
+def validate_tuition(data):
     try:
         student_id = int(text(data, "student_id"))
         semester = text(data, "semester")
@@ -280,16 +337,67 @@ def save_tuition():
             raise ValueError()
     except ValueError:
         raise ApiError("Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng.")
+    return student_id, semester, due, paid, due_date, note
+
+
+def tuition_integrity_error(exc):
+    if exc.args and exc.args[0] == ER_DUP_ENTRY:
+        return ApiError("Sinh viên này đã có bản ghi học phí cho học kỳ này.", 409)
+    return ApiError("Sinh viên không tồn tại.")
+
+
+@app.get("/api/tuition")
+def list_tuition():
+    with transaction() as cur:
+        cur.execute(TUITION_SELECT + " ORDER BY t.semester DESC, s.student_code")
+        return jsonify(rows(cur))
+
+
+@app.get("/api/tuition/<int:tuition_id>")
+def get_tuition(tuition_id):
+    with transaction() as cur:
+        cur.execute(TUITION_SELECT + " WHERE t.id=%s", (tuition_id,))
+        record = cur.fetchone()
+    if not record:
+        raise ApiError("Không tìm thấy bản ghi học phí.", 404)
+    return jsonify(to_jsonable(record))
+
+
+@app.post("/api/tuition")
+def save_tuition():
+    values = validate_tuition(payload())
     try:
         with transaction() as cur:
             cur.execute("""INSERT INTO tuition(student_id,semester,amount_due,amount_paid,due_date,note)
                 VALUES(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
                 amount_due=VALUES(amount_due), amount_paid=VALUES(amount_paid),
-                due_date=VALUES(due_date), note=VALUES(note)""",
-                        (student_id, semester, due, paid, due_date, note))
-    except pymysql.err.IntegrityError:
-        raise ApiError("Sinh viên không tồn tại.")
+                due_date=VALUES(due_date), note=VALUES(note)""", values)
+    except pymysql.err.IntegrityError as exc:
+        raise tuition_integrity_error(exc)
     return ok("Đã lưu thông tin học phí.")
+
+
+@app.put("/api/tuition/<int:tuition_id>")
+def update_tuition(tuition_id):
+    values = validate_tuition(payload())
+    try:
+        with transaction() as cur:
+            affected = cur.execute("""UPDATE tuition SET student_id=%s, semester=%s, amount_due=%s,
+                amount_paid=%s, due_date=%s, note=%s WHERE id=%s""", (*values, tuition_id))
+    except pymysql.err.IntegrityError as exc:
+        raise tuition_integrity_error(exc)
+    if not affected:
+        raise ApiError("Không tìm thấy bản ghi học phí.", 404)
+    return ok("Đã cập nhật thông tin học phí.")
+
+
+@app.delete("/api/tuition/<int:tuition_id>")
+def delete_tuition(tuition_id):
+    with transaction() as cur:
+        affected = cur.execute("DELETE FROM tuition WHERE id=%s", (tuition_id,))
+    if not affected:
+        raise ApiError("Không tìm thấy bản ghi học phí.", 404)
+    return ok("Đã xóa bản ghi học phí.")
 
 
 # ---------------------------------------------------------------- thống kê

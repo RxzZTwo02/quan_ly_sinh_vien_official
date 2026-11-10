@@ -8,20 +8,21 @@
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
 |---|---|---|---|
-| GET | `/` | Trang chính. Tham số: `q` (tìm kiếm), `edit` (id sinh viên cần sửa), `message`, `error` (thông báo) | `GET /api/students?q=`, `GET /api/students/<edit>`, `GET /api/subjects`, `GET /api/grades`, `GET /api/tuition`, `GET /api/stats` |
+| GET | `/` | Trang chính. Tham số: `q` (tìm kiếm); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa); `message`, `error` (thông báo) | `GET /api/students?q=`, `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades`, `GET /api/tuition`, `GET /api/stats` |
 | POST | `/save` | Thêm sinh viên (không có `id`) hoặc sửa (có `id`) | `POST /api/students` / `PUT /api/students/<id>` |
 | POST | `/delete/<id>` | Xóa sinh viên | `DELETE /api/students/<id>` |
-| POST | `/subjects/save` | Thêm môn học | `POST /api/subjects` |
+| POST | `/subjects/save` | Thêm môn học (không có `id`) hoặc sửa (có `id`) | `POST /api/subjects` / `PUT /api/subjects/<id>` |
 | POST | `/subjects/delete/<id>` | Xóa môn học | `DELETE /api/subjects/<id>` |
-| POST | `/grades/save` | Lưu điểm | `POST /api/grades` |
+| POST | `/grades/save` | Lưu điểm (không có `id`) hoặc sửa bản ghi điểm (có `id`) | `POST /api/grades` / `PUT /api/grades/<id>` |
 | POST | `/grades/delete/<id>` | Xóa điểm | `DELETE /api/grades/<id>` |
-| POST | `/tuition/save` | Lưu học phí | `POST /api/tuition` |
+| POST | `/tuition/save` | Lưu học phí (không có `id`) hoặc sửa bản ghi học phí (có `id`) | `POST /api/tuition` / `PUT /api/tuition/<id>` |
+| POST | `/tuition/delete/<id>` | Xóa học phí | `DELETE /api/tuition/<id>` |
 | GET | `/health` | `200 {"frontend":"ok","backend":{...}}` hoặc `503` khi back-end lỗi | `GET /api/health` |
 
 ### Xử lý lỗi
 - Lỗi từ API khi ghi → chuyển hướng `/?error=<thông điệp của back-end>`.
 - Lỗi khi tải trang chính (back-end tắt, MySQL tắt…) → vẫn render trang với dữ liệu rỗng và thông báo lỗi; mã HTTP `503` nếu back-end trả/không kết nối được (503), ngược lại `502`.
-- `?edit=<id>` không tồn tại → thông báo "Không tìm thấy sinh viên cần sửa."
+- Tham số sửa trỏ tới bản ghi không tồn tại → thông báo "Không tìm thấy sinh viên / môn học / bản ghi điểm / bản ghi học phí cần sửa."
 - `id` trong form sửa không phải số → `400`.
 
 ## 2. CSRF
@@ -44,13 +45,15 @@
    - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`); khi sửa có nút **Hủy**.
    - Ô tìm kiếm + nút **Tất cả**.
    - Bảng: Mã SV · Họ tên · Lớp · Email · Thao tác (**Sửa**, **Xóa** có hộp xác nhận).
-7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); bảng Mã môn · Tên môn · Tín chỉ · Thao tác (**Xóa** có hộp xác nhận; nếu môn đã có điểm, hộp xác nhận nêu số bản ghi điểm sẽ bị xóa theo).
+7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**. Bảng Mã môn · Tên môn · Tín chỉ · Thao tác (**Sửa**, **Xóa** có hộp xác nhận; nếu môn đã có điểm, hộp xác nhận nêu số bản ghi điểm sẽ bị xóa theo).
 8. **Bảng điểm** (`#grades`)
-   - Form: chọn sinh viên, chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8).
-   - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết (2 chữ số) · nút **Xóa** có xác nhận.
+   - Form: chọn sinh viên, chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
+   - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết (2 chữ số) · Thao tác (**Sửa**, **Xóa** có xác nhận).
 9. **Học phí và công nợ** (`#tuition`)
-   - Form: chọn sinh viên, học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú.
-   - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam).
+   - Form: chọn sinh viên, học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
+   - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam) · Thao tác (**Sửa**, **Xóa** có xác nhận).
+
+**Chế độ sửa (chung cho 4 mục):** nút **Sửa** mở `/?edit…=<id>`; form được điền sẵn (số tiền/điểm hiển thị gọn, ví dụ `8000000` thay vì `8000000.0` — bộ lọc Jinja `plain_number`), có trường ẩn `id`, dòng đang sửa trong bảng được tô vàng (`tr.is-editing`). Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Mỗi lúc chỉ sửa một bản ghi.
 10. **Chân trang**: công nghệ và liên kết `/health`.
 
 ## 4. Kiểm tra phía trình duyệt
@@ -65,7 +68,7 @@ Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc 
 Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía server **không đổi**: vẫn là Post/Redirect/Get, nên khi tắt JavaScript trang hoạt động như cũ (tải lại trang).
 
 **Luồng xử lý**
-1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy, Tất cả). Nếu người dùng bấm Hủy ở hộp xác nhận xóa (`onsubmit="return confirm(...)"`) thì không gửi gì.
+1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy ở cả 4 mục; Tất cả). Giá trị `data-ajax` là id của mục cần cuộn tới và đặt con trỏ sau khi tải (`students`, `subjects`, `grades`, `tuition`), hoặc `search`. Nếu người dùng bấm Hủy ở hộp xác nhận xóa (`onsubmit="return confirm(...)"`) thì không gửi gì.
 2. Gửi bằng `fetch` (form POST gửi `FormData` kèm `csrf_token`; form GET và link thì gửi GET). Với POST, `fetch` tự đi theo redirect về `/?message=…` hoặc `/?error=…`.
 3. Phân tích HTML trả về bằng `DOMParser`, rồi:
    - luôn thay vùng thông báo `#notices`;
@@ -73,7 +76,7 @@ Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía ser
    - nếu **có lỗi** (trang mới có `.notice.error`): chỉ hiện thông báo, **không** thay các vùng khác, nên form giữ nguyên dữ liệu đã nhập.
 4. Giữ vị trí cuộn: đo vị trí của vùng (`section`) chứa form/link vừa dùng trước và sau khi thay nội dung rồi `scrollBy` phần chênh lệch.
 5. Địa chỉ trình duyệt: luôn bỏ `message`/`error` (F5 không hiện lại thông báo cũ). Tìm kiếm, Sửa, Hủy, Tất cả dùng `history.pushState` nên nút Back/Forward vẫn quay lại đúng trạng thái (sự kiện `popstate` tải lại nội dung tại chỗ); thao tác ghi dùng `replaceState`.
-6. Con trỏ: lưu thành công thì đặt vào ô đầu tiên của form vừa dùng để nhập tiếp; bấm Sửa thì cuộn tới form sinh viên và đặt vào ô Mã sinh viên; tìm kiếm thì giữ con trỏ ở ô tìm kiếm.
+6. Con trỏ: lưu thành công thì đặt vào ô đầu tiên của form vừa dùng để nhập tiếp; bấm Sửa / Hủy thì cuộn tới form của mục đó và đặt vào ô nhập đầu tiên; tìm kiếm thì giữ con trỏ ở ô tìm kiếm.
 
 **Trường hợp đặc biệt**
 | Tình huống | Hiển thị |

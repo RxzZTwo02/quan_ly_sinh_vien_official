@@ -10,7 +10,8 @@ from pymysql.cursors import DictCursor
 import config
 
 # Mã lỗi MySQL dùng để phân loại IntegrityError.
-ER_NO_REFERENCED_ROW = 1452
+ER_DUP_ENTRY = 1062          # trùng khóa UNIQUE
+ER_NO_REFERENCED_ROW = 1452  # khóa ngoại trỏ tới bản ghi không tồn tại
 
 # Lược đồ và dữ liệu mẫu nằm trong file SQL (backend/sql/).
 SQL_DIR = config.BASE_DIR / "sql"

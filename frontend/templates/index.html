@@ -232,6 +232,19 @@
       margin-top: 14px;
     }
 
+    /* Chế độ sửa: dòng nhắc trên form và tô sáng dòng đang sửa trong bảng */
+    .editing-banner {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    tr.is-editing td {
+      background: #fef9c3;
+    }
+
     .search {
       display: flex;
       gap: 8px;
@@ -537,7 +550,7 @@
           </thead>
           <tbody>
             {% for s in students %}
-            <tr>
+            <tr{% if editing and editing.id == s.id %} class="is-editing"{% endif %}>
               <td>{{ s.student_code }}</td>
               <td>{{ s.full_name }}</td>
               <td>{{ s.class_name }}</td>
@@ -566,21 +579,31 @@
       <h2>Quản lý môn học</h2>
       <form method="post" action="{{ url_for('save_subject') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" value="{{ editing_subject.id if editing_subject else '' }}">
+        {% if editing_subject %}
+        <p class="editing-banner">Đang sửa môn học <strong>{{ editing_subject.subject_code }}</strong>.</p>
+        {% endif %}
         <div class="grid">
           <div>
             <label>Mã môn</label>
-            <input name="subject_code" required maxlength="20" placeholder="CS101">
+            <input name="subject_code" required maxlength="20" placeholder="CS101"
+                   value="{{ editing_subject.subject_code if editing_subject else '' }}">
           </div>
           <div>
             <label>Tên môn học</label>
-            <input name="subject_name" required maxlength="120" placeholder="Cơ sở dữ liệu">
+            <input name="subject_name" required maxlength="120" placeholder="Cơ sở dữ liệu"
+                   value="{{ editing_subject.subject_name if editing_subject else '' }}">
           </div>
           <div>
             <label>Số tín chỉ</label>
-            <input type="number" name="credits" min="1" max="10" value="3" required>
+            <input type="number" name="credits" min="1" max="10" required
+                   value="{{ editing_subject.credits if editing_subject else 3 }}">
           </div>
         </div>
-        <p><button>Thêm môn học</button></p>
+        <div class="form-actions">
+          <button type="submit">{{ "Lưu thay đổi" if editing_subject else "Thêm môn học" }}</button>
+          {% if editing_subject %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="subjects">Hủy</a>{% endif %}
+        </div>
       </form>
       <div class="table-wrap">
         <table>
@@ -595,11 +618,12 @@
           <tbody>
             {% for sub in subjects %}
             {% set sub_grade_count = grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
-            <tr>
+            <tr{% if editing_subject and editing_subject.id == sub.id %} class="is-editing"{% endif %}>
               <td>{{ sub.subject_code }}</td>
               <td>{{ sub.subject_name }}</td>
               <td>{{ sub.credits }}</td>
               <td>
+                <a class="button" href="{{ url_for('index', edit_subject=sub.id) }}" data-ajax="subjects">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_subject', subject_id=sub.id) }}"
                       onsubmit="return confirm('{% if sub_grade_count %}Môn này có {{ sub_grade_count }} bản ghi điểm, sẽ bị xóa theo. {% endif %}Xóa môn học?')">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -626,13 +650,20 @@
       </p>
       <form method="post" action="{{ url_for('save_grade') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" value="{{ editing_grade.id if editing_grade else '' }}">
+        {% if editing_grade %}
+        <p class="editing-banner">
+          Đang sửa điểm của <strong>{{ editing_grade.student_code }} — {{ editing_grade.full_name }}</strong>,
+          môn <strong>{{ editing_grade.subject_code }}</strong>, học kỳ <strong>{{ editing_grade.semester }}</strong>.
+        </p>
+        {% endif %}
         <div class="grid">
           <div>
             <label>Sinh viên</label>
             <select name="student_id" required>
               <option value="">Chọn sinh viên</option>
               {% for s in students %}
-              <option value="{{ s.id }}">{{ s.student_code }} — {{ s.full_name }}</option>
+              <option value="{{ s.id }}"{% if editing_grade and editing_grade.student_id == s.id %} selected{% endif %}>{{ s.student_code }} — {{ s.full_name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -641,28 +672,35 @@
             <select name="subject_id" required>
               <option value="">Chọn môn học</option>
               {% for sub in subjects %}
-              <option value="{{ sub.id }}">{{ sub.subject_code }} — {{ sub.subject_name }}</option>
+              <option value="{{ sub.id }}"{% if editing_grade and editing_grade.subject_id == sub.id %} selected{% endif %}>{{ sub.subject_code }} — {{ sub.subject_name }}</option>
               {% endfor %}
             </select>
           </div>
           <div>
             <label>Học kỳ</label>
-            <input name="semester" required placeholder="2026-1">
+            <input name="semester" required maxlength="20" placeholder="2026-1"
+                   value="{{ editing_grade.semester if editing_grade else '' }}">
           </div>
           <div>
             <label>Chuyên cần (0–10)</label>
-            <input type="number" name="attendance" min="0" max="10" step="0.1" required value="8">
+            <input type="number" name="attendance" min="0" max="10" step="0.1" required
+                   value="{{ editing_grade.attendance | plain_number if editing_grade else 8 }}">
           </div>
           <div>
             <label>Giữa kỳ (0–10)</label>
-            <input type="number" name="midterm" min="0" max="10" step="0.1" required value="8">
+            <input type="number" name="midterm" min="0" max="10" step="0.1" required
+                   value="{{ editing_grade.midterm | plain_number if editing_grade else 8 }}">
           </div>
           <div>
             <label>Cuối kỳ (0–10)</label>
-            <input type="number" name="final" min="0" max="10" step="0.1" required value="8">
+            <input type="number" name="final" min="0" max="10" step="0.1" required
+                   value="{{ editing_grade.final | plain_number if editing_grade else 8 }}">
           </div>
         </div>
-        <p><button>Lưu điểm</button></p>
+        <div class="form-actions">
+          <button type="submit">{{ "Lưu thay đổi" if editing_grade else "Lưu điểm" }}</button>
+          {% if editing_grade %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="grades">Hủy</a>{% endif %}
+        </div>
       </form>
       <div class="table-wrap">
         <table>
@@ -676,12 +714,12 @@
               <th>Giữa kỳ</th>
               <th>Cuối kỳ</th>
               <th>Tổng kết</th>
-              <th></th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for g in grades %}
-            <tr>
+            <tr{% if editing_grade and editing_grade.id == g.id %} class="is-editing"{% endif %}>
               <td>{{ g.student_code }}</td>
               <td>{{ g.full_name }}</td>
               <td>{{ g.subject_code }} — {{ g.subject_name }}</td>
@@ -691,7 +729,8 @@
               <td>{{ g.final }}</td>
               <td><strong>{{ "%.2f"|format(g.total) }}</strong></td>
               <td>
-                <form method="post" action="{{ url_for('delete_grade', grade_id=g.id) }}"
+                <a class="button" href="{{ url_for('index', edit_grade=g.id) }}" data-ajax="grades">Sửa</a>
+                <form class="inline" method="post" action="{{ url_for('delete_grade', grade_id=g.id) }}"
                       onsubmit="return confirm('Xóa bản ghi điểm này?')">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="danger">Xóa</button>
@@ -717,38 +756,52 @@
       </p>
       <form method="post" action="{{ url_for('save_tuition') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" value="{{ editing_tuition.id if editing_tuition else '' }}">
+        {% if editing_tuition %}
+        <p class="editing-banner">
+          Đang sửa học phí của <strong>{{ editing_tuition.student_code }} — {{ editing_tuition.full_name }}</strong>,
+          học kỳ <strong>{{ editing_tuition.semester }}</strong>.
+        </p>
+        {% endif %}
         <div class="grid">
           <div>
             <label>Sinh viên</label>
             <select name="student_id" required>
               <option value="">Chọn sinh viên</option>
               {% for s in students %}
-              <option value="{{ s.id }}">{{ s.student_code }} — {{ s.full_name }}</option>
+              <option value="{{ s.id }}"{% if editing_tuition and editing_tuition.student_id == s.id %} selected{% endif %}>{{ s.student_code }} — {{ s.full_name }}</option>
               {% endfor %}
             </select>
           </div>
           <div>
             <label>Học kỳ</label>
-            <input name="semester" required placeholder="2026-1">
+            <input name="semester" required maxlength="20" placeholder="2026-1"
+                   value="{{ editing_tuition.semester if editing_tuition else '' }}">
           </div>
           <div>
             <label>Học phí phải đóng (VNĐ)</label>
-            <input type="number" name="amount_due" min="0" step="1000" required placeholder="8000000">
+            <input type="number" name="amount_due" min="0" step="1000" required placeholder="8000000"
+                   value="{{ editing_tuition.amount_due | plain_number if editing_tuition else '' }}">
           </div>
           <div>
             <label>Đã đóng (VNĐ)</label>
-            <input type="number" name="amount_paid" min="0" step="1000" value="0" required>
+            <input type="number" name="amount_paid" min="0" step="1000" required
+                   value="{{ editing_tuition.amount_paid | plain_number if editing_tuition else 0 }}">
           </div>
           <div>
             <label>Hạn đóng</label>
-            <input type="date" name="due_date">
+            <input type="date" name="due_date" value="{{ editing_tuition.due_date if editing_tuition else '' }}">
           </div>
           <div>
             <label>Ghi chú</label>
-            <input name="note" maxlength="200" placeholder="Học phí học kỳ">
+            <input name="note" maxlength="200" placeholder="Học phí học kỳ"
+                   value="{{ editing_tuition.note if editing_tuition else '' }}">
           </div>
         </div>
-        <p><button>Lưu học phí</button></p>
+        <div class="form-actions">
+          <button type="submit">{{ "Lưu thay đổi" if editing_tuition else "Lưu học phí" }}</button>
+          {% if editing_tuition %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="tuition">Hủy</a>{% endif %}
+        </div>
       </form>
       <div class="table-wrap">
         <table>
@@ -762,11 +815,12 @@
               <th>Còn nợ</th>
               <th>Hạn đóng</th>
               <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for t in tuition %}
-            <tr>
+            <tr{% if editing_tuition and editing_tuition.id == t.id %} class="is-editing"{% endif %}>
               <td>{{ t.student_code }}</td>
               <td>{{ t.full_name }}</td>
               <td>{{ t.semester }}</td>
@@ -781,10 +835,18 @@
                 <span style="color:#b45309">Còn nợ</span>
                 {% endif %}
               </td>
+              <td>
+                <a class="button" href="{{ url_for('index', edit_tuition=t.id) }}" data-ajax="tuition">Sửa</a>
+                <form class="inline" method="post" action="{{ url_for('delete_tuition', tuition_id=t.id) }}"
+                      onsubmit="return confirm('Xóa bản ghi học phí này?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="danger">Xóa</button>
+                </form>
+              </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="8">Chưa có dữ liệu học phí.</td>
+              <td colspan="9">Chưa có dữ liệu học phí.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -1032,15 +1094,22 @@
         }
       }
 
+      /*
+       * target = id của section (students, subjects, grades, tuition): cuộn tới form của mục đó
+       * và đặt con trỏ vào ô nhập đầu tiên (dùng cho nút Sửa / Hủy). target = 'search': giữ
+       * con trỏ ở ô tìm kiếm.
+       */
       function focusAfterNavigation(target) {
-        if (target === 'students') {
-          document.getElementById('students').scrollIntoView({ behavior: 'smooth', block: 'start' });
-          document.getElementById('student_code').focus({ preventScroll: true });
-        } else if (target === 'search') {
+        if (target === 'search') {
           const box = document.querySelector('#students form.search input[name="q"]');
           box.focus({ preventScroll: true });
           box.setSelectionRange(box.value.length, box.value.length);
+          return;
         }
+        const section = document.getElementById(target);
+        if (!section) return;
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        section.querySelector('form input:not([type="hidden"]), form select')?.focus({ preventScroll: true });
       }
 
       /* Điều hướng GET (tìm kiếm, Sửa, Hủy, Tất cả): cập nhật địa chỉ để nút Back vẫn dùng được. */

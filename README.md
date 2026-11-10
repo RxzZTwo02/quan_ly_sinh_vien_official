@@ -146,10 +146,11 @@ Sao chép `backend/.env.example` → `backend/.env`, `frontend/.env.example` →
 | GET · PUT · DELETE | `/api/students/<id>` | xem / sửa / xóa (xóa kèm điểm, học phí) |
 | POST | `/api/students` | thêm sinh viên |
 | GET · POST | `/api/subjects` | danh sách / thêm môn học |
-| DELETE | `/api/subjects/<id>` | xóa môn học (xóa kèm điểm của môn đó) |
+| GET · PUT · DELETE | `/api/subjects/<id>` | xem / sửa / xóa môn học (xóa kèm điểm của môn đó) |
 | GET · POST | `/api/grades` | bảng điểm / lưu điểm (trùng SV + môn + học kỳ thì cập nhật) |
-| DELETE | `/api/grades/<id>` | xóa bản ghi điểm |
+| GET · PUT · DELETE | `/api/grades/<id>` | xem / sửa / xóa bản ghi điểm |
 | GET · POST | `/api/tuition` | học phí / lưu học phí (trùng SV + học kỳ thì cập nhật) |
+| GET · PUT · DELETE | `/api/tuition/<id>` | xem / sửa / xóa bản ghi học phí |
 | GET | `/api/stats` | số liệu KPI và dữ liệu biểu đồ |
 
 Lỗi trả về dạng `{"error": "..."}` với mã 400/404/409/503; thành công kèm `{"message": "..."}`.
