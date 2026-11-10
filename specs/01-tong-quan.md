@@ -32,7 +32,7 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 Trình duyệt ──HTTP (HTML form)──▶ Front-end Flask :5000 ──REST/JSON (requests)──▶ Back-end Flask API :5001 ──PyMySQL──▶ MySQL (qlsv)
 ```
 - **Front-end** (`frontend/`): render HTML bằng Jinja, xử lý form, kiểm tra CSRF. **Không truy cập DB**; mọi dữ liệu lấy qua API, gọi phía server nên trình duyệt không gọi thẳng back-end.
-- **Back-end** (`backend/`): REST API JSON, kiểm tra dữ liệu, truy vấn MySQL. Khi khởi động tự tạo database `qlsv` và các bảng.
+- **Back-end** (`backend/`): REST API JSON, kiểm tra dữ liệu, truy vấn MySQL. Khi khởi động tự tạo database `qlsv` và các bảng, nạp dữ liệu mẫu nếu database rỗng (xem [03](03-co-so-du-lieu.md) mục 8).
 - **CSDL**: MySQL 8 (Laragon khi chạy trực tiếp, image `mysql:8.4` khi chạy Docker).
 
 ### Luồng xử lý một thao tác ghi (ví dụ thêm sinh viên)
@@ -41,6 +41,8 @@ Trình duyệt ──HTTP (HTML form)──▶ Front-end Flask :5000 ──REST/
 3. Back-end kiểm tra dữ liệu, ghi MySQL trong một transaction, trả `{"message": ...}` hoặc `{"error": ...}`.
 4. Front-end chuyển hướng `302` về `/?message=...` hoặc `/?error=...` (mẫu Post/Redirect/Get).
 5. Trang chủ gọi lại các API đọc và hiển thị thông báo.
+
+Khi trình duyệt bật JavaScript, bước 1 được gửi bằng `fetch` thay vì gửi form thông thường. Trang trả về ở bước 5 không thay cả cửa sổ; chỉ các vùng dữ liệu được thay tại chỗ (xem [05](05-giao-dien.md) mục 6). Phía server không đổi.
 
 ## 5. Công nghệ
 | Thành phần | Công nghệ |
@@ -61,9 +63,13 @@ backend/
   sql/schema.sql            # lược đồ bảng
   sql/seed.sql              # dữ liệu mẫu (nạp khi DB rỗng)
   config.py                 # đọc biến môi trường / .env
+  Dockerfile, .env.example, requirements.txt
 frontend/
-  app.py                    # route giao diện, CSRF
+  app.py                    # route giao diện, CSRF, chế độ sửa
   api_client.py             # gọi back-end bằng requests
-  templates/index.html      # giao diện một trang + Chart.js
+  templates/index.html      # giao diện một trang + Chart.js + script cập nhật tại chỗ
+  Dockerfile, .env.example, requirements.txt
+specs/                      # tài liệu đặc tả (thư mục này)
 compose.yaml                # mysql + backend + frontend
+README.md                   # hướng dẫn cài đặt, chạy, xử lý sự cố
 ```

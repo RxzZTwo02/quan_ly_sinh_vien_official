@@ -40,7 +40,9 @@ Xóa sinh viên hoặc môn học sẽ xóa dây chuyền (`ON DELETE CASCADE`) 
 | `midterm` | DOUBLE | NOT NULL, DEFAULT 0, CHECK 0–10 |
 | `final` | DOUBLE | NOT NULL, DEFAULT 0, CHECK 0–10 |
 
-Khóa duy nhất `uq_grades (student_id, subject_id, semester)` — dùng cho `INSERT … ON DUPLICATE KEY UPDATE`.
+Khóa duy nhất `uq_grades (student_id, subject_id, semester)`:
+- khi thêm (`POST /api/grades`), dùng cho `INSERT … ON DUPLICATE KEY UPDATE`, nên bộ ba đã có điểm thì được cập nhật;
+- khi sửa (`PUT /api/grades/<id>`), `UPDATE` vi phạm khóa này (lỗi MySQL 1062) được trả về `409` (BR-17).
 
 ## 5. Bảng `tuition`
 | Cột | Kiểu | Ràng buộc |
@@ -53,7 +55,9 @@ Khóa duy nhất `uq_grades (student_id, subject_id, semester)` — dùng cho `I
 | `due_date` | VARCHAR(10) | NOT NULL, DEFAULT `''` |
 | `note` | VARCHAR(200) | NOT NULL, DEFAULT `''` |
 
-Khóa duy nhất `uq_tuition (student_id, semester)`.
+Khóa duy nhất `uq_tuition (student_id, semester)`, dùng giống `uq_grades`:
+- `POST` thì cập nhật bản ghi đã có;
+- `PUT` trùng với bản ghi khác thì trả `409` (BR-18).
 
 > Ràng buộc `amount_paid ≤ amount_due` chỉ được kiểm tra ở back-end, không có CHECK trong DB.
 
@@ -67,7 +71,12 @@ Cột `DECIMAL` được chuyển sang `float` trước khi trả JSON (`db.to_j
 
 ## 7. Kết nối
 - PyMySQL, `DictCursor`, `autocommit=False`, `connect_timeout=5`.
-- Cờ `CLIENT.FOUND_ROWS`: `UPDATE` trả về số dòng **khớp** điều kiện, nên lưu sinh viên không đổi gì vẫn được coi là thành công (không bị nhầm thành 404).
+- Cờ `CLIENT.FOUND_ROWS`: `UPDATE` trả về số dòng **khớp** điều kiện. Vì vậy bấm **Lưu thay đổi** mà không đổi gì (ở cả 4 mục) vẫn được coi là thành công, không bị nhầm thành 404.
+- Lỗi `IntegrityError` được xử lý như sau:
+  - Sinh viên và môn học: mọi lỗi đều là trùng mã → `409`.
+  - Điểm và học phí: phân loại theo mã lỗi MySQL (hằng số trong `db.py`):
+    - `1062` (`ER_DUP_ENTRY`, trùng khóa UNIQUE) → `409`;
+    - `1452` (`ER_NO_REFERENCED_ROW`, khóa ngoại trỏ tới bản ghi không tồn tại) và các lỗi khác → `400`.
 - Mỗi request mở một kết nối mới qua `db.transaction()`: commit khi thành công, rollback khi lỗi, luôn đóng kết nối. Không dùng connection pool.
 - Khởi động: thử kết nối `DB_CONNECT_RETRIES` lần, cách nhau `DB_CONNECT_DELAY` giây (Docker đặt 30 lần).
 

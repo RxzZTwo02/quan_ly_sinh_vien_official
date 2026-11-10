@@ -44,7 +44,11 @@ Hướng dẫn chi tiết từng lệnh (tạo/kích hoạt/xóa venv, kiểm tr
 
 **Thứ tự khởi động**: MySQL → back-end → front-end. Back-end dừng ngay khi không kết nối được MySQL (in hướng dẫn bật Laragon).
 
-> Nếu `py -m venv .venv` báo *Unable to copy … venvlauncher.exe*: `.venv` đã tồn tại và `python.exe` bên trong đang bị VS Code dùng. Bỏ qua bước tạo venv, hoặc đóng VS Code rồi xóa `.venv` và tạo lại.
+**Áp dụng thay đổi mã**: Waitress không tự nạp lại mã, và Flask (không bật debug) lưu cache template. Vì vậy sau khi sửa `.py` hoặc `templates/index.html` phải dừng (Ctrl+C) rồi chạy lại app tương ứng.
+
+**Chạy trùng**: trên Windows, chạy `app.py` lần thứ hai với cùng cổng **không** báo lỗi. Cả hai process cùng nghe cổng đó, và request có thể tới bản cũ. Kiểm tra bằng `Get-NetTCPConnection -LocalPort 5000,5001 -State Listen`.
+
+Các lỗi thường gặp khác (venv, ExecutionPolicy, CSRF, API key…): xem mục *Xử lý sự cố* trong [README.md](../README.md).
 
 ## 3. Chạy bằng Docker Compose
 ```powershell
@@ -62,7 +66,14 @@ docker compose down -v     # xóa cả volume dữ liệu
 
 Biến tùy chọn trong `.env` cạnh `compose.yaml`: `MYSQL_ROOT_PASSWORD` (mặc định `qlsv_root`), `SECRET_KEY`, `API_TOKEN`, `SEED_DATA` (mặc định `yes`).
 
-Dockerfile của cả hai app dựa trên `python:3.14-slim`, cài `requirements.txt`, chạy `python app.py` bằng Waitress.
+Dockerfile của cả hai app:
+- dựa trên `python:3.14-slim` và cài `requirements.txt`;
+- chép mã nguồn vào image: back-end chép thêm `sql/`, front-end chép thêm `templates/`;
+- chạy `python app.py` bằng Waitress.
+
+Vì mã được chép vào image, sau khi sửa mã hoặc `backend/sql/*.sql` phải chạy `docker compose up --build -d`.
+
+Front-end trong Docker dùng cổng `5000` của host, nên không chạy cùng lúc với front-end chạy trực tiếp.
 
 ## 4. Bảo mật
 | Biện pháp | Vị trí |

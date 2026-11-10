@@ -6,7 +6,7 @@
 | FR-01 | Hiển thị danh sách sinh viên, mới nhất trước (sắp xếp `id` giảm dần). |
 | FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. |
 | FR-03 | Thêm sinh viên gồm: mã SV, họ tên, lớp, email. |
-| FR-04 | Sửa sinh viên: bấm **Sửa** đưa dữ liệu lên form, bấm **Hủy** để thoát chế độ sửa. Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng, form hiện dòng nhắc "Đang sửa …" và nút lưu đổi thành **Lưu thay đổi**. |
+| FR-04 | Sửa sinh viên: bấm **Sửa** đưa dữ liệu lên form, tiêu đề form đổi thành "Cập nhật sinh viên"; bấm **Hủy** để thoát chế độ sửa. Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng và nút lưu đổi thành **Lưu thay đổi**; form Môn học, Bảng điểm, Học phí còn hiện dòng nhắc "Đang sửa …". |
 | FR-05 | Xóa sinh viên sau khi người dùng xác nhận; xóa kèm toàn bộ điểm và học phí của sinh viên đó. |
 
 **Quy tắc**
@@ -38,7 +38,7 @@
 
 **Quy tắc**
 - BR-07: Điểm chuyên cần, giữa kỳ, cuối kỳ là số thực trong `[0, 10]`.
-- BR-08: Học kỳ bắt buộc, ≤ 20 ký tự, dạng tự do (gợi ý `2026-1`).
+- BR-08: Học kỳ bắt buộc, ≤ 20 ký tự, dạng tự do (giao diện gợi ý `HK1-2026`, dữ liệu mẫu dùng `HK1-2025`, `HK2-2025`).
 - BR-09: **Điểm tổng kết** = `chuyên cần × 0,1 + giữa kỳ × 0,3 + cuối kỳ × 0,6`, làm tròn 2 chữ số. Được tính khi truy vấn, không lưu trong DB.
 - BR-10: **Xếp loại** theo điểm tổng kết: Giỏi ≥ 8; Khá ≥ 6,5; Trung bình ≥ 5; còn lại là "Cần cố gắng".
 - BR-11: Sinh viên hoặc môn học không tồn tại → báo lỗi.

@@ -1,33 +1,86 @@
-# Website quản lý sinh viên — kiến trúc front-end / back-end + MySQL
+# Website quản lý sinh viên
 
-## Kiến trúc
+Ứng dụng web một trang để quản lý **sinh viên, môn học, bảng điểm và học phí**, kèm dashboard thống kê. Hệ thống gồm hai ứng dụng Flask (giao diện và REST API) dùng chung một database MySQL. Có thể chạy trực tiếp với **Laragon** hoặc chạy bằng **Docker**.
+
+## Mục lục
+- [Tính năng](#tính-năng)
+- [Kiến trúc và công nghệ](#kiến-trúc-và-công-nghệ)
+- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
+- [Chạy trực tiếp với Laragon](#chạy-trực-tiếp-với-laragon)
+- [Chạy bằng Docker](#chạy-bằng-docker)
+- [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed)
+- [Biến môi trường](#biến-môi-trường)
+- [REST API](#rest-api)
+- [Xử lý sự cố](#xử-lý-sự-cố)
+- [Tài liệu đặc tả](#tài-liệu-đặc-tả)
+
+## Tính năng
+| Mục | Thao tác | Ghi chú |
+|---|---|---|
+| Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. |
+| Môn học | Thêm, sửa, xóa | Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
+| Bảng điểm | Thêm, sửa, xóa | Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ. |
+| Học phí | Thêm, sửa, xóa | Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. |
+| Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). |
+
+**Cách thao tác**
+- **Sửa**: bấm **Sửa** ở một dòng. Dữ liệu được đưa lên form, dòng đó được tô vàng và nút lưu đổi thành **Lưu thay đổi**. Bấm **Hủy** để thoát chế độ sửa.
+- **Xóa**: luôn hỏi xác nhận trước khi xóa.
+- **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
+- **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
+- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường.
+- **Biểu đồ cần Internet**: Chart.js được tải từ CDN. Không có mạng thì chỉ biểu đồ không hiển thị, các phần khác vẫn dùng được.
+
+## Kiến trúc và công nghệ
 ```
 Trình duyệt ──HTTP──▶ Front-end Flask (:5000) ──REST/JSON──▶ Back-end Flask API (:5001) ──▶ MySQL (qlsv)
                       frontend/                               backend/                      Laragon hoặc Docker
 ```
-- **frontend/**: giao diện (Jinja + Chart.js), form, CSRF. Không truy cập DB; mọi dữ liệu lấy qua API của back-end (gọi phía server bằng `requests`, nên trình duyệt không gọi thẳng API).
-- **backend/**: REST API JSON, kiểm tra dữ liệu, truy vấn MySQL bằng PyMySQL. Tự tạo database `qlsv`, các bảng (`backend/sql/schema.sql`) và nạp dữ liệu mẫu (`backend/sql/seed.sql`) khi database còn rỗng (tắt bằng `SEED_DATA=no`).
+- **frontend/**: giao diện (Jinja + Chart.js), form, CSRF. Không truy cập database. Mọi dữ liệu được lấy qua API của back-end, gọi từ phía server bằng `requests`, nên trình duyệt không gọi thẳng API.
+- **backend/**: REST API JSON, kiểm tra dữ liệu, truy vấn MySQL bằng PyMySQL. Khi khởi động, back-end tự tạo database `qlsv` và các bảng. Nếu database còn rỗng, nó nạp [dữ liệu mẫu](#dữ-liệu-mẫu-seed).
 
-## Công nghệ
-- Python 3.12+ · Flask · Waitress
-- MySQL 8 (Laragon khi chạy trực tiếp, image `mysql:8.4` khi chạy Docker) · PyMySQL
-- Chart.js (tải từ CDN) cho biểu đồ
+| Thành phần | Công nghệ |
+|---|---|
+| Ngôn ngữ, web server | Python 3.12+ · Flask 3.1 · Waitress |
+| Cơ sở dữ liệu | MySQL 8 (Laragon khi chạy trực tiếp, image `mysql:8.4` khi chạy Docker) · PyMySQL |
+| Biểu đồ | Chart.js 4.4.9 (tải từ CDN jsDelivr) |
+| Đóng gói | Docker, Docker Compose |
 
-## Chạy trực tiếp với Laragon (không cần Docker)
-Các lệnh dưới đây dùng **PowerShell** trên Windows và chạy từ thư mục gốc của dự án (thư mục chứa `compose.yaml`).
+## Cấu trúc thư mục
+```
+backend/                    REST API (cổng 5001)
+  app.py                    route API, kiểm tra dữ liệu, xử lý lỗi
+  db.py                     kết nối MySQL, transaction, tạo bảng và nạp dữ liệu mẫu
+  config.py                 đọc biến môi trường / backend\.env
+  sql/schema.sql            lược đồ 4 bảng: students, subjects, grades, tuition
+  sql/seed.sql              dữ liệu mẫu
+  requirements.txt · .env.example · Dockerfile
+frontend/                   giao diện web (cổng 5000)
+  app.py                    route giao diện, CSRF
+  api_client.py             gọi back-end bằng requests
+  templates/index.html      trang duy nhất: form, bảng, biểu đồ, script cập nhật tại chỗ
+  requirements.txt · .env.example · Dockerfile
+specs/                      tài liệu đặc tả hệ thống
+compose.yaml                chạy mysql + backend + frontend bằng Docker
+```
 
-### Bước 0 — Kiểm tra Python
+## Chạy trực tiếp với Laragon
+Cần có Windows, **Python 3.12+** và **Laragon** (có sẵn MySQL 8). Các lệnh dưới đây dùng **PowerShell** và chạy từ thư mục gốc của dự án (thư mục chứa `compose.yaml`).
+
+### Bước 1 — Kiểm tra Python
 ```powershell
 py --version    # phiên bản Python mặc định, cần 3.12 trở lên
 py -0           # liệt kê các phiên bản Python đã cài
 ```
 Nếu máy có nhiều phiên bản và muốn dùng đúng bản giống Docker, thay `py` bằng `py -3.12` ở bước tạo venv.
 
-### Bước 1 — Bật MySQL
-Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Mặc định Laragon dùng `root` / mật khẩu rỗng / cổng 3306; ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**. Database `qlsv`, các bảng và dữ liệu mẫu được back-end tạo tự động; không muốn dữ liệu mẫu thì xem [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed) **trước** khi chạy back-end lần đầu.
+### Bước 2 — Bật MySQL
+Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Laragon mặc định dùng `root`, mật khẩu rỗng, cổng 3306. Ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**.
 
-### Bước 2 — Tạo môi trường ảo (venv) và cài thư viện (chỉ làm lần đầu)
-Back-end và front-end dùng thư viện khác nhau nên **mỗi app có một `.venv` riêng** nằm trong thư mục của app đó.
+Database `qlsv`, các bảng và dữ liệu mẫu do back-end tạo tự động. Nếu không muốn có dữ liệu mẫu, hãy đọc [Dữ liệu mẫu (seed)](#dữ-liệu-mẫu-seed) **trước** khi chạy back-end lần đầu.
+
+### Bước 3 — Tạo môi trường ảo (venv) và cài thư viện (chỉ làm lần đầu)
+Back-end và front-end dùng thư viện khác nhau, nên **mỗi app có một `.venv` riêng** nằm trong thư mục của app đó.
 
 Back-end:
 ```powershell
@@ -49,23 +102,24 @@ py -m venv .venv                                                 # tạo fronten
 cd ..
 ```
 
-Kết quả: hai thư mục `backend\.venv` và `frontend\.venv`, cả hai đã nằm trong `.gitignore` nên không bị đưa lên Git.
+Kết quả là hai thư mục `backend\.venv` và `frontend\.venv`. Cả hai đã nằm trong `.gitignore` nên không bị đưa lên Git.
 
-### Bước 3 — Chạy chương trình
-Cần **hai cửa sổ terminal** chạy song song. Thứ tự: MySQL → back-end → front-end.
+### Bước 4 — Chạy chương trình
+Cần **hai cửa sổ terminal** chạy song song. Thứ tự khởi động: MySQL → back-end → front-end.
 
 Terminal 1 — back-end:
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe app.py
 ```
-Nếu chạy được sẽ in ra (lần chạy đầu, khi database `qlsv` còn rỗng):
+Lần chạy đầu, khi database `qlsv` còn rỗng, màn hình sẽ in ra:
 ```
 Database 'qlsv' đang trống, đang nạp dữ liệu mẫu từ seed.sql...
 Đã nạp dữ liệu mẫu: 10 sinh viên, 5 môn học, 18 bản ghi điểm, 10 bản ghi học phí. (Không muốn dữ liệu mẫu: đặt SEED_DATA=no, xem README.)
 Back-end API: http://127.0.0.1:5001  (MySQL root@127.0.0.1:3306/qlsv)
 ```
-Các lần chạy sau, khi database đã có dữ liệu, dòng đầu đổi thành `Dùng dữ liệu hiện có trong database 'qlsv' (… sinh viên), không nạp dữ liệu mẫu.`
+Từ lần chạy sau, khi database đã có dữ liệu, dòng đầu đổi thành `Dùng dữ liệu hiện có trong database 'qlsv' (… sinh viên), không nạp dữ liệu mẫu.`
+
 Nếu không kết nối được MySQL, back-end dừng ngay và in hướng dẫn bật Laragon.
 
 Terminal 2 — front-end:
@@ -73,62 +127,34 @@ Terminal 2 — front-end:
 cd frontend
 .\.venv\Scripts\python.exe app.py
 ```
-Nếu chạy được sẽ in ra:
+Nếu chạy được, màn hình in ra:
 ```
 Front-end: http://127.0.0.1:5000  (back-end: http://127.0.0.1:5001)
 ```
-Mở trình duyệt tại http://127.0.0.1:5000. Nhấn **Ctrl+C** trong từng terminal để dừng.
+Mở trình duyệt tại **http://127.0.0.1:5000**.
 
-### Bước 4 — Kiểm tra bằng dòng lệnh
+**Dừng chương trình**: nhấn **Ctrl+C** trong từng terminal.
+
+**Sau khi sửa mã nguồn** (`.py`, `templates/index.html`): phải dừng rồi chạy lại app tương ứng, vì app không tự nạp lại thay đổi.
+
+### Bước 5 — Kiểm tra
 Mở terminal thứ ba trong khi hai app đang chạy:
 ```powershell
-Invoke-RestMethod http://127.0.0.1:5001/api/health    # back-end  → status: ok, database: ok
-Invoke-RestMethod http://127.0.0.1:5000/health        # front-end → frontend: ok, backend: {...}
-Invoke-RestMethod http://127.0.0.1:5001/api/students  # danh sách sinh viên (JSON)
-Invoke-RestMethod http://127.0.0.1:5001/api/stats     # số liệu cho dashboard
+Invoke-RestMethod http://127.0.0.1:5001/api/health            # back-end  → status: ok, database: ok
+Invoke-RestMethod http://127.0.0.1:5000/health                # front-end → frontend: ok, backend: {...}
+(Invoke-RestMethod http://127.0.0.1:5001/api/students).Count  # số sinh viên (10 với dữ liệu mẫu)
 ```
-Có thể dùng `curl.exe` thay cho `Invoke-RestMethod`, ví dụ `curl.exe http://127.0.0.1:5001/api/health`. Nếu đã đặt `API_TOKEN`, thêm header: `curl.exe -H "X-API-Key: <token>" http://127.0.0.1:5001/api/students`.
 
-Xem dữ liệu trực tiếp: dùng HeidiSQL/phpMyAdmin của Laragon, mở database `qlsv`.
+**Xem dữ liệu JSON**: mở thẳng địa chỉ API trong trình duyệt, ví dụ http://127.0.0.1:5001/api/students hoặc http://127.0.0.1:5001/api/stats. Không nên in bằng `Invoke-RestMethod`, vì Windows PowerShell 5.1 hiển thị sai tiếng Việt (xem [Xử lý sự cố](#xử-lý-sự-cố)).
 
-### Dữ liệu mẫu (seed)
-Không cần lệnh riêng. Mỗi lần khởi động, back-end tạo các bảng nếu chưa có (`backend/sql/schema.sql`) rồi kiểm tra dữ liệu trong database `qlsv`:
-
-| Tình trạng database | `SEED_DATA=yes` (mặc định) | `SEED_DATA=no` |
-|---|---|---|
-| **Rỗng**: chưa tồn tại, chưa có bảng, hoặc cả 4 bảng đều chưa có dòng nào | Nạp dữ liệu mẫu từ `backend/sql/seed.sql` | Để trống |
-| **Đã có dữ liệu** (dù chỉ 1 dòng ở bất kỳ bảng nào) | Giữ nguyên, **không** đọc `seed.sql` | Giữ nguyên |
-
-Dữ liệu mẫu gồm 10 sinh viên (`SV001`–`SV010`), 5 môn học, 18 bản ghi điểm, 10 bản ghi học phí. Sau khi nạp, mọi thao tác thêm / sửa / xóa (trên giao diện hay trong phpMyAdmin / HeidiSQL) chỉ lưu vào MySQL, **không** ghi ngược vào file `.sql`, nên `seed.sql` luôn là bản gốc. Back-end đọc thẳng MySQL ở mỗi request: sửa dữ liệu trong phpMyAdmin xong chỉ cần tải lại trang.
-
-**Không muốn dữ liệu mẫu** — làm một lần, **trước** khi chạy back-end lần đầu: sao chép `backend\.env.example` → `backend\.env` và đặt `SEED_DATA=no`. Nếu lỡ chạy rồi thì làm thêm bước "quay về database trống" bên dưới.
-
-> Với `SEED_DATA=yes`, nếu xóa hết dữ liệu (cả 4 bảng trống) rồi khởi động lại, dữ liệu mẫu sẽ được nạp lại. Muốn dùng database trống thì đặt `SEED_DATA=no`.
-
-**Quay về trạng thái gốc** (⚠️ mất toàn bộ dữ liệu đang có trong `qlsv`; muốn giữ thì vào phpMyAdmin chọn `qlsv` → **Export** trước):
-
-| Muốn về | Đặt trong `backend\.env` |
-|---|---|
-| Dữ liệu mẫu ban đầu | `SEED_DATA=yes` (hoặc không có file `.env`) |
-| Database trống | `SEED_DATA=no` |
-
-1. Dừng back-end (Ctrl+C). Nếu không dừng, back-end vẫn chạy nhưng mọi request sẽ lỗi cho tới khi khởi động lại.
-2. Xóa database `qlsv`: trong phpMyAdmin chọn `qlsv` → tab **Operations** → **Drop the database (DROP)**. Hoặc dùng lệnh (MySQL của Laragon thường không nằm trong PATH; đổi `mysql-8.4.3-winx64` cho đúng phiên bản trên máy):
-   ```powershell
-   & "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "DROP DATABASE qlsv"
-   ```
-3. Chạy lại back-end: database và các bảng được tạo lại, có hoặc không có dữ liệu mẫu theo `SEED_DATA`.
-
-**Giữ database cũ, thử dữ liệu mẫu ở database khác:** trong `backend\.env` đặt `DB_NAME=qlsv_demo` rồi chạy lại back-end. `qlsv` cũ giữ nguyên; đổi lại `DB_NAME=qlsv` để quay về.
-
-**Kiểm tra đã nạp dữ liệu mẫu:** mở http://127.0.0.1:5000 thấy 10 sinh viên và biểu đồ có số liệu, hoặc:
+**Nếu đã đặt `API_TOKEN`**: trình duyệt không gửi được header, nên hãy dùng
 ```powershell
-(Invoke-RestMethod http://127.0.0.1:5001/api/students).Count    # 10
+curl.exe -H "X-API-Key: <token>" http://127.0.0.1:5001/api/students
 ```
 
-> Không import `seed.sql` thủ công vào database đã có dữ liệu: id trùng sẽ báo lỗi. Muốn đổi dữ liệu mẫu thì sửa `backend/sql/seed.sql` rồi quay về trạng thái gốc như trên. File này chạy trong một transaction nên chỉ được chứa lệnh `INSERT` (bảng cha `students`, `subjects` trước bảng con), không có `CREATE` / `ALTER` / `DROP` hay `START TRANSACTION` / `COMMIT`. Lưu ý điều này nếu thay bằng file xuất từ phpMyAdmin, vì file xuất mặc định có các lệnh đó.
+**Xem trực tiếp trong MySQL**: dùng HeidiSQL hoặc phpMyAdmin của Laragon, mở database `qlsv`.
 
-### Cách khác: kích hoạt venv rồi gọi `python`
+### Mẹo: kích hoạt venv để gõ lệnh ngắn hơn
 Thay vì gõ `.\.venv\Scripts\python.exe` mỗi lần, có thể kích hoạt venv để dùng lệnh `python` / `pip` ngắn gọn:
 ```powershell
 cd backend
@@ -142,66 +168,172 @@ deactivate                       # thoát venv khi xong
 | Command Prompt (cmd) | `.venv\Scripts\activate.bat` |
 | Git Bash | `source .venv/Scripts/activate` |
 
-Nếu PowerShell báo *running scripts is disabled on this system*, cho phép chạy script trong cửa sổ hiện tại rồi kích hoạt lại:
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
-
 ### Xóa và tạo lại venv
-Dùng khi muốn cài lại từ đầu (ví dụ đổi phiên bản Python hoặc thư viện bị lỗi). Trước khi xóa, dừng hai app (Ctrl+C) và đóng các terminal đang kích hoạt venv:
+Dùng khi muốn cài lại từ đầu, ví dụ khi đổi phiên bản Python hoặc thư viện bị lỗi. Trước khi xóa, dừng hai app (Ctrl+C) và đóng các terminal đang kích hoạt venv:
 ```powershell
 Remove-Item -Recurse -Force backend\.venv, frontend\.venv
 ```
-Sau đó làm lại **Bước 2**.
-
-> Nếu `py -m venv .venv` báo *Unable to copy … venvlauncher.exe*: `.venv` vẫn còn và `python.exe` bên trong đang bị VS Code hoặc một terminal khác dùng. Đóng chương trình đó rồi xóa `.venv` và tạo lại.
-
-## Biến môi trường
-Sao chép `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env` nếu cần đổi.
-
-| App | Biến | Mặc định | Ý nghĩa |
-|---|---|---|---|
-| backend | `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | địa chỉ MySQL |
-| backend | `DB_USER` / `DB_PASSWORD` | `root` / *(rỗng)* | tài khoản MySQL |
-| backend | `DB_NAME` | `qlsv` | tên database (tự tạo nếu chưa có) |
-| backend | `SEED_DATA` | `yes` | database rỗng thì nạp dữ liệu mẫu; `no` để bắt đầu với database trống |
-| backend | `API_HOST` / `API_PORT` | `127.0.0.1` / `5001` | nơi API lắng nghe |
-| cả hai | `API_TOKEN` | *(rỗng)* | nếu đặt, front-end gửi header `X-API-Key`; hai bên phải trùng nhau |
-| frontend | `BACKEND_URL` | `http://127.0.0.1:5001` | địa chỉ back-end |
-| frontend | `FRONTEND_HOST` / `FRONTEND_PORT` | `127.0.0.1` / `5000` | nơi giao diện lắng nghe |
-| frontend | `SECRET_KEY` | ngẫu nhiên mỗi lần chạy | nên đặt cố định để phiên không mất khi khởi động lại |
-
-## REST API (back-end)
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/api/health` | trạng thái API và kết nối DB |
-| GET | `/api/students?q=` | danh sách / tìm sinh viên |
-| GET · PUT · DELETE | `/api/students/<id>` | xem / sửa / xóa (xóa kèm điểm, học phí) |
-| POST | `/api/students` | thêm sinh viên |
-| GET · POST | `/api/subjects` | danh sách / thêm môn học |
-| GET · PUT · DELETE | `/api/subjects/<id>` | xem / sửa / xóa môn học (xóa kèm điểm của môn đó) |
-| GET · POST | `/api/grades` | bảng điểm / lưu điểm (trùng SV + môn + học kỳ thì cập nhật) |
-| GET · PUT · DELETE | `/api/grades/<id>` | xem / sửa / xóa bản ghi điểm |
-| GET · POST | `/api/tuition` | học phí / lưu học phí (trùng SV + học kỳ thì cập nhật) |
-| GET · PUT · DELETE | `/api/tuition/<id>` | xem / sửa / xóa bản ghi học phí |
-| GET | `/api/stats` | số liệu KPI và dữ liệu biểu đồ |
-
-Lỗi trả về dạng `{"error": "..."}` với mã 400/404/409/503; thành công kèm `{"message": "..."}`.
+Sau đó làm lại **Bước 3**.
 
 ## Chạy bằng Docker
 ```powershell
-docker compose up --build -d
-docker compose ps
-docker compose logs -f backend frontend
+docker compose up --build -d             # build image và chạy nền
+docker compose ps                        # trạng thái 3 service
+docker compose logs -f backend frontend  # xem log
+docker compose down                      # dừng, GIỮ dữ liệu
+docker compose down -v                   # dừng và XÓA dữ liệu (volume mysql_data)
 ```
-Truy cập http://localhost:5000. Gồm 3 service: `mysql`, `backend`, `frontend`. MySQL trong Docker **không mở cổng 3306** ra máy host nên chạy song song với Laragon không bị xung đột. Dữ liệu nằm trong volume `mysql_data` (`docker compose down` không xóa volume; `docker compose down -v` thì có).
+Mở **http://localhost:5000**.
 
-Dữ liệu mẫu: lần đầu chạy (volume còn trống) back-end tự nạp như khi chạy trực tiếp; không muốn thì đặt `SEED_DATA=no` trong file `.env` cạnh `compose.yaml` trước lần chạy đầu. Đây là database riêng trong Docker, không dùng chung với `qlsv` của Laragon. Muốn quay về trạng thái gốc (⚠️ mất dữ liệu trong Docker): `docker compose down -v` rồi `docker compose up --build -d`. Luôn dùng `--build` sau khi sửa `backend/sql/*.sql` vì các file này được chép vào image.
+- **3 service**: `mysql` (image `mysql:8.4`), `backend`, `frontend`.
+- **Cổng**: chỉ front-end mở cổng ra máy host (`127.0.0.1:5000`). MySQL và back-end chỉ truy cập được bên trong Docker, nên không xung đột với MySQL 3306 của Laragon. Tuy vậy, đừng chạy cùng lúc với front-end chạy trực tiếp, vì cả hai đều dùng cổng 5000.
+- **Dữ liệu**: database trong Docker là database riêng, không dùng chung với `qlsv` của Laragon. Dữ liệu nằm trong volume `mysql_data`. Lần đầu chạy, khi volume còn trống, back-end tự nạp dữ liệu mẫu.
+- **Tùy chọn**: đặt trong file `.env` cạnh `compose.yaml`:
+  - `MYSQL_ROOT_PASSWORD` (mặc định `qlsv_root`)
+  - `SECRET_KEY`
+  - `API_TOKEN`
+  - `SEED_DATA` (mặc định `yes`)
+- **Sau khi sửa mã nguồn hoặc `backend/sql/*.sql`**: luôn chạy lại với `--build`, vì các file này được chép vào image.
 
-Có thể đặt `MYSQL_ROOT_PASSWORD`, `SECRET_KEY`, `API_TOKEN`, `SEED_DATA` trong file `.env` cạnh `compose.yaml`.
+## Dữ liệu mẫu (seed)
+Không cần lệnh riêng. Mỗi lần khởi động, back-end tạo các bảng nếu chưa có (`backend/sql/schema.sql`), rồi kiểm tra dữ liệu trong database:
 
-## Dashboard
-- Thẻ KPI: tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ.
-- Biểu đồ học phí phải đóng / đã đóng / còn nợ, phân loại kết quả học tập, số sinh viên theo lớp — dữ liệu truy vấn trực tiếp từ MySQL.
-- Chart.js tải từ CDN nên trình duyệt cần Internet để hiển thị biểu đồ.
-- Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn giữ nguyên; thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được (tải lại trang như cũ).
+| Tình trạng database | `SEED_DATA=yes` (mặc định) | `SEED_DATA=no` |
+|---|---|---|
+| **Rỗng**: chưa tồn tại, chưa có bảng, hoặc cả 4 bảng đều chưa có dòng nào | Nạp dữ liệu mẫu từ `backend/sql/seed.sql` | Để trống |
+| **Đã có dữ liệu** (dù chỉ 1 dòng ở bất kỳ bảng nào) | Giữ nguyên, **không** đọc `seed.sql` | Giữ nguyên |
+
+Dữ liệu mẫu gồm 10 sinh viên (`SV001`–`SV010`), 5 môn học, 18 bản ghi điểm và 10 bản ghi học phí.
+
+Sau khi nạp, mọi thao tác thêm / sửa / xóa (trên giao diện, hay trong phpMyAdmin / HeidiSQL) chỉ lưu vào MySQL. Chúng **không** được ghi ngược vào file `.sql`, nên `seed.sql` luôn là bản gốc. Back-end đọc thẳng MySQL ở mỗi request, nên sửa dữ liệu trong phpMyAdmin xong chỉ cần tải lại trang.
+
+### Không muốn dữ liệu mẫu
+Làm **trước** khi chạy back-end lần đầu:
+- **Chạy trực tiếp**: sao chép `backend\.env.example` thành `backend\.env`, rồi đặt `SEED_DATA=no`.
+- **Docker**: đặt `SEED_DATA=no` trong file `.env` cạnh `compose.yaml`.
+
+Nếu đã lỡ chạy, hãy [quay về trạng thái gốc](#quay-về-trạng-thái-gốc) với `SEED_DATA=no`.
+
+> Với `SEED_DATA=yes`, nếu xóa hết dữ liệu (cả 4 bảng trống) rồi khởi động lại, dữ liệu mẫu sẽ được nạp lại. Muốn dùng database trống thì đặt `SEED_DATA=no`.
+
+### Quay về trạng thái gốc
+⚠️ **Mất toàn bộ dữ liệu đang có.** Muốn giữ lại thì vào phpMyAdmin, chọn `qlsv` → **Export** trước.
+
+Trạng thái sau khi làm lại phụ thuộc vào `SEED_DATA`:
+
+| Muốn về | `SEED_DATA` |
+|---|---|
+| Dữ liệu mẫu ban đầu | `yes` (hoặc không có file `.env`) |
+| Database trống | `no` |
+
+**Chạy trực tiếp (Laragon):**
+1. Dừng back-end (Ctrl+C). Nếu không dừng, back-end vẫn chạy nhưng mọi request sẽ lỗi cho tới khi khởi động lại.
+2. Xóa database `qlsv`. Trong phpMyAdmin: chọn `qlsv` → tab **Operations** → **Drop the database (DROP)**.
+
+   Hoặc dùng lệnh dưới đây. MySQL của Laragon thường không nằm trong PATH; đổi `mysql-8.4.3-winx64` cho đúng phiên bản trên máy:
+   ```powershell
+   & "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -uroot -e "DROP DATABASE qlsv"
+   ```
+3. Chạy lại back-end. Database và các bảng được tạo lại, có hoặc không có dữ liệu mẫu tùy theo `SEED_DATA`.
+
+**Docker:** chạy `docker compose down -v` rồi `docker compose up --build -d`.
+
+### Thử dữ liệu mẫu mà không xóa database cũ
+1. Trong `backend\.env`, đặt `DB_NAME=qlsv_demo`.
+2. Chạy lại back-end. Database `qlsv` cũ vẫn giữ nguyên.
+3. Muốn quay về database cũ thì đổi lại `DB_NAME=qlsv`.
+
+### Kiểm tra đã nạp dữ liệu mẫu
+Một trong các cách sau:
+- Log back-end có dòng `Đã nạp dữ liệu mẫu: …`.
+- Mở http://127.0.0.1:5000 thấy 10 sinh viên và biểu đồ có số liệu.
+- Chạy lệnh:
+  ```powershell
+  (Invoke-RestMethod http://127.0.0.1:5001/api/students).Count    # 10
+  ```
+
+### Sửa dữ liệu mẫu
+Không import `seed.sql` thủ công vào database đã có dữ liệu, vì id trùng sẽ báo lỗi. Muốn đổi dữ liệu mẫu thì sửa `backend/sql/seed.sql`, rồi [quay về trạng thái gốc](#quay-về-trạng-thái-gốc).
+
+File này chạy trong một transaction, nên:
+- chỉ được chứa lệnh `INSERT`;
+- phải chèn bảng cha (`students`, `subjects`) trước bảng con (`grades`, `tuition`);
+- không được có `CREATE` / `ALTER` / `DROP`, hay `START TRANSACTION` / `COMMIT`.
+
+Lưu ý điều này nếu thay bằng file xuất từ phpMyAdmin, vì file xuất mặc định có các lệnh đó.
+
+## Biến môi trường
+Không bắt buộc, vì giá trị mặc định đã khớp với MySQL của Laragon. Khi cần đổi:
+1. Sao chép `backend\.env.example` thành `backend\.env`, và `frontend\.env.example` thành `frontend\.env`.
+2. Sửa giá trị trong file `.env`.
+3. Khởi động lại app để áp dụng.
+
+| App | Biến | Mặc định | Ý nghĩa |
+|---|---|---|---|
+| backend | `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | Địa chỉ MySQL |
+| backend | `DB_USER` / `DB_PASSWORD` | `root` / *(rỗng)* | Tài khoản MySQL |
+| backend | `DB_NAME` | `qlsv` | Tên database (tự tạo nếu chưa có) |
+| backend | `SEED_DATA` | `yes` | Database rỗng thì nạp dữ liệu mẫu; `no` để bắt đầu với database trống |
+| backend | `DB_CONNECT_RETRIES` / `DB_CONNECT_DELAY` | `1` / `2` | Số lần thử kết nối MySQL khi khởi động / số giây giữa các lần (Docker đặt 30 lần) |
+| backend | `API_HOST` / `API_PORT` | `127.0.0.1` / `5001` | Nơi API lắng nghe |
+| cả hai | `API_TOKEN` | *(rỗng)* | Nếu đặt, mọi request API (trừ `/api/health`) phải có header `X-API-Key`; hai app phải đặt giống nhau |
+| frontend | `BACKEND_URL` | `http://127.0.0.1:5001` | Địa chỉ back-end |
+| frontend | `API_TIMEOUT` | `5` | Số giây chờ back-end trả lời |
+| frontend | `FRONTEND_HOST` / `FRONTEND_PORT` | `127.0.0.1` / `5000` | Nơi giao diện lắng nghe |
+| frontend | `SECRET_KEY` | ngẫu nhiên mỗi lần chạy | Nên đặt cố định để phiên làm việc không mất khi khởi động lại |
+
+Biến dùng khi chạy Docker: xem [Chạy bằng Docker](#chạy-bằng-docker).
+
+## REST API
+Back-end chạy tại `http://127.0.0.1:5001`. Body gửi lên phải là JSON object.
+- Thành công: trả về `{"message": "..."}`; khi thêm mới thì kèm `"id"`.
+- Lỗi: trả về `{"error": "..."}`.
+
+Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](specs/04-api.md).
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| GET | `/api/health` | Trạng thái API và kết nối DB (không cần API key) |
+| GET · POST | `/api/students` | Danh sách sinh viên (`?q=` để tìm theo mã / họ tên / lớp) · thêm sinh viên |
+| GET · PUT · DELETE | `/api/students/<id>` | Xem · sửa · xóa sinh viên (xóa kèm điểm, học phí) |
+| GET · POST | `/api/subjects` | Danh sách · thêm môn học |
+| GET · PUT · DELETE | `/api/subjects/<id>` | Xem · sửa · xóa môn học (xóa kèm điểm của môn) |
+| GET · POST | `/api/grades` | Bảng điểm · lưu điểm (trùng sinh viên + môn + học kỳ thì cập nhật) |
+| GET · PUT · DELETE | `/api/grades/<id>` | Xem · sửa · xóa bản ghi điểm |
+| GET · POST | `/api/tuition` | Học phí · lưu học phí (trùng sinh viên + học kỳ thì cập nhật) |
+| GET · PUT · DELETE | `/api/tuition/<id>` | Xem · sửa · xóa bản ghi học phí |
+| GET | `/api/stats` | Số liệu cho thẻ KPI và biểu đồ |
+
+| Mã lỗi | Khi nào |
+|---|---|
+| 400 | Dữ liệu thiếu hoặc không hợp lệ, body không phải JSON, sinh viên / môn học được chọn không tồn tại |
+| 401 | Thiếu hoặc sai `X-API-Key` (khi có đặt `API_TOKEN`) |
+| 404 | Không tìm thấy bản ghi |
+| 409 | Trùng mã sinh viên / mã môn học; khi **sửa** điểm hoặc học phí, trùng với một bản ghi khác |
+| 503 | Không kết nối được MySQL |
+
+Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng thái của cả front-end và back-end.
+
+## Xử lý sự cố
+| Hiện tượng | Nguyên nhân | Cách xử lý |
+|---|---|---|
+| Back-end dừng ngay, báo `Không kết nối được MySQL tại 127.0.0.1:3306…` | MySQL chưa chạy, hoặc sai tài khoản | Laragon → **Start All**; kiểm tra các biến `DB_*` trong `backend\.env` |
+| Back-end dừng, báo `SEED_DATA='…' không hợp lệ` | Giá trị khác `yes` / `no` | Sửa `SEED_DATA` trong `backend\.env` |
+| Trang báo `Không kết nối được back-end tại http://127.0.0.1:5001…` | Back-end chưa chạy hoặc đã dừng | Chạy back-end ([Bước 4](#bước-4--chạy-chương-trình)) rồi tải lại trang |
+| Trang báo `Không kết nối được cơ sở dữ liệu MySQL.` | MySQL bị tắt trong lúc back-end đang chạy | Bật lại MySQL trong Laragon rồi tải lại trang |
+| Bấm lưu / xóa thì báo `Phiên làm việc hết hạn. Hãy tải lại trang.` | Front-end vừa khởi động lại mà chưa đặt `SECRET_KEY` | Tải lại trang (F5). Đặt `SECRET_KEY` cố định trong `frontend\.env` để không gặp lại |
+| Báo `Thiếu hoặc sai API key.` | `API_TOKEN` ở hai app khác nhau | Đặt cùng một giá trị trong `backend\.env` và `frontend\.env`, rồi khởi động lại cả hai |
+| Biểu đồ báo `Không tải được thư viện biểu đồ…` | Không có Internet (Chart.js tải từ CDN) | Kết nối mạng rồi tải lại trang. Các chức năng khác vẫn dùng được |
+| Đã sửa code / template nhưng trang vẫn như cũ | App chưa được chạy lại; hoặc một bản cũ vẫn đang chạy ở cửa sổ khác. Trên Windows, chạy `app.py` lần thứ hai **không báo lỗi trùng cổng**: cả hai bản cùng nghe một cổng, nên request có thể vẫn tới bản cũ | Dừng app (Ctrl+C) rồi chạy lại. Kiểm tra còn bản nào đang chạy bằng `Get-NetTCPConnection -LocalPort 5000,5001 -State Listen`, rồi dừng bằng `Stop-Process -Id <OwningProcess>`. Docker thì chạy `docker compose up --build -d` |
+| Tiếng Việt bị lỗi font (ví dụ `ÄÃ£ thÃªm`) khi in kết quả `Invoke-RestMethod` | Windows PowerShell 5.1 đọc sai bảng mã của phản hồi. Dữ liệu trong database vẫn đúng | Xem JSON bằng trình duyệt (mở thẳng địa chỉ API) |
+| `py -m venv .venv` báo *Unable to copy … venvlauncher.exe* | `.venv` vẫn còn, và `python.exe` bên trong đang bị VS Code hoặc một terminal khác dùng | Đóng chương trình đó, xóa `.venv` rồi tạo lại |
+| Kích hoạt venv thì PowerShell báo *running scripts is disabled on this system* | Chính sách chạy script của PowerShell | Chạy `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` rồi kích hoạt lại (chỉ áp dụng cho cửa sổ hiện tại) |
+
+## Tài liệu đặc tả
+Thư mục [specs/](specs/README.md) mô tả hệ thống đúng như mã nguồn hiện tại:
+- yêu cầu chức năng và quy tắc nghiệp vụ;
+- lược đồ cơ sở dữ liệu;
+- đặc tả API;
+- giao diện;
+- cấu hình triển khai;
+- hạn chế đã biết.

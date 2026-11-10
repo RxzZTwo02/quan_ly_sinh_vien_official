@@ -52,9 +52,22 @@
 9. **Học phí và công nợ** (`#tuition`)
    - Form: chọn sinh viên, học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
    - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam) · Thao tác (**Sửa**, **Xóa** có xác nhận).
-
-**Chế độ sửa (chung cho 4 mục):** nút **Sửa** mở `/?edit…=<id>`; form được điền sẵn (số tiền/điểm hiển thị gọn, ví dụ `8000000` thay vì `8000000.0` — bộ lọc Jinja `plain_number`), có trường ẩn `id`, dòng đang sửa trong bảng được tô vàng (`tr.is-editing`). Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Mỗi lúc chỉ sửa một bản ghi.
 10. **Chân trang**: công nghệ và liên kết `/health`.
+
+### Chế độ sửa (chung cho 4 mục)
+| Mục | Tham số URL | Dấu hiệu đang sửa trên form |
+|---|---|---|
+| Sinh viên | `edit` | Tiêu đề đổi thành "Cập nhật sinh viên" |
+| Môn học | `edit_subject` | Dòng nhắc vàng "Đang sửa môn học **<mã môn>**." |
+| Bảng điểm | `edit_grade` | Dòng nhắc vàng "Đang sửa điểm của **<mã SV — họ tên>**, môn **<mã môn>**, học kỳ **<học kỳ>**." |
+| Học phí | `edit_tuition` | Dòng nhắc vàng "Đang sửa học phí của **<mã SV — họ tên>**, học kỳ **<học kỳ>**." |
+
+- Nút **Sửa** mở `/?<tham số>=<id>`. Front-end gọi `GET /api/<…>/<id>` rồi điền sẵn form; ô chọn sinh viên / môn học được chọn sẵn.
+- Số tiền và điểm hiển thị gọn nhờ bộ lọc Jinja `plain_number`, ví dụ `8000000` thay vì `8000000.0`.
+- Form có trường ẩn `id`. Dòng đang sửa trong bảng được tô vàng (`tr.is-editing`). Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
+- Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa.
+- Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
+- Mỗi lúc chỉ sửa một bản ghi: nút **Sửa** mới thay cho bản ghi đang sửa trước đó.
 
 ## 4. Kiểm tra phía trình duyệt
 Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc ở back-end. Đây chỉ là hỗ trợ người dùng; **back-end mới là nơi kiểm tra chính thức**.
