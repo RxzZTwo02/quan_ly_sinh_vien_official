@@ -1,6 +1,6 @@
 """Back-end: REST API JSON cho hệ thống quản lý sinh viên (MySQL)."""
 import secrets
-from datetime import date, datetime
+from datetime import date
 
 import pymysql
 from flask import Flask, jsonify, request
@@ -333,12 +333,12 @@ def validate_tuition(data):
         paid = float(text(data, "amount_paid", "0") or "0")
         due_date = text(data, "due_date")
         note = text(data, "note")
-        if due_date: date.fromisoformat(due_date)  # kiểm tra định dạng ngày
+        if due_date: due_date = date.fromisoformat(due_date).isoformat()  # kiểm tra định dạng ngày
         if (not semester or len(semester) > 20 or len(due_date) > 10 or len(note) > 200
                 or not (0 <= paid <= due < 1e13)):
             raise ValueError()
     except ValueError:
-        raise ApiError("Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng.")
+        raise ApiError("Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng và hạn đóng dạng YYYY-MM-DD.")
     return student_id, semester, due, paid, due_date, note
 
 
@@ -426,11 +426,8 @@ def stats():
         cur.execute("""SELECT class_name AS label, COUNT(*) AS amount
             FROM students GROUP BY class_name ORDER BY amount DESC, label LIMIT 8""")
         class_summary = cur.fetchall()
-
-
-
         by_label = {r["label"]: r["amount"] for r in grade_summary}
-        grade_labels = GRADE_LABELS = ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]
+        grade_labels = GRADE_LABELS if by_label else []
     return jsonify(
         total=counts["total"],
         subject_count=counts["subject_count"],
