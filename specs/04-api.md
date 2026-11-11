@@ -115,7 +115,7 @@ Thêm mới, hoặc cập nhật nếu đã có bộ (`student_id`, `subject_id`
 {"student_id": 2, "subject_id": 3, "semester": "HK2-2025", "attendance": 9, "midterm": 7.5, "final": 8}
 ```
 - `200 "Đã lưu điểm. Điểm tổng kết được tính theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ."`
-- `400 "Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ."`
+- `400 "Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ."`: cả khi điểm là `"nan"`, `"inf"`, `"-inf"`.
 - `400 "Sinh viên hoặc môn học không tồn tại."`
 
 ### `GET /api/grades/<id>`
@@ -151,8 +151,12 @@ Thêm mới, hoặc cập nhật nếu đã có bộ (`student_id`, `semester`).
 {"student_id": 1, "semester": "HK2-2025", "amount_due": 9000000, "amount_paid": 0, "due_date": "2026-02-28", "note": "Học phí học kỳ"}
 ```
 `amount_paid`, `due_date`, `note` tùy chọn.
+- `amount_due` và `amount_paid`: `0 ≤ amount_paid ≤ amount_due < 1e13` (BR-13); `nan` / `inf` bị từ chối.
+- `due_date`: ngày có thật theo ISO 8601, được lưu dạng `YYYY-MM-DD` (BR-15). Ví dụ `"20261231"` lưu thành `"2026-12-31"`; `"2026-02-30"` hay `"31/12/2026"` bị từ chối.
+
+Kết quả:
 - `200 "Đã lưu thông tin học phí."`
-- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng."`
+- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng và hạn đóng dạng YYYY-MM-DD."`
 - `400 "Sinh viên không tồn tại."`
 
 ### `GET /api/tuition/<id>`
@@ -161,7 +165,7 @@ Một bản ghi học phí, cùng các trường như một phần tử của `G
 ### `PUT /api/tuition/<id>`
 Sửa bản ghi học phí theo `id`; body và kiểm tra giống `POST /api/tuition`, được đổi cả `student_id`, `semester`.
 - `200 "Đã cập nhật thông tin học phí."`
-- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng."`
+- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng và hạn đóng dạng YYYY-MM-DD."`
 - `400 "Sinh viên không tồn tại."`
 - `404 "Không tìm thấy bản ghi học phí."`
 - `409 "Sinh viên này đã có bản ghi học phí cho học kỳ này."`
@@ -177,13 +181,15 @@ Số liệu cho dashboard.
 {
   "total": 10, "subject_count": 5, "grade_count": 18, "tuition_balance": 31500000.0,
   "chart_data": {
-    "gradeLabels": ["Giỏi", "Khá", "Cần cố gắng", "Trung bình"], "gradeValues": [7, 7, 3, 1],
+    "gradeLabels": ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"], "gradeValues": [7, 7, 1, 3],
     "classLabels": ["CNTT1", "CNTT2", "HTTT1", "KTPM1"], "classValues": [3, 3, 2, 2],
     "tuitionDue": 87000000.0, "tuitionPaid": 55500000.0, "tuitionBalance": 31500000.0
   }
 }
 ```
-- `gradeLabels/Values`: số bản ghi điểm theo xếp loại (BR-10); chỉ có nhãn xuất hiện trong dữ liệu, thứ tự không cố định (xem [07](07-han-che.md) L-02).
+- `gradeLabels/Values`: số bản ghi điểm theo xếp loại (BR-10, tính trên điểm tổng kết đã làm tròn).
+  - Luôn đủ 4 nhãn theo thứ tự cố định `["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]` (hằng `GRADE_LABELS`); nhãn không có bản ghi thì giá trị `0`.
+  - Chưa có bản ghi điểm nào thì cả hai là mảng rỗng `[]`, và giao diện hiện "Chưa có dữ liệu".
 - `classLabels/Values`: tối đa 8 lớp, sắp theo số sinh viên giảm dần rồi tên lớp.
 - `tuition*`: tổng trên toàn bảng `tuition`; số dư mỗi bản ghi không âm.
 

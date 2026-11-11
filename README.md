@@ -20,11 +20,11 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 ## Tính năng
 | Mục | Thao tác | Ghi chú |
 |---|---|---|
-| Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. |
+| Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở Bảng điểm và Học phí vẫn đủ danh sách. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. |
 | Môn học | Thêm, sửa, xóa | Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
-| Bảng điểm | Thêm, sửa, xóa | Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ. |
-| Học phí | Thêm, sửa, xóa | Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. |
-| Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). |
+| Bảng điểm | Thêm, sửa, xóa | Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ, làm tròn 2 chữ số. Xếp loại Giỏi (≥ 8) / Khá (≥ 6,5) / Trung bình (≥ 5) / Cần cố gắng dựa trên đúng số đã làm tròn này. |
+| Học phí | Thêm, sửa, xóa | Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. Hạn đóng (tùy chọn) phải là ngày có thật. |
+| Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). Biểu đồ phân loại luôn đủ 4 xếp loại, mỗi xếp loại một màu cố định. |
 
 **Cách thao tác**
 - **Sửa**: bấm **Sửa** ở một dòng. Dữ liệu được đưa lên form, dòng đó được tô vàng và nút lưu đổi thành **Lưu thay đổi**. Bấm **Hủy** để thoát chế độ sửa.
@@ -389,7 +389,7 @@ Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](
 
 | Mã lỗi | Khi nào |
 |---|---|
-| 400 | Dữ liệu thiếu hoặc không hợp lệ, body không phải JSON, sinh viên / môn học được chọn không tồn tại |
+| 400 | Dữ liệu thiếu hoặc không hợp lệ (gồm cả số `nan` / `inf`, hạn đóng không phải ngày `YYYY-MM-DD` có thật), body không phải JSON, sinh viên / môn học được chọn không tồn tại |
 | 401 | Thiếu hoặc sai `X-API-Key` (khi có đặt `API_TOKEN`) |
 | 404 | Không tìm thấy bản ghi |
 | 409 | Trùng mã sinh viên / mã môn học; khi **sửa** điểm hoặc học phí, trùng với một bản ghi khác |

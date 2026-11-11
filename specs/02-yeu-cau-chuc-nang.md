@@ -4,7 +4,7 @@
 | Mã | Yêu cầu |
 |---|---|
 | FR-01 | Hiển thị danh sách sinh viên, mới nhất trước (sắp xếp `id` giảm dần). |
-| FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. |
+| FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở form Bảng điểm và Học phí luôn có đủ sinh viên. |
 | FR-03 | Thêm sinh viên gồm: mã SV, họ tên, lớp, email. |
 | FR-04 | Sửa sinh viên: bấm **Sửa** đưa dữ liệu lên form, tiêu đề form đổi thành "Cập nhật sinh viên"; bấm **Hủy** để thoát chế độ sửa. Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng và nút lưu đổi thành **Lưu thay đổi**; form Môn học, Bảng điểm, Học phí còn hiện dòng nhắc "Đang sửa …". |
 | FR-05 | Xóa sinh viên sau khi người dùng xác nhận; xóa kèm toàn bộ điểm và học phí của sinh viên đó. |
@@ -40,7 +40,7 @@
 - BR-07: Điểm chuyên cần, giữa kỳ, cuối kỳ là số thực trong `[0, 10]`.
 - BR-08: Học kỳ bắt buộc, ≤ 20 ký tự, dạng tự do (giao diện gợi ý `HK1-2026`, dữ liệu mẫu dùng `HK1-2025`, `HK2-2025`).
 - BR-09: **Điểm tổng kết** = `chuyên cần × 0,1 + giữa kỳ × 0,3 + cuối kỳ × 0,6`, làm tròn 2 chữ số. Được tính khi truy vấn, không lưu trong DB.
-- BR-10: **Xếp loại** theo điểm tổng kết: Giỏi ≥ 8; Khá ≥ 6,5; Trung bình ≥ 5; còn lại là "Cần cố gắng".
+- BR-10: **Xếp loại** theo điểm tổng kết **đã làm tròn** (đúng số hiển thị trong bảng): Giỏi ≥ 8; Khá ≥ 6,5; Trung bình ≥ 5; còn lại là "Cần cố gắng".
 - BR-11: Sinh viên hoặc môn học không tồn tại → báo lỗi.
 - BR-17: Khi **sửa** một bản ghi điểm sang bộ (sinh viên, môn học, học kỳ) đã thuộc về bản ghi khác → báo lỗi trùng, không gộp hay ghi đè bản ghi kia.
 
@@ -54,9 +54,9 @@
 
 **Quy tắc**
 - BR-12: Mỗi sinh viên có tối đa **một** bản ghi học phí cho mỗi học kỳ.
-- BR-13: `0 ≤ đã đóng ≤ phải đóng`; để trống "đã đóng" thì coi là 0.
+- BR-13: `0 ≤ đã đóng ≤ phải đóng < 10¹³` (giới hạn của cột `DECIMAL(15,2)`); để trống "đã đóng" thì coi là 0.
 - BR-14: **Còn nợ** = `max(phải đóng − đã đóng, 0)`. Trạng thái "Đã hoàn thành" khi còn nợ = 0, ngược lại "Còn nợ".
-- BR-15: Hạn đóng tùy chọn (chuỗi ≤ 10 ký tự, giao diện dùng ô chọn ngày `YYYY-MM-DD`); ghi chú ≤ 200 ký tự.
+- BR-15: Hạn đóng tùy chọn. Nếu nhập thì phải là ngày có thật theo ISO 8601, được lưu dạng `YYYY-MM-DD` (ví dụ `20261231` lưu thành `2026-12-31`; `2026-02-30` hay `31/12/2026` bị từ chối). Giao diện dùng ô chọn ngày. Ghi chú ≤ 200 ký tự.
 - BR-18: Khi **sửa** một bản ghi học phí sang (sinh viên, học kỳ) đã có bản ghi khác → báo lỗi trùng.
 
 ## 5. Dashboard
@@ -64,7 +64,7 @@
 |---|---|
 | FR-13 | 4 thẻ KPI: tổng sinh viên, số môn học, số bản ghi điểm, tổng học phí còn nợ (VNĐ). |
 | FR-14 | Biểu đồ cột "Tình hình học phí": tổng phải đóng / đã đóng / còn nợ. |
-| FR-15 | Biểu đồ vành khuyên "Phân loại kết quả học tập": số bản ghi điểm theo xếp loại (BR-10). |
+| FR-15 | Biểu đồ vành khuyên "Phân loại kết quả học tập": số bản ghi điểm theo xếp loại (BR-10). Luôn đủ 4 xếp loại theo thứ tự cố định Giỏi → Khá → Trung bình → Cần cố gắng (kể cả xếp loại có 0 bản ghi), nên mỗi xếp loại giữ một màu cố định. |
 | FR-16 | Biểu đồ cột ngang "Sinh viên theo lớp": tối đa 8 lớp đông nhất. |
 | FR-17 | Khi chưa có dữ liệu, biểu đồ hiện nhãn "Chưa có dữ liệu"; khi không tải được Chart.js, hiện thông báo kiểm tra Internet. |
 

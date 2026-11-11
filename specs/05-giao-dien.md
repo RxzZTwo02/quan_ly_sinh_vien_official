@@ -8,7 +8,7 @@
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
 |---|---|---|---|
-| GET | `/` | Trang chính. Tham số: `q` (tìm kiếm); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa); `message`, `error` (thông báo) | `GET /api/students?q=`, `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades`, `GET /api/tuition`, `GET /api/stats` |
+| GET | `/` | Trang chính. Tham số: `q` (tìm kiếm); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa); `message`, `error` (thông báo) | `GET /api/students?q=` (bảng sinh viên), `GET /api/students` không lọc (chỉ khi có `q`, cho ô chọn sinh viên ở Bảng điểm và Học phí), `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades`, `GET /api/tuition`, `GET /api/stats` |
 | POST | `/save` | Thêm sinh viên (không có `id`) hoặc sửa (có `id`) | `POST /api/students` / `PUT /api/students/<id>` |
 | POST | `/delete/<id>` | Xóa sinh viên | `DELETE /api/students/<id>` |
 | POST | `/subjects/save` | Thêm môn học (không có `id`) hoặc sửa (có `id`) | `POST /api/subjects` / `PUT /api/subjects/<id>` |
@@ -38,7 +38,7 @@
    | Biểu đồ | Loại | Dữ liệu |
    |---|---|---|
    | Tình hình học phí | Cột dọc | Phải đóng / Đã đóng / Còn nợ; tooltip định dạng VNĐ, trục rút gọn (`8 Tr`) |
-   | Phân loại kết quả học tập | Vành khuyên | Số bản ghi theo Giỏi / Khá / Trung bình / Cần cố gắng |
+   | Phân loại kết quả học tập | Vành khuyên | Số bản ghi theo xếp loại, luôn theo thứ tự và màu cố định: Giỏi (xanh dương) · Khá (xanh lá) · Trung bình (vàng cam) · Cần cố gắng (đỏ) |
    | Sinh viên theo lớp | Cột ngang | Tối đa 8 lớp |
 5. **Thanh điều hướng**: liên kết neo `#students`, `#subjects`, `#grades`, `#tuition`.
 6. **Sinh viên** (`#students`)
@@ -47,12 +47,15 @@
    - Bảng: Mã SV · Họ tên · Lớp · Email · Thao tác (**Sửa**, **Xóa** có hộp xác nhận).
 7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**. Bảng Mã môn · Tên môn · Tín chỉ · Thao tác (**Sửa**, **Xóa** có hộp xác nhận; nếu môn đã có điểm, hộp xác nhận nêu số bản ghi điểm sẽ bị xóa theo).
 8. **Bảng điểm** (`#grades`)
-   - Form: chọn sinh viên, chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
-   - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết (2 chữ số) · Thao tác (**Sửa**, **Xóa** có xác nhận).
+   - Form: chọn sinh viên (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
+   - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết · Thao tác (**Sửa**, **Xóa** có xác nhận).
+   - Ba cột điểm thành phần hiển thị gọn bằng bộ lọc `plain_number` (`9` thay vì `9.0`, giữ `8.5`). Cột Tổng kết luôn có 2 chữ số thập phân.
 9. **Học phí và công nợ** (`#tuition`)
-   - Form: chọn sinh viên, học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
+   - Form: chọn sinh viên (luôn đủ danh sách, như ở Bảng điểm), học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
    - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam) · Thao tác (**Sửa**, **Xóa** có xác nhận).
 10. **Chân trang**: công nghệ và liên kết `/health`.
+
+Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), để trình duyệt không tự gọi `/favicon.ico` và báo lỗi 404 trong console.
 
 ### Chế độ sửa (chung cho 4 mục)
 | Mục | Tham số URL | Dấu hiệu đang sửa trên form |

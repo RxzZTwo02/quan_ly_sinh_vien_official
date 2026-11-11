@@ -67,7 +67,9 @@ Khóa duy nhất `uq_tuition (student_id, semester)`, dùng giống `uq_grades`:
 | Điểm tổng kết | `ROUND(attendance*0.1 + midterm*0.3 + final*0.6, 2)` |
 | Còn nợ | `GREATEST(amount_due - amount_paid, 0)` |
 
-Cột `DECIMAL` được chuyển sang `float` trước khi trả JSON (`db.to_jsonable`).
+- Biểu thức điểm tổng kết nằm ở hằng `TOTAL_EXPR` trong `backend/app.py`. Bảng điểm (`GRADE_SELECT`) và phần xếp loại của thống kê (`/api/stats`) dùng chung hằng này, nên xếp loại luôn khớp với số hiển thị.
+- Cột `DECIMAL` được chuyển sang `float` trước khi trả JSON (`db.to_jsonable`).
+- `due_date` được back-end kiểm tra và chuẩn hóa thành `YYYY-MM-DD` trước khi lưu (BR-15); cột trong DB vẫn là `VARCHAR(10)`.
 
 ## 7. Kết nối
 - PyMySQL, `DictCursor`, `autocommit=False`, `connect_timeout=5`.
