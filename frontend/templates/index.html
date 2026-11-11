@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" herf="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Quản lý sinh viên</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -760,9 +761,9 @@
               <td>{{ g.full_name }}</td>
               <td>{{ g.subject_code }} — {{ g.subject_name }}</td>
               <td>{{ g.semester }}</td>
-              <td>{{ g.attendance }}</td>
-              <td>{{ g.midterm }}</td>
-              <td>{{ g.final }}</td>
+              <td>{{ g.attendance | plain_number }}</td>
+              <td>{{ g.midterm | plain_number }}</td>
+              <td>{{ g.final | plain_number }}</td>
               <td><strong>{{ "%.2f"|format(g.total) }}</strong></td>
               <td>
                 <a class="button" href="{{ url_for('index', edit_grade=g.id) }}" data-ajax="grades">Sửa</a>

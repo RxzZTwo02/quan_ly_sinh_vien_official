@@ -1,5 +1,6 @@
 """Back-end: REST API JSON cho hệ thống quản lý sinh viên (MySQL)."""
 import secrets
+from datetime import date, datetime
 
 import pymysql
 from flask import Flask, jsonify, request
@@ -248,7 +249,7 @@ def validate_grade(data):
         attendance = float(text(data, "attendance"))
         midterm = float(text(data, "midterm"))
         final = float(text(data, "final"))
-        if not semester or len(semester) > 20 or any(x < 0 or x > 10 for x in [attendance, midterm, final]):
+        if not semester or len(semester) > 20 or not all(0 <= x <= 10 for x in (attendance, midterm, final)):
             raise ValueError()
     except ValueError:
         raise ApiError("Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ.")
@@ -332,8 +333,9 @@ def validate_tuition(data):
         paid = float(text(data, "amount_paid", "0") or "0")
         due_date = text(data, "due_date")
         note = text(data, "note")
+        if due_date: date.fromisoformat(due_date)  # kiểm tra định dạng ngày
         if (not semester or len(semester) > 20 or len(due_date) > 10 or len(note) > 200
-                or due < 0 or paid < 0 or paid > due):
+                or not (0 <= paid <= due < 1e13)):
             raise ValueError()
     except ValueError:
         raise ApiError("Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng.")
