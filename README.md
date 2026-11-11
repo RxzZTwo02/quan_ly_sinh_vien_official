@@ -32,6 +32,13 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
 - **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường.
+- **Không mất dữ liệu đang nhập dở**:
+  - Bấm menu (Sinh viên, Môn học, Bảng điểm, Học phí) chỉ cuộn trang, dữ liệu đang gõ vẫn còn.
+  - Đang nhập dở mà bấm Sửa / Hủy / Tất cả, tìm kiếm, xóa, lưu ở mục khác hay nhấn Back, chương trình hỏi trước:
+    - **Lưu rồi tiếp tục**: chưa nhập đủ thì chỉ ra ô còn thiếu và không làm tiếp.
+    - **Không lưu**: bỏ dữ liệu đang nhập và làm tiếp.
+    - **Ở lại nhập tiếp**: quay về ô đang nhập.
+  - F5 hoặc đóng tab khi đang nhập dở thì trình duyệt hỏi "Rời khỏi trang?".
 - **Biểu đồ cần Internet**: Chart.js được tải từ CDN. Không có mạng thì chỉ biểu đồ không hiển thị, các phần khác vẫn dùng được.
 
 ## Kiến trúc và công nghệ

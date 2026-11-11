@@ -8,7 +8,7 @@ Bộ tài liệu mô tả hệ thống **đúng như mã nguồn hiện tại** 
 | [02-yeu-cau-chuc-nang.md](02-yeu-cau-chuc-nang.md) | Yêu cầu chức năng và quy tắc nghiệp vụ |
 | [03-co-so-du-lieu.md](03-co-so-du-lieu.md) | Lược đồ MySQL, ràng buộc, seed dữ liệu mẫu |
 | [04-api.md](04-api.md) | Đặc tả REST API của back-end |
-| [05-giao-dien.md](05-giao-dien.md) | Route front-end, bố cục trang, chế độ sửa, cập nhật tại chỗ |
+| [05-giao-dien.md](05-giao-dien.md) | Route front-end, bố cục trang, chế độ sửa, cập nhật tại chỗ, hỏi lưu dữ liệu đang nhập dở |
 | [06-cau-hinh-trien-khai.md](06-cau-hinh-trien-khai.md) | Biến môi trường, chạy trực tiếp, Docker, bảo mật |
 | [07-han-che.md](07-han-che.md) | Hạn chế đã biết và hướng cải tiến |
 

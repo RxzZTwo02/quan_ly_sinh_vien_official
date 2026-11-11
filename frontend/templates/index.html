@@ -339,6 +339,42 @@
       cursor: progress;
     }
 
+    /* Hộp thoại hỏi lưu dữ liệu đang nhập dở */
+    .confirm-dialog {
+      width: min(500px, calc(100% - 32px));
+      border: 0;
+      border-radius: 16px;
+      padding: 22px;
+      color: #0f172a;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, .28);
+    }
+
+    .confirm-dialog::backdrop {
+      background: rgba(15, 23, 42, .45);
+    }
+
+    .confirm-dialog h2 {
+      margin: 0 0 10px;
+      font-size: 19px;
+    }
+
+    .confirm-dialog p {
+      margin: 6px 0;
+    }
+
+    .confirm-dialog ul {
+      margin: 8px 0 12px;
+      padding-left: 20px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
     .success {
       background: #dcfce7;
       color: #166534;
@@ -498,7 +534,7 @@
     <!-- Sinh viên -->
     <section class="card" id="students">
       <h2>{{ "Cập nhật sinh viên" if editing else "Thêm sinh viên" }}</h2>
-      <form method="post" action="{{ url_for('save_student') }}">
+      <form method="post" action="{{ url_for('save_student') }}" data-entry="Sinh viên" data-edit-param="edit">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing['id'] if editing else '' }}">
         <div class="grid">
@@ -577,7 +613,7 @@
     <!-- Môn học -->
     <section class="card" id="subjects">
       <h2>Quản lý môn học</h2>
-      <form method="post" action="{{ url_for('save_subject') }}">
+      <form method="post" action="{{ url_for('save_subject') }}" data-entry="Môn học" data-edit-param="edit_subject">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing_subject.id if editing_subject else '' }}">
         {% if editing_subject %}
@@ -648,7 +684,7 @@
         Điểm tổng kết minh họa: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ.
         Điều chỉnh tỷ trọng theo quy định của trường.
       </p>
-      <form method="post" action="{{ url_for('save_grade') }}">
+      <form method="post" action="{{ url_for('save_grade') }}" data-entry="Bảng điểm" data-edit-param="edit_grade">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing_grade.id if editing_grade else '' }}">
         {% if editing_grade %}
@@ -754,7 +790,7 @@
         Mỗi sinh viên có một bản ghi học phí cho mỗi học kỳ.
         Có thể cập nhật lại số phải đóng và số đã đóng.
       </p>
-      <form method="post" action="{{ url_for('save_tuition') }}">
+      <form method="post" action="{{ url_for('save_tuition') }}" data-entry="Học phí" data-edit-param="edit_tuition">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing_tuition.id if editing_tuition else '' }}">
         {% if editing_tuition %}
@@ -856,6 +892,23 @@
 
     <p class="footer">Python · Flask (front-end + back-end API) · MySQL · <a href="/health">Health check</a></p>
   </main>
+
+  <!-- Hỏi trước khi một thao tác làm mất dữ liệu đang nhập dở (dùng khi có JavaScript) -->
+  <dialog id="unsaved-dialog" class="confirm-dialog" aria-labelledby="unsaved-title" aria-describedby="unsaved-desc">
+    <form method="dialog">
+      <h2 id="unsaved-title">Dữ liệu đang nhập chưa được lưu</h2>
+      <div id="unsaved-desc">
+        <p>Bạn đang nhập dở ở:</p>
+        <ul id="unsaved-list"></ul>
+        <p class="muted">Có muốn lưu trước khi tiếp tục không? Chọn <strong>Không lưu</strong> thì dữ liệu đang nhập sẽ bị xóa.</p>
+      </div>
+      <div class="dialog-actions">
+        <button value="save" autofocus>Lưu rồi tiếp tục</button>
+        <button value="discard" class="danger">Không lưu</button>
+        <button value="stay" class="secondary">Ở lại nhập tiếp</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
   <script id="dashboard-data" type="application/json">{{ chart_data|tojson }}</script>
@@ -1016,14 +1069,20 @@
         });
       }
 
-      function showNotice(text, kind) {
+      function makeNotice(text, kind) {
         const notice = document.createElement('div');
         notice.className = `notice ${kind}`;
         notice.setAttribute('role', kind === 'error' ? 'alert' : 'status');
         notice.textContent = text;
-        notices.replaceChildren(notice);
+        return notice;
+      }
+
+      function setNotices(nodes) {
+        notices.replaceChildren(...nodes);
         decorateNotices();
       }
+
+      const showNotice = (text, kind) => setNotices([makeNotice(text, kind)]);
 
       // ===================================================== Gửi yêu cầu, thay nội dung tại chỗ
       /* Bỏ ?message=/?error= khỏi địa chỉ để F5 không hiện lại thông báo cũ. */
@@ -1035,35 +1094,46 @@
       }
 
       /*
-       * Gửi request tới front-end (POST thì Flask redirect về trang chính, fetch tự đi theo),
-       * nhận HTML trang mới và chỉ thay các vùng dữ liệu. Nếu trang mới báo lỗi thì chỉ hiện
-       * thông báo, giữ nguyên các form để người dùng sửa lại mà không phải nhập lại từ đầu.
-       * Trả về URL trang kết quả khi thành công, null khi lỗi.
+       * Gửi request tới front-end (POST thì Flask redirect về trang chính, fetch tự đi theo) và
+       * đọc trang kết quả, chưa thay gì trên trang hiện tại.
+       * Trả về { doc, url, notices, failed }: notices là các node thông báo của trang kết quả;
+       * failed = true khi trang báo lỗi, không phải trang chính (vd lỗi 400 khi phiên làm việc
+       * hết hạn) hoặc không kết nối được.
        */
-      async function load(url, init, anchorEl) {
+      async function fetchPage(url, init) {
         let response;
         let doc;
         try {
           response = await fetch(url, { ...init, credentials: 'same-origin' });
           doc = new DOMParser().parseFromString(await response.text(), 'text/html');
         } catch {
-          showNotice('Không kết nối được máy chủ front-end. Hãy kiểm tra frontend/app.py còn đang chạy.', 'error');
-          return null;
+          const text = 'Không kết nối được máy chủ front-end. Hãy kiểm tra frontend/app.py còn đang chạy.';
+          return { doc: null, url: null, failed: true, notices: [makeNotice(text, 'error')] };
         }
-
         const freshNotices = doc.getElementById('notices');
         if (!freshNotices) {
-          // Không phải trang chính, ví dụ lỗi 400 khi phiên làm việc hết hạn (sai CSRF).
           const detail = doc.querySelector('p')?.textContent.trim();
-          showNotice(detail || `Máy chủ trả về lỗi HTTP ${response.status}.`, 'error');
-          return null;
+          const text = detail || `Máy chủ trả về lỗi HTTP ${response.status}.`;
+          return { doc: null, url: null, failed: true, notices: [makeNotice(text, 'error')] };
         }
+        return {
+          doc,
+          url: response.url,
+          failed: freshNotices.querySelector('.notice.error') !== null,
+          notices: [...freshNotices.children],
+        };
+      }
 
-        // Kiểm tra lỗi trước khi chuyển node sang trang hiện tại (chuyển xong freshNotices sẽ rỗng).
-        const failed = freshNotices.querySelector('.notice.error') !== null;
-        notices.replaceChildren(...freshNotices.children);
-        decorateNotices();
-        if (failed) return null;
+      /*
+       * Gửi request rồi chỉ thay các vùng dữ liệu bằng bản mới. Nếu trang kết quả báo lỗi thì
+       * chỉ hiện thông báo, giữ nguyên các form để người dùng sửa lại mà không phải nhập lại.
+       * carry: thông báo hiện kèm phía trên (kết quả các lần lưu trước đó).
+       * Trả về URL trang kết quả khi thành công, null khi lỗi.
+       */
+      async function load(url, init, anchorEl, carry = []) {
+        const page = await fetchPage(url, init);
+        setNotices([...carry, ...page.notices]);
+        if (page.failed) return null;
 
         // Giữ vùng người dùng đang thao tác đứng yên trên màn hình sau khi thay nội dung.
         const anchorId = anchorEl?.closest('section[id]')?.id;
@@ -1071,15 +1141,15 @@
 
         for (const id of REGIONS) {
           const current = document.getElementById(id);
-          const fresh = doc.getElementById(id);
+          const fresh = page.doc.getElementById(id);
           if (current && fresh) current.replaceWith(fresh);
         }
-        updateCharts(readChartData(doc));
+        updateCharts(readChartData(page.doc));
 
         if (anchorId) {
           window.scrollBy(0, document.getElementById(anchorId).getBoundingClientRect().top - before);
         }
-        return response.url;
+        return page.url;
       }
 
       async function run(task) {
@@ -1112,12 +1182,172 @@
         section.querySelector('form input:not([type="hidden"]), form select')?.focus({ preventScroll: true });
       }
 
+      /* Đường dẫn (không gồm #neo) của nội dung đang hiển thị; cập nhật mỗi khi đổi địa chỉ. */
+      let shownPath = cleanUrl(location.href);
+
+      function setUrl(href, push) {
+        shownPath = cleanUrl(href);
+        history[push ? 'pushState' : 'replaceState'](null, '', shownPath);
+      }
+
       /* Điều hướng GET (tìm kiếm, Sửa, Hủy, Tất cả): cập nhật địa chỉ để nút Back vẫn dùng được. */
-      async function navigate(url, focusTarget, anchorEl) {
-        const finalUrl = await load(url, { method: 'GET' }, anchorEl);
+      async function navigate(url, focusTarget, anchorEl, carry = []) {
+        const finalUrl = await load(url, { method: 'GET' }, anchorEl, carry);
+        if (finalUrl === null) return null;
+        setUrl(finalUrl, true);
+        if (focusTarget) focusAfterNavigation(focusTarget);
+        return finalUrl;
+      }
+
+      /* Gửi một form POST (lưu, xóa) rồi thay nội dung trang. */
+      async function submitForm(form, carry = []) {
+        const action = form.getAttribute('action');
+        form.setAttribute('aria-busy', 'true');
+        const finalUrl = await load(form.action, { method: 'POST', body: new FormData(form) }, form, carry);
+        form.removeAttribute('aria-busy');
+        if (finalUrl === null) return null;
+        setUrl(finalUrl, false);
+        // Lưu xong: đặt con trỏ vào ô đầu của form vừa dùng để nhập tiếp bản ghi khác.
+        document.querySelector(`main form[action="${CSS.escape(action)}"]`)
+          ?.querySelector('input:not([type="hidden"]), select')
+          ?.focus({ preventScroll: true });
+        return finalUrl;
+      }
+
+      // ===================================================== Dữ liệu đang nhập dở
+      /*
+       * Mọi thao tác thành công đều thay toàn bộ các vùng dữ liệu, nên dữ liệu đang gõ dở ở
+       * các form khác sẽ mất. Trước khi điều đó xảy ra, hỏi người dùng có muốn lưu trước không.
+       * "Đang nhập dở" = một trong 4 form nhập liệu (data-entry) có ô khác giá trị lúc trang
+       * được tạo (thuộc tính value / selected trong HTML, tức là defaultValue / defaultSelected).
+       */
+      const unsavedDialog = document.getElementById('unsaved-dialog');
+      const entryForms = () => [...document.querySelectorAll('main form[data-entry]')];
+
+      /* Các ô người dùng nhập được (bỏ trường ẩn csrf_token, id và các nút). */
+      const fieldsOf = form => [...form.elements].filter(el => el.name
+        && (el.tagName === 'SELECT' || (el.tagName === 'INPUT' && el.type !== 'hidden')));
+
+      function isChanged(el) {
+        if (el.tagName === 'SELECT') {
+          const initial = [...el.options].find(o => o.defaultSelected) ?? el.options[0];
+          return el.value !== (initial ? initial.value : '');
+        }
+        // badInput: ô số đang chứa ký tự không hợp lệ (value rỗng nhưng người dùng đã gõ).
+        return el.validity.badInput || el.value.trim() !== el.defaultValue.trim();
+      }
+
+      const changedFields = form => fieldsOf(form).filter(isChanged);
+      const dirtyForms = (except = null) => entryForms().filter(f => f !== except && changedFields(f).length);
+      const entryForm = name => document.querySelector(`main form[data-entry="${CSS.escape(name)}"]`);
+
+      /* Nhãn của ô: label gắn bằng for=, hoặc label đứng cùng khung với ô. */
+      const labelOf = el => (el.labels?.[0] ?? el.closest('div')?.querySelector('label'))
+        ?.textContent.trim() || el.name;
+
+      /* Hiện hộp thoại; trả về 'save' | 'discard' | 'stay' (Esc hoặc đóng hộp thoại = 'stay'). */
+      function askUnsaved(forms) {
+        unsavedDialog.querySelector('#unsaved-list').replaceChildren(...forms.map(form => {
+          const item = document.createElement('li');
+          const name = document.createElement('strong');
+          name.textContent = form.dataset.entry;
+          const mode = form.elements.id?.value ? 'đang sửa' : 'đang thêm mới';
+          item.append(name, ` (${mode}): ${changedFields(form).map(labelOf).join(', ')}`);
+          return item;
+        }));
+        unsavedDialog.returnValue = 'stay';
+        unsavedDialog.showModal();
+        return new Promise(resolve => unsavedDialog.addEventListener(
+          'close', () => resolve(unsavedDialog.returnValue || 'stay'), { once: true }));
+      }
+
+      /* Cuộn tới và đặt con trỏ vào ô đang nhập dở (hoặc ô đầu tiên) của một mục. */
+      function focusEntry(name) {
+        const form = entryForm(name);
+        if (!form) return;
+        const field = changedFields(form)[0] ?? fieldsOf(form)[0];
+        field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field?.focus({ preventScroll: true });
+      }
+
+      const draftOf = form => ({
+        entry: form.dataset.entry,
+        id: form.elements.id?.value ?? '',
+        values: fieldsOf(form).map(el => [el.name, el.value]),
+      });
+
+      /* Điền lại bản nháp vào form mới, chỉ khi form vẫn đang thêm mới / sửa đúng bản ghi cũ. */
+      function restoreDraft(draft) {
+        const form = entryForm(draft.entry);
+        if (!form || (form.elements.id?.value ?? '') !== draft.id) return;
+        for (const [name, value] of draft.values) {
+          const el = form.elements[name];
+          if (!el) continue;
+          if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === value)) continue;
+          el.value = value;
+        }
+      }
+
+      /*
+       * Đã lưu được một số form nhưng bước sau bị lỗi: tải lại dữ liệu để bảng hiện bản mới,
+       * nhưng giữ nguyên các form chưa lưu (kể cả chế độ sửa của chúng) và thông báo đang hiện.
+       */
+      async function refreshKeeping(saved) {
+        const savedNames = saved.map(f => f.dataset.entry);
+        const keep = dirtyForms().filter(f => !savedNames.includes(f.dataset.entry)).map(draftOf);
+        const url = new URL(location.href);
+        for (const form of saved) url.searchParams.delete(form.dataset.editParam);
+        const finalUrl = await load(url.href, { method: 'GET' }, null, [...notices.children]);
         if (finalUrl === null) return;
-        history.pushState(null, '', cleanUrl(finalUrl));
-        focusAfterNavigation(focusTarget);
+        setUrl(finalUrl, false);
+        keep.forEach(restoreDraft);
+      }
+
+      /*
+       * Bọc một thao tác sẽ thay nội dung trang. Nếu có form đang nhập dở (trừ `except`, form
+       * đang được gửi) thì hỏi trước:
+       *  - Lưu rồi tiếp tục: lưu lần lượt từng form, lưu được hết mới làm tiếp thao tác;
+       *    form nào còn thiếu / sai thông tin hoặc bị back-end từ chối thì dừng lại ở form đó.
+       *  - Không lưu: làm tiếp, dữ liệu đang nhập bị bỏ.
+       *  - Ở lại nhập tiếp: không làm gì, đưa con trỏ về ô đang nhập dở.
+       * action(carry) trả về giá trị khác null khi thành công; carry là thông báo của các lần lưu.
+       */
+      async function guard(action, except = null) {
+        if (busy || unsavedDialog.open) return;
+        const forms = dirtyForms(except);
+        if (!forms.length) return run(() => action([]));
+
+        const choice = await askUnsaved(forms);
+        if (choice === 'stay') return focusEntry(forms[0].dataset.entry);
+        if (choice === 'discard') return run(() => action([]));
+
+        const invalid = forms.find(f => !f.checkValidity());
+        if (invalid) {
+          showNotice(`Chưa lưu được mục ${invalid.dataset.entry}: còn ô chưa nhập hoặc nhập chưa đúng. `
+            + 'Hãy hoàn tất rồi thử lại.', 'error');
+          invalid.reportValidity();  // trình duyệt chỉ ra ô cần sửa
+          return;
+        }
+
+        return run(async () => {
+          const carry = [];
+          const saved = [];
+          for (const form of forms) {
+            // Chỉ gửi, chưa thay trang: các form khác vẫn giữ nguyên dữ liệu đang nhập.
+            form.setAttribute('aria-busy', 'true');
+            const page = await fetchPage(form.action, { method: 'POST', body: new FormData(form) });
+            form.removeAttribute('aria-busy');
+            carry.push(...page.notices);
+            if (page.failed) {
+              setNotices(carry);
+              if (saved.length) await refreshKeeping(saved);
+              focusEntry(form.dataset.entry);
+              return;
+            }
+            saved.push(form);
+          }
+          if (await action(carry) === null) await refreshKeeping(saved);
+        });
       }
 
       document.addEventListener('submit', event => {
@@ -1130,22 +1360,10 @@
         if (form.method.toLowerCase() === 'get') {
           const url = new URL(form.action);
           url.search = new URLSearchParams(new FormData(form)).toString();
-          run(() => navigate(url.href, 'search', form));
+          guard(carry => navigate(url.href, 'search', form, carry));
           return;
         }
-
-        const action = form.getAttribute('action');
-        run(async () => {
-          form.setAttribute('aria-busy', 'true');
-          const finalUrl = await load(form.action, { method: 'POST', body: new FormData(form) }, form);
-          form.removeAttribute('aria-busy');
-          if (finalUrl === null) return;
-          history.replaceState(null, '', cleanUrl(finalUrl));
-          // Lưu xong: đặt con trỏ vào ô đầu của form vừa dùng để nhập tiếp bản ghi khác.
-          document.querySelector(`main form[action="${CSS.escape(action)}"]`)
-            ?.querySelector('input:not([type="hidden"]), select')
-            ?.focus({ preventScroll: true });
-        });
+        guard(carry => submitForm(form, carry), form);
       });
 
       document.addEventListener('click', event => {
@@ -1153,15 +1371,42 @@
         if (!link || event.defaultPrevented || event.button !== 0
             || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        run(() => navigate(link.href, link.dataset.ajax, link));
+        guard(carry => navigate(link.href, link.dataset.ajax, link, carry));
       });
 
-      window.addEventListener('popstate', () => run(() => load(location.href, { method: 'GET' })));
+      window.addEventListener('popstate', () => {
+        const target = cleanUrl(location.href);
+        // Bấm menu (#students, #grades…) hoặc Back/Forward giữa các vị trí neo: trình duyệt chỉ
+        // cuộn trang, nội dung không đổi nên không tải lại (trước đây việc này xóa mọi form).
+        if (target === shownPath) return;
+        if (unsavedDialog.open) {  // đang hỏi về một thao tác khác: bỏ qua lần Back/Forward này
+          history.pushState(null, '', shownPath);
+          return;
+        }
+        if (busy || !dirtyForms().length) {
+          run(async () => {
+            const finalUrl = await load(location.href, { method: 'GET' });
+            if (finalUrl !== null) shownPath = target;
+          });
+          return;
+        }
+        // Có dữ liệu đang nhập dở: đưa địa chỉ về trạng thái đang hiển thị rồi mới hỏi.
+        const href = location.href;
+        history.pushState(null, '', shownPath);
+        guard(carry => navigate(href, null, null, carry));
+      });
+
+      /* Tải lại trang (F5), đóng tab, mở liên kết khác: trình duyệt tự hỏi "Rời khỏi trang?". */
+      window.addEventListener('beforeunload', event => {
+        if (!dirtyForms().length) return;
+        event.preventDefault();
+        event.returnValue = '';
+      });
 
       // ===================================================== Khởi động
       initCharts(readChartData(document));
       decorateNotices();
-      history.replaceState(null, '', cleanUrl(location.href) + location.hash);
+      history.replaceState(null, '', shownPath + location.hash);
     })();
   </script>
 </body>

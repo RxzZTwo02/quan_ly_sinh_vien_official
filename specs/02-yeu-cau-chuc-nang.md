@@ -74,7 +74,8 @@
 | FR-18 | Sau mỗi thao tác ghi, hiển thị thông báo thành công (xanh) hoặc lỗi (đỏ) nổi ở đầu màn hình, nhìn thấy được dù đang cuộn ở bất kỳ đâu. Thông báo thành công tự ẩn sau 4 giây; thông báo lỗi giữ lại tới khi người dùng bấm ×. |
 | FR-19 | Endpoint health cho cả back-end (`/api/health`) và front-end (`/health`). |
 | FR-20 | Khi khởi động, tự tạo database và bảng từ `schema.sql` nếu chưa có. Nếu database rỗng (cả 4 bảng chưa có dòng nào) và `SEED_DATA=yes` (mặc định) thì nạp dữ liệu mẫu từ `seed.sql`; `SEED_DATA=no` thì để trống. Database đã có dữ liệu thì không bị thay đổi và không đọc `seed.sql`. |
-| FR-22 | Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: chỉ các vùng dữ liệu (thẻ KPI, bảng, ô chọn) và biểu đồ được cập nhật; vị trí cuộn được giữ nguyên. Khi thao tác bị lỗi, form giữ nguyên dữ liệu đã nhập để sửa lại. |
+| FR-22 | Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: chỉ các vùng dữ liệu (thẻ KPI, bảng, ô chọn) và biểu đồ được cập nhật; vị trí cuộn được giữ nguyên. Khi thao tác bị lỗi, form giữ nguyên dữ liệu đã nhập để sửa lại. Bấm menu (Sinh viên, Môn học, Bảng điểm, Học phí) chỉ cuộn trang, không làm mất dữ liệu đang nhập. |
+| FR-27 | Khi đang nhập dở ở một form mà người dùng làm thao tác khác (Sửa / Hủy / Tất cả, tìm kiếm, xóa, lưu form khác, Back / Forward), hỏi trước khi làm: **Lưu rồi tiếp tục** / **Không lưu** / **Ở lại nhập tiếp**. Chọn lưu mà dữ liệu chưa đủ hoặc bị từ chối thì dừng lại, chỉ ra chỗ cần sửa và giữ nguyên dữ liệu. F5 hoặc đóng tab khi đang nhập dở thì trình duyệt hỏi "Rời khỏi trang?". Chi tiết: [05](05-giao-dien.md) mục 7. |
 
 ## 7. Yêu cầu phi chức năng
 | Mã | Yêu cầu |
@@ -86,4 +87,4 @@
 | NFR-05 | Khi back-end hoặc MySQL không chạy, front-end vẫn hiển thị trang với thông báo lỗi rõ ràng (HTTP 502/503) thay vì sập. |
 | NFR-06 | Giao diện dùng được trên màn hình điện thoại (CSS responsive). |
 | NFR-07 | Front-end gọi back-end có timeout (mặc định 5 giây, biến `API_TIMEOUT`). |
-| NFR-08 | Trình duyệt tắt JavaScript vẫn dùng được đầy đủ chức năng (form gửi theo cách truyền thống, tải lại trang). |
+| NFR-08 | Trình duyệt tắt JavaScript vẫn dùng được đầy đủ chức năng (form gửi theo cách truyền thống, tải lại trang). Riêng hộp thoại hỏi lưu dữ liệu đang nhập dở (FR-27) cần JavaScript. |
