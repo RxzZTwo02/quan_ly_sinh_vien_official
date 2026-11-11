@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.json.ensure_ascii = False  # trả tiếng Việt có dấu nguyên vẹn
 app.json.sort_keys = False
 
-TOTAL_EXPR = "(attendance*0.1 + midterm*0.3 + final*0.6)"
+TOTAL_EXPR = "ROUND(attendance*0.1 + midterm*0.3 + final*0.6, 2)" # công thức tính điểm tổng kết theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ
 
 
 class ApiError(Exception):
@@ -234,8 +234,8 @@ def delete_subject(subject_id):
 
 # ---------------------------------------------------------------- bảng điểm
 
-GRADE_SELECT = """SELECT g.*, s.student_code, s.full_name, sub.subject_code, sub.subject_name,
-    sub.credits, ROUND(g.attendance*0.1 + g.midterm*0.3 + g.final*0.6, 2) AS total
+GRADE_SELECT = f"""SELECT g.*, s.student_code, s.full_name, sub.subject_code, sub.subject_name,
+    sub.credits, {TOTAL_EXPR} AS total
     FROM grades g JOIN students s ON s.id=g.student_id
     JOIN subjects sub ON sub.id=g.subject_id"""
 
