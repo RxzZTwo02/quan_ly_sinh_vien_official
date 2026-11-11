@@ -698,7 +698,7 @@
             <label>Sinh viên</label>
             <select name="student_id" required>
               <option value="">Chọn sinh viên</option>
-              {% for s in students %}
+              {% for s in all_students %}
               <option value="{{ s.id }}"{% if editing_grade and editing_grade.student_id == s.id %} selected{% endif %}>{{ s.student_code }} — {{ s.full_name }}</option>
               {% endfor %}
             </select>
@@ -804,7 +804,7 @@
             <label>Sinh viên</label>
             <select name="student_id" required>
               <option value="">Chọn sinh viên</option>
-              {% for s in students %}
+              {% for s in all_students %}
               <option value="{{ s.id }}"{% if editing_tuition and editing_tuition.student_id == s.id %} selected{% endif %}>{{ s.student_code }} — {{ s.full_name }}</option>
               {% endfor %}
             </select>

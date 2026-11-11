@@ -107,6 +107,7 @@ def index():
     status = 200
     try:
         students = api.get("/api/students", {"q": keyword})
+        all_students = api.get("/api/students") if keyword else students
         editing, edit_error = load_editing()
         error = error or edit_error
         subjects = api.get("/api/subjects")
@@ -114,12 +115,12 @@ def index():
         tuition = api.get("/api/tuition")
         stats = api.get("/api/stats")
     except ApiError as exc:
-        students, editing, subjects, grades, tuition = [], {}, [], [], []
+        students, all_students, editing, subjects, grades, tuition = [], [], {}, [], [], []
         stats = {"total": 0, "subject_count": 0, "grade_count": 0, "tuition_balance": 0,
                  "chart_data": EMPTY_CHART}
         error = exc.message
         status = 503 if exc.status == 503 else 502
-    return render_template("index.html", students=students, keyword=keyword,
+    return render_template("index.html", students=students, all_students=all_students, keyword=keyword,
         editing=editing.get("edit"), editing_subject=editing.get("edit_subject"),
         editing_grade=editing.get("edit_grade"), editing_tuition=editing.get("edit_tuition"),
         total=stats["total"], subjects=subjects, grades=grades, tuition=tuition,
