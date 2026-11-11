@@ -14,7 +14,7 @@ app.json.ensure_ascii = False  # trả tiếng Việt có dấu nguyên vẹn
 app.json.sort_keys = False
 
 TOTAL_EXPR = "ROUND(attendance*0.1 + midterm*0.3 + final*0.6, 2)" # công thức tính điểm tổng kết theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ
-
+GRADE_LABELS = ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]  # theo điểm tổng kết
 
 class ApiError(Exception):
     def __init__(self, message, status=400):
@@ -424,14 +424,19 @@ def stats():
         cur.execute("""SELECT class_name AS label, COUNT(*) AS amount
             FROM students GROUP BY class_name ORDER BY amount DESC, label LIMIT 8""")
         class_summary = cur.fetchall()
+
+
+
+        by_label = {r["label"]: r["amount"] for r in grade_summary}
+        grade_labels = GRADE_LABELS = ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]
     return jsonify(
         total=counts["total"],
         subject_count=counts["subject_count"],
         grade_count=counts["grade_count"],
         tuition_balance=money["balance"],
         chart_data={
-            "gradeLabels": [r["label"] for r in grade_summary],
-            "gradeValues": [r["amount"] for r in grade_summary],
+            "gradeLabels": grade_labels,
+            "gradeValues": [by_label.get(l, 0) for l in grade_labels],
             "classLabels": [r["label"] for r in class_summary],
             "classValues": [r["amount"] for r in class_summary],
             "tuitionDue": money["due"],
