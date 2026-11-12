@@ -68,7 +68,7 @@ Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), �
 - Nút **Sửa** mở `/?<tham số>=<id>`. Front-end gọi `GET /api/<…>/<id>` rồi điền sẵn form; ô chọn sinh viên / môn học được chọn sẵn.
 - Số tiền và điểm hiển thị gọn nhờ bộ lọc Jinja `plain_number`, ví dụ `8000000` thay vì `8000000.0`.
 - Form có trường ẩn `id`. Dòng đang sửa trong bảng được tô vàng (`tr.is-editing`). Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
-- Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa.
+- Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
 - Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
 - Mỗi lúc chỉ sửa một bản ghi: nút **Sửa** mới thay cho bản ghi đang sửa trước đó.
 
@@ -117,7 +117,8 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 **Khi nào hỏi**
 | Thao tác | Form được xét |
 |---|---|
-| Bấm Sửa / Hủy / Tất cả, tìm kiếm, xóa một dòng | Mọi form nhập dở |
+| Bấm Sửa / Tất cả, tìm kiếm, xóa một dòng | Mọi form nhập dở |
+| Bấm **Hủy** ở form đang sửa | Các form nhập dở ở mục **khác**. Thay đổi của chính form có nút Hủy bị bỏ luôn, không hỏi, vì việc của nút Hủy là bỏ thay đổi và thoát chế độ sửa |
 | Lưu một form | Các form nhập dở **khác**; form đang lưu không tính |
 | Back / Forward làm đổi nội dung | Mọi form nhập dở. Địa chỉ được trả về trạng thái đang hiển thị rồi mới hỏi |
 | F5, đóng tab, mở liên kết khác (`/health`) | Mọi form nhập dở. Trình duyệt hiện hộp thoại "Rời khỏi trang?" của chính nó (sự kiện `beforeunload`) |

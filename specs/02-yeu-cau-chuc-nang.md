@@ -6,7 +6,7 @@
 | FR-01 | Hiển thị danh sách sinh viên, mới nhất trước (sắp xếp `id` giảm dần). |
 | FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở form Bảng điểm và Học phí luôn có đủ sinh viên. |
 | FR-03 | Thêm sinh viên gồm: mã SV, họ tên, lớp, email. |
-| FR-04 | Sửa sinh viên: bấm **Sửa** đưa dữ liệu lên form, tiêu đề form đổi thành "Cập nhật sinh viên"; bấm **Hủy** để thoát chế độ sửa. Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng và nút lưu đổi thành **Lưu thay đổi**; form Môn học, Bảng điểm, Học phí còn hiện dòng nhắc "Đang sửa …". |
+| FR-04 | Sửa sinh viên: bấm **Sửa** đưa dữ liệu lên form, tiêu đề form đổi thành "Cập nhật sinh viên"; bấm **Hủy** để bỏ mọi thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại (áp dụng cho nút Hủy ở cả 4 mục). Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng và nút lưu đổi thành **Lưu thay đổi**; form Môn học, Bảng điểm, Học phí còn hiện dòng nhắc "Đang sửa …". |
 | FR-05 | Xóa sinh viên sau khi người dùng xác nhận; xóa kèm toàn bộ điểm và học phí của sinh viên đó. |
 
 **Quy tắc**
@@ -75,7 +75,7 @@
 | FR-19 | Endpoint health cho cả back-end (`/api/health`) và front-end (`/health`). |
 | FR-20 | Khi khởi động, tự tạo database và bảng từ `schema.sql` nếu chưa có. Nếu database rỗng (cả 4 bảng chưa có dòng nào) và `SEED_DATA=yes` (mặc định) thì nạp dữ liệu mẫu từ `seed.sql`; `SEED_DATA=no` thì để trống. Database đã có dữ liệu thì không bị thay đổi và không đọc `seed.sql`. |
 | FR-22 | Thêm / sửa / xóa / tìm kiếm **không tải lại trang**: chỉ các vùng dữ liệu (thẻ KPI, bảng, ô chọn) và biểu đồ được cập nhật; vị trí cuộn được giữ nguyên. Khi thao tác bị lỗi, form giữ nguyên dữ liệu đã nhập để sửa lại. Bấm menu (Sinh viên, Môn học, Bảng điểm, Học phí) chỉ cuộn trang, không làm mất dữ liệu đang nhập. |
-| FR-27 | Khi đang nhập dở ở một form mà người dùng làm thao tác khác (Sửa / Hủy / Tất cả, tìm kiếm, xóa, lưu form khác, Back / Forward), hỏi trước khi làm: **Lưu rồi tiếp tục** / **Không lưu** / **Ở lại nhập tiếp**. Chọn lưu mà dữ liệu chưa đủ hoặc bị từ chối thì dừng lại, chỉ ra chỗ cần sửa và giữ nguyên dữ liệu. F5 hoặc đóng tab khi đang nhập dở thì trình duyệt hỏi "Rời khỏi trang?". Chi tiết: [05](05-giao-dien.md) mục 7. |
+| FR-27 | Khi đang nhập dở ở một form mà người dùng làm thao tác khác (Sửa / Tất cả, tìm kiếm, xóa, lưu form khác, Hủy ở form khác, Back / Forward), hỏi trước khi làm: **Lưu rồi tiếp tục** / **Không lưu** / **Ở lại nhập tiếp**. Chọn lưu mà dữ liệu chưa đủ hoặc bị từ chối thì dừng lại, chỉ ra chỗ cần sửa và giữ nguyên dữ liệu. Riêng nút **Hủy** của chính form đang sửa thì không hỏi về form đó (FR-04); chỉ hỏi nếu form ở mục khác đang nhập dở. F5 hoặc đóng tab khi đang nhập dở thì trình duyệt hỏi "Rời khỏi trang?". Chi tiết: [05](05-giao-dien.md) mục 7. |
 
 ## 7. Yêu cầu phi chức năng
 | Mã | Yêu cầu |

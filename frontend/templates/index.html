@@ -1305,8 +1305,8 @@
       }
 
       /*
-       * Bọc một thao tác sẽ thay nội dung trang. Nếu có form đang nhập dở (trừ `except`, form
-       * đang được gửi) thì hỏi trước:
+       * Bọc một thao tác sẽ thay nội dung trang. Nếu có form đang nhập dở (trừ `except`: form
+       * đang được gửi, hoặc form có nút Hủy vừa bấm) thì hỏi trước:
        *  - Lưu rồi tiếp tục: lưu lần lượt từng form, lưu được hết mới làm tiếp thao tác;
        *    form nào còn thiếu / sai thông tin hoặc bị back-end từ chối thì dừng lại ở form đó.
        *  - Không lưu: làm tiếp, dữ liệu đang nhập bị bỏ.
@@ -1372,7 +1372,10 @@
         if (!link || event.defaultPrevented || event.button !== 0
             || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        guard(carry => navigate(link.href, link.dataset.ajax, link, carry));
+        // Nút Hủy nằm trong form nhập liệu: việc của nó là bỏ thay đổi của chính form đó và thoát
+        // chế độ sửa, nên không hỏi về form này; chỉ hỏi nếu form ở bảng khác đang nhập dở.
+        const cancelledForm = link.closest('main form[data-entry]');
+        guard(carry => navigate(link.href, link.dataset.ajax, link, carry), cancelledForm);
       });
 
       window.addEventListener('popstate', () => {
