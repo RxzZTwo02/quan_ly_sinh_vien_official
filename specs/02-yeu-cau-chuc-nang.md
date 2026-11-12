@@ -7,7 +7,7 @@
 | FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở form Bảng điểm và Học phí luôn có đủ sinh viên. |
 | FR-03 | Thêm sinh viên gồm: mã SV, họ tên, lớp, email. |
 | FR-04 | Sửa sinh viên: bấm **Sửa** đưa dữ liệu lên form, tiêu đề form đổi thành "Cập nhật sinh viên"; bấm **Hủy** để bỏ mọi thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại (áp dụng cho nút Hủy ở cả 4 mục). Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng và nút lưu đổi thành **Lưu thay đổi**; form Môn học, Bảng điểm, Học phí còn hiện dòng nhắc "Đang sửa …". |
-| FR-05 | Xóa sinh viên sau khi người dùng xác nhận; xóa kèm toàn bộ điểm và học phí của sinh viên đó. |
+| FR-05 | Xóa sinh viên sau khi người dùng xác nhận; xóa kèm toàn bộ điểm và học phí của sinh viên đó. Ở cả 4 mục, việc xác nhận xóa dùng hộp thoại của chương trình (không dùng hộp "localhost:5000 says" của trình duyệt), nêu rõ bản ghi sẽ bị xóa, có hai nút **Xóa** / **Hủy**. Chi tiết: [05](05-giao-dien.md) mục 8. |
 
 **Quy tắc**
 - BR-01: Cả 4 trường bắt buộc; khoảng trắng đầu/cuối bị cắt bỏ.
@@ -87,4 +87,4 @@
 | NFR-05 | Khi back-end hoặc MySQL không chạy, front-end vẫn hiển thị trang với thông báo lỗi rõ ràng (HTTP 502/503) thay vì sập. |
 | NFR-06 | Giao diện dùng được trên màn hình điện thoại (CSS responsive). |
 | NFR-07 | Front-end gọi back-end có timeout (mặc định 5 giây, biến `API_TIMEOUT`). |
-| NFR-08 | Trình duyệt tắt JavaScript vẫn dùng được đầy đủ chức năng (form gửi theo cách truyền thống, tải lại trang). Riêng hộp thoại hỏi lưu dữ liệu đang nhập dở (FR-27) cần JavaScript. |
+| NFR-08 | Trình duyệt tắt JavaScript vẫn dùng được đầy đủ chức năng (form gửi theo cách truyền thống, tải lại trang). Riêng hộp thoại hỏi lưu dữ liệu đang nhập dở (FR-27) và hộp xác nhận xóa cần JavaScript; khi tắt JavaScript, bấm Xóa là xóa ngay. |

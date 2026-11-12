@@ -340,7 +340,7 @@
       cursor: progress;
     }
 
-    /* Hộp thoại hỏi lưu dữ liệu đang nhập dở */
+    /* Hộp thoại của chương trình: hỏi lưu dữ liệu đang nhập dở, xác nhận xóa */
     .confirm-dialog {
       width: min(500px, calc(100% - 32px));
       border: 0;
@@ -366,6 +366,11 @@
     .confirm-dialog ul {
       margin: 8px 0 12px;
       padding-left: 20px;
+    }
+
+    .delete-note {
+      color: #991b1b;
+      font-size: 13px;
     }
 
     .dialog-actions {
@@ -595,7 +600,8 @@
               <td>
                 <a class="button" href="{{ url_for('index', edit=s.id) }}" data-ajax="students">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_student', student_id=s.id) }}"
-                      onsubmit="return confirm('Xóa sinh viên và dữ liệu liên quan?')">
+                      data-confirm-what="sinh viên" data-confirm-target="{{ s.student_code }} — {{ s.full_name }}"
+                      data-confirm-note="Toàn bộ điểm và học phí của sinh viên này cũng bị xóa.">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="danger">Xóa</button>
                 </form>
@@ -662,7 +668,8 @@
               <td>
                 <a class="button" href="{{ url_for('index', edit_subject=sub.id) }}" data-ajax="subjects">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_subject', subject_id=sub.id) }}"
-                      onsubmit="return confirm('{% if sub_grade_count %}Môn này có {{ sub_grade_count }} bản ghi điểm, sẽ bị xóa theo. {% endif %}Xóa môn học?')">
+                      data-confirm-what="môn học" data-confirm-target="{{ sub.subject_code }} — {{ sub.subject_name }}"
+                      data-confirm-note="{% if sub_grade_count %}Môn này có {{ sub_grade_count }} bản ghi điểm, sẽ bị xóa theo.{% endif %}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="danger">Xóa</button>
                 </form>
@@ -768,7 +775,8 @@
               <td>
                 <a class="button" href="{{ url_for('index', edit_grade=g.id) }}" data-ajax="grades">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_grade', grade_id=g.id) }}"
-                      onsubmit="return confirm('Xóa bản ghi điểm này?')">
+                      data-confirm-what="bản ghi điểm"
+                      data-confirm-target="{{ g.student_code }} — {{ g.full_name }}, môn {{ g.subject_code }} — {{ g.subject_name }}, học kỳ {{ g.semester }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="danger">Xóa</button>
                 </form>
@@ -875,7 +883,7 @@
               <td>
                 <a class="button" href="{{ url_for('index', edit_tuition=t.id) }}" data-ajax="tuition">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_tuition', tuition_id=t.id) }}"
-                      onsubmit="return confirm('Xóa bản ghi học phí này?')">
+                      data-confirm-what="bản ghi học phí" data-confirm-target="{{ t.student_code }} — {{ t.full_name }}, học kỳ {{ t.semester }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="danger">Xóa</button>
                 </form>
@@ -907,6 +915,21 @@
         <button value="save" autofocus>Lưu rồi tiếp tục</button>
         <button value="discard" class="danger">Không lưu</button>
         <button value="stay" class="secondary">Ở lại nhập tiếp</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Xác nhận xóa (thay cho hộp confirm của trình duyệt, vốn luôn có dòng "localhost:5000 says") -->
+  <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-title" aria-describedby="delete-desc">
+    <form method="dialog">
+      <h2 id="delete-title">Xác nhận xóa</h2>
+      <div id="delete-desc">
+        <p id="delete-question"></p>
+        <p class="delete-note" id="delete-note"></p>
+      </div>
+      <div class="dialog-actions">
+        <button value="delete" class="danger">Xóa</button>
+        <button value="cancel" class="secondary" autofocus>Hủy</button>
       </div>
     </form>
   </dialog>
@@ -1351,12 +1374,38 @@
         });
       }
 
+      // ===================================================== Xác nhận xóa
+      /*
+       * Form xóa có data-confirm-what (sinh viên / môn học / bản ghi điểm / bản ghi học phí),
+       * data-confirm-target (bản ghi sẽ xóa) và data-confirm-note (dữ liệu bị xóa theo, nếu có).
+       * Trả về true khi người dùng bấm "Xóa"; "Hủy", Esc hoặc đóng hộp thoại = false.
+       */
+      const deleteDialog = document.getElementById('delete-dialog');
+
+      function confirmDelete(form) {
+        const { confirmWhat: what, confirmTarget: target, confirmNote: note } = form.dataset;
+        deleteDialog.querySelector('#delete-title').textContent = `Xác nhận xóa ${what}`;
+        const name = document.createElement('strong');
+        name.textContent = target;
+        deleteDialog.querySelector('#delete-question').replaceChildren(`Bạn có chắc muốn xóa ${what} `, name, '?');
+        deleteDialog.querySelector('#delete-note').textContent =
+          `${note ? note + ' ' : ''}Thao tác này không thể hoàn tác.`;
+        deleteDialog.returnValue = 'cancel';
+        deleteDialog.showModal();  // con trỏ mặc định ở nút "Hủy" để Enter không xóa nhầm
+        return new Promise(resolve => deleteDialog.addEventListener(
+          'close', () => resolve(deleteDialog.returnValue === 'delete'), { once: true }));
+      }
+
       document.addEventListener('submit', event => {
         const form = event.target;
-        // defaultPrevented: người dùng bấm "Hủy" ở hộp xác nhận xóa (onsubmit="return confirm(...)").
         if (event.defaultPrevented || !form.closest('main')) return;
         event.preventDefault();
-        if (busy) return;
+        if (busy || deleteDialog.open || unsavedDialog.open) return;
+
+        if (form.dataset.confirmWhat) {
+          confirmDelete(form).then(ok => { if (ok) guard(carry => submitForm(form, carry), form); });
+          return;
+        }
 
         if (form.method.toLowerCase() === 'get') {
           const url = new URL(form.action);
@@ -1383,7 +1432,7 @@
         // Bấm menu (#students, #grades…) hoặc Back/Forward giữa các vị trí neo: trình duyệt chỉ
         // cuộn trang, nội dung không đổi nên không tải lại (trước đây việc này xóa mọi form).
         if (target === shownPath) return;
-        if (unsavedDialog.open) {  // đang hỏi về một thao tác khác: bỏ qua lần Back/Forward này
+        if (unsavedDialog.open || deleteDialog.open) {  // đang hỏi về một thao tác khác: bỏ qua lần Back/Forward này
           history.pushState(null, '', shownPath);
           return;
         }

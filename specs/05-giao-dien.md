@@ -84,7 +84,7 @@ Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc 
 Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía server **không đổi**: vẫn là Post/Redirect/Get, nên khi tắt JavaScript trang hoạt động như cũ (tải lại trang).
 
 **Luồng xử lý**
-1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy ở cả 4 mục; Tất cả). Giá trị `data-ajax` là id của mục cần cuộn tới và đặt con trỏ sau khi tải (`students`, `subjects`, `grades`, `tuition`), hoặc `search`. Nếu người dùng bấm Hủy ở hộp xác nhận xóa (`onsubmit="return confirm(...)"`) thì không gửi gì. Nếu đang có form nhập dở thì hỏi trước (mục 7).
+1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy ở cả 4 mục; Tất cả). Giá trị `data-ajax` là id của mục cần cuộn tới và đặt con trỏ sau khi tải (`students`, `subjects`, `grades`, `tuition`), hoặc `search`. Form xóa thì hiện hộp xác nhận xóa trước (mục 8); người dùng bấm **Hủy** thì không gửi gì. Nếu đang có form nhập dở thì hỏi trước (mục 7).
 2. Gửi bằng `fetch` (form POST gửi `FormData` kèm `csrf_token`; form GET và link thì gửi GET). Với POST, `fetch` tự đi theo redirect về `/?message=…` hoặc `/?error=…`.
 3. Phân tích HTML trả về bằng `DOMParser`, rồi:
    - luôn thay vùng thông báo `#notices`;
@@ -124,7 +124,7 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 | F5, đóng tab, mở liên kết khác (`/health`) | Mọi form nhập dở. Trình duyệt hiện hộp thoại "Rời khỏi trang?" của chính nó (sự kiện `beforeunload`) |
 | Bấm menu (`#neo`) | Không hỏi, vì chỉ cuộn trang và không mất gì |
 
-Với thao tác xóa, hộp xác nhận xóa (`confirm`) vẫn hiện trước như cũ.
+Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **Hủy** ở đó thì dừng luôn, không hỏi gì thêm.
 
 **Hộp thoại** (`<dialog id="unsaved-dialog">`, mở bằng `showModal()`)
 - Liệt kê từng mục đang nhập dở, ví dụ: **Môn học** (đang thêm mới): Mã môn, Tên môn học.
@@ -135,3 +135,20 @@ Với thao tác xóa, hộp xác nhận xóa (`confirm`) vẫn hiện trước n
 | **Lưu rồi tiếp tục** (con trỏ mặc định ở nút này) | 1. Kiểm tra hợp lệ **tất cả** các form trước (`checkValidity`). Có form còn thiếu hoặc sai thì không lưu form nào: hiện thông báo "Chưa lưu được mục …", rồi trình duyệt chỉ ra ô cần sửa (`reportValidity`).<br>2. Gửi lần lượt từng form (`fetchPage`, **chưa** thay trang, nên các form khác vẫn giữ dữ liệu).<br>3. Lưu được hết thì làm tiếp thao tác ban đầu. Thông báo của các lần lưu hiện kèm phía trên thông báo của thao tác.<br>4. Một form bị back-end từ chối (ví dụ trùng mã) thì dừng ở form đó và hiện lỗi. Nếu trước đó đã lưu được form nào, trang được tải lại để bảng hiện dữ liệu mới, còn các form chưa lưu được điền lại bản nháp (`refreshKeeping` / `restoreDraft`), giữ nguyên chế độ sửa của chúng. |
 | **Không lưu** | Làm tiếp thao tác; dữ liệu đang nhập bị bỏ. |
 | **Ở lại nhập tiếp** (hoặc phím Esc) | Không làm gì; cuộn tới và đặt con trỏ vào ô đang nhập dở. |
+
+## 8. Xác nhận xóa
+Bấm **Xóa** ở bất kỳ bảng nào sẽ hiện hộp thoại của chương trình (`<dialog id="delete-dialog">`, cùng kiểu với mục 7). Chương trình không dùng hộp `confirm()` của trình duyệt, vì hộp đó luôn có dòng tiêu đề "localhost:5000 says" mà trang web không đổi được.
+
+| Bảng | Tiêu đề | Câu hỏi | Ghi chú (chữ đỏ) |
+|---|---|---|---|
+| Sinh viên | Xác nhận xóa sinh viên | Bạn có chắc muốn xóa sinh viên **<mã> — <họ tên>**? | Toàn bộ điểm và học phí của sinh viên này cũng bị xóa. Thao tác này không thể hoàn tác. |
+| Môn học | Xác nhận xóa môn học | Bạn có chắc muốn xóa môn học **<mã môn> — <tên môn>**? | Môn này có N bản ghi điểm, sẽ bị xóa theo. (chỉ khi môn đã có điểm) Thao tác này không thể hoàn tác. |
+| Bảng điểm | Xác nhận xóa bản ghi điểm | Bạn có chắc muốn xóa bản ghi điểm **<mã SV> — <họ tên>, môn <mã môn> — <tên môn>, học kỳ <học kỳ>**? | Thao tác này không thể hoàn tác. |
+| Học phí | Xác nhận xóa bản ghi học phí | Bạn có chắc muốn xóa bản ghi học phí **<mã SV> — <họ tên>, học kỳ <học kỳ>**? | Thao tác này không thể hoàn tác. |
+
+- Hai nút: **Xóa** (đỏ) gửi yêu cầu xóa; **Hủy** (xám), phím Esc hoặc đóng hộp thoại thì không làm gì.
+- Con trỏ mặc định ở nút **Hủy**, nên lỡ nhấn Enter cũng không xóa nhầm.
+- Nội dung lấy từ các thuộc tính `data-confirm-what`, `data-confirm-target`, `data-confirm-note` của form xóa. Script đưa vào hộp thoại dưới dạng chữ thuần (`textContent`), nên tên có dấu nháy hay ký tự đặc biệt vẫn hiện đúng.
+- Bấm **Xóa** xong, nếu có form ở mục khác đang nhập dở thì hộp thoại ở mục 7 hiện tiếp.
+- Đang mở hộp xác nhận mà bấm Back / Forward thì bị bỏ qua, giống mục 7.
+- Hộp xác nhận cần JavaScript. Khi tắt JavaScript, bấm Xóa là xóa ngay (NFR-08).

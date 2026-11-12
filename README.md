@@ -28,7 +28,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 
 **Cách thao tác**
 - **Sửa**: bấm **Sửa** ở một dòng. Dữ liệu được đưa lên form, dòng đó được tô vàng và nút lưu đổi thành **Lưu thay đổi**. Bấm **Hủy** để bỏ các thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại.
-- **Xóa**: luôn hỏi xác nhận trước khi xóa.
+- **Xóa**: luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
 - **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường.
