@@ -31,7 +31,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Xóa**: luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
-- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường.
+- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường; riêng nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
 - **Không mất dữ liệu đang nhập dở**:
   - Bấm menu (Sinh viên, Môn học, Bảng điểm, Học phí) chỉ cuộn trang, dữ liệu đang gõ vẫn còn.
   - Đang nhập dở mà bấm Sửa / Tất cả, tìm kiếm, xóa, lưu hoặc Hủy ở mục khác hay nhấn Back, chương trình hỏi trước:
@@ -68,7 +68,7 @@ backend/                    REST API (cổng 5001)
 frontend/                   giao diện web (cổng 5000)
   app.py                    route giao diện, CSRF
   api_client.py             gọi back-end bằng requests
-  templates/index.html      trang duy nhất: form, bảng, biểu đồ, script cập nhật tại chỗ
+  templates/index.html      trang duy nhất: form, bảng, biểu đồ, hộp thoại, script cập nhật tại chỗ
   requirements.txt · .env.example · Dockerfile
 specs/                      tài liệu đặc tả hệ thống
 compose.yaml                chạy mysql + backend + frontend bằng Docker

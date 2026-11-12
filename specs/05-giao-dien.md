@@ -3,7 +3,7 @@
 - Địa chỉ mặc định: `http://127.0.0.1:5000`
 - Mã nguồn: `frontend/app.py`, `frontend/api_client.py`, `frontend/templates/index.html`.
 - Ứng dụng **một trang**: mọi chức năng nằm ở `/`; form POST xong chuyển hướng về `/` (Post/Redirect/Get).
-- Trên trình duyệt có JavaScript, form và các nút Sửa / Hủy / Tất cả được gửi bằng `fetch` và **cập nhật trang tại chỗ, không tải lại** (xem mục 6). Đang nhập dở mà làm thao tác khác thì được hỏi lưu trước (mục 7).
+- Trên trình duyệt có JavaScript, form và các nút Sửa / Hủy / Tất cả được gửi bằng `fetch` và **cập nhật trang tại chỗ, không tải lại** (xem mục 6). Đang nhập dở mà làm thao tác khác thì được hỏi lưu trước (mục 7). Bấm Hủy ở form đang sửa thì bỏ thay đổi ngay, không hỏi. Bấm Xóa thì hiện hộp xác nhận của chương trình (mục 8).
 
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
@@ -44,7 +44,7 @@
 6. **Sinh viên** (`#students`)
    - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`); khi sửa có nút **Hủy**.
    - Ô tìm kiếm + nút **Tất cả**.
-   - Bảng: Mã SV · Họ tên · Lớp · Email · Thao tác (**Sửa**, **Xóa** có hộp xác nhận).
+   - Bảng: Mã SV · Họ tên · Lớp · Email · Thao tác (**Sửa**, **Xóa** có hộp xác nhận, mục 8).
 7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**. Bảng Mã môn · Tên môn · Tín chỉ · Thao tác (**Sửa**, **Xóa** có hộp xác nhận; nếu môn đã có điểm, hộp xác nhận nêu số bản ghi điểm sẽ bị xóa theo).
 8. **Bảng điểm** (`#grades`)
    - Form: chọn sinh viên (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
