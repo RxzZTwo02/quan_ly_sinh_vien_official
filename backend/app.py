@@ -1,5 +1,7 @@
 """Back-end: REST API JSON cho hệ thống quản lý sinh viên (MySQL)."""
+import os
 import secrets
+import socket
 from datetime import date
 
 import pymysql
@@ -447,7 +449,26 @@ def stats():
     )
 
 
+# ---------------------------------------------------------------- khởi động
+
+def ensure_port_free(host, port):
+    """Windows cho 2 process cùng nghe 1 cổng mà không báo lỗi (Waitress bật SO_REUSEADDR):
+    thử bind độc quyền trước khi serve(), cổng đã có process khác dùng thì dừng."""
+    if os.name != "nt":  # Linux/Docker: chạy trùng cổng đã tự báo lỗi
+        return
+    s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+    try:
+        s.bind((host, port))
+    except OSError:
+        raise SystemExit(f"Cổng {port} đang được dùng (có thể backend/app.py đang chạy ở cửa sổ khác). "
+                         "Hãy tắt nó trước.")
+    finally:
+        s.close()
+
+
 if __name__ == "__main__":
+    ensure_port_free(config.API_HOST, config.API_PORT)  # trước init_database: không đụng tới DB
     init_database()
     print(f"Back-end API: http://{config.API_HOST}:{config.API_PORT}  "
           f"(MySQL {config.DB_USER}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME})", flush=True)

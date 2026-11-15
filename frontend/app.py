@@ -1,6 +1,7 @@
 """Front-end: giao diện web, gọi REST API của back-end."""
 import os
 import secrets
+import socket
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -178,6 +179,23 @@ def health():
         return {"frontend": "ok", "backend": {"status": "error", "detail": exc.message}}, 503
 
 
+def ensure_port_free(host, port):
+    """Windows cho 2 process cùng nghe 1 cổng mà không báo lỗi (Waitress bật SO_REUSEADDR):
+    thử bind độc quyền trước khi serve(), cổng đã có process khác dùng thì dừng."""
+    if os.name != "nt":  # Linux/Docker: chạy trùng cổng đã tự báo lỗi
+        return
+    s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+    try:
+        s.bind((host, port))
+    except OSError:
+        raise SystemExit(f"Cổng {port} đang được dùng (có thể frontend/app.py đang chạy ở cửa sổ khác). "
+                         "Hãy tắt nó trước.")
+    finally:
+        s.close()
+
+
 if __name__ == "__main__":
+    ensure_port_free(FRONTEND_HOST, FRONTEND_PORT)
     print(f"Front-end: http://{FRONTEND_HOST}:{FRONTEND_PORT}  (back-end: {api.BACKEND_URL})", flush=True)
     serve(app, host=FRONTEND_HOST, port=FRONTEND_PORT)
