@@ -50,6 +50,17 @@ def text(data, key, default=""):
     return "" if value is None else str(value).strip()
 
 
+def keyword_filter(*columns):
+    """Tham số ?q=: trả về (" WHERE c1 LIKE %s OR c2 LIKE %s ...", tham số) để khớp một phần
+    trên các cột đã cho. Không có q (hoặc chỉ toàn khoảng trắng) thì ("", None): không lọc
+    (None để pymysql không thay %s trong câu SQL)."""
+    keyword = request.args.get("q", "").strip()
+    if not keyword:
+        return "", None
+    like = f"%{keyword}%"
+    return " WHERE " + " OR ".join(f"{col} LIKE %s" for col in columns), (like,) * len(columns)
+
+
 # ---------------------------------------------------------------- xử lý chung
 
 @app.before_request
@@ -182,8 +193,9 @@ def validate_subject(data):
 
 @app.get("/api/subjects")
 def list_subjects():
+    where, params = keyword_filter("subject_code", "subject_name")
     with transaction() as cur:
-        cur.execute("SELECT * FROM subjects ORDER BY subject_name")
+        cur.execute("SELECT * FROM subjects" + where + " ORDER BY subject_name", params)
         return jsonify(rows(cur))
 
 
@@ -271,8 +283,11 @@ def grade_integrity_error(exc):
 
 @app.get("/api/grades")
 def list_grades():
+    where, params = keyword_filter("s.student_code", "s.full_name", "sub.subject_code",
+                                   "sub.subject_name", "g.semester")
     with transaction() as cur:
-        cur.execute(GRADE_SELECT + " ORDER BY g.semester DESC, s.student_code, sub.subject_name")
+        cur.execute(GRADE_SELECT + where + " ORDER BY g.semester DESC, s.student_code, sub.subject_name",
+                    params)
         return jsonify(rows(cur))
 
 
@@ -354,8 +369,9 @@ def tuition_integrity_error(exc):
 
 @app.get("/api/tuition")
 def list_tuition():
+    where, params = keyword_filter("s.student_code", "s.full_name", "t.semester")
     with transaction() as cur:
-        cur.execute(TUITION_SELECT + " ORDER BY t.semester DESC, s.student_code")
+        cur.execute(TUITION_SELECT + where + " ORDER BY t.semester DESC, s.student_code", params)
         return jsonify(rows(cur))
 
 

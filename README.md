@@ -381,11 +381,11 @@ Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](
 | GET | `/api/health` | Trạng thái API và kết nối DB (không cần API key) |
 | GET · POST | `/api/students` | Danh sách sinh viên (`?q=` để tìm theo mã / họ tên / lớp) · thêm sinh viên |
 | GET · PUT · DELETE | `/api/students/<id>` | Xem · sửa · xóa sinh viên (xóa kèm điểm, học phí) |
-| GET · POST | `/api/subjects` | Danh sách · thêm môn học |
+| GET · POST | `/api/subjects` | Danh sách (`?q=` để tìm theo mã / tên môn) · thêm môn học |
 | GET · PUT · DELETE | `/api/subjects/<id>` | Xem · sửa · xóa môn học (xóa kèm điểm của môn) |
-| GET · POST | `/api/grades` | Bảng điểm · lưu điểm (trùng sinh viên + môn + học kỳ thì cập nhật) |
+| GET · POST | `/api/grades` | Bảng điểm (`?q=` để tìm theo mã SV / họ tên / mã, tên môn / học kỳ) · lưu điểm (trùng sinh viên + môn + học kỳ thì cập nhật) |
 | GET · PUT · DELETE | `/api/grades/<id>` | Xem · sửa · xóa bản ghi điểm |
-| GET · POST | `/api/tuition` | Học phí · lưu học phí (trùng sinh viên + học kỳ thì cập nhật) |
+| GET · POST | `/api/tuition` | Học phí (`?q=` để tìm theo mã SV / họ tên / học kỳ) · lưu học phí (trùng sinh viên + học kỳ thì cập nhật) |
 | GET · PUT · DELETE | `/api/tuition/<id>` | Xem · sửa · xóa bản ghi học phí |
 | GET | `/api/stats` | Số liệu cho thẻ KPI và biểu đồ |
 

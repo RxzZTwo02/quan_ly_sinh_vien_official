@@ -64,8 +64,8 @@ Xóa sinh viên và (cascade) điểm, học phí. `200 "Đã xóa sinh viên v�
 
 ---
 
-### `GET /api/subjects`
-Danh sách môn học, sắp xếp theo `subject_name`.
+### `GET /api/subjects?q=<từ khóa>`
+Danh sách môn học, sắp xếp theo `subject_name`. `q` (tùy chọn) khớp `LIKE %q%` trên `subject_code`, `subject_name`; không có `q` thì trả đủ.
 ```json
 [{"id": 2, "subject_code": "INT1002", "subject_name": "Cấu trúc dữ liệu và giải thuật", "credits": 4}]
 ```
@@ -97,8 +97,8 @@ Xóa môn học và (cascade) mọi bản ghi điểm của môn đó. `deleted_
 
 ---
 
-### `GET /api/grades`
-Bảng điểm kèm thông tin sinh viên, môn học và điểm tổng kết. Sắp xếp `semester DESC, student_code, subject_name`.
+### `GET /api/grades?q=<từ khóa>`
+Bảng điểm kèm thông tin sinh viên, môn học và điểm tổng kết. Sắp xếp `semester DESC, student_code, subject_name`. `q` (tùy chọn) khớp `LIKE %q%` trên mã SV, họ tên, mã môn, tên môn, học kỳ; không có `q` thì trả đủ.
 ```json
 [{
   "id": 3, "student_id": 1, "subject_id": 3, "semester": "HK2-2025",
@@ -134,8 +134,8 @@ Sửa bản ghi điểm theo `id`; body và kiểm tra giống `POST /api/grades
 
 ---
 
-### `GET /api/tuition`
-Học phí kèm thông tin sinh viên và số còn nợ. Sắp xếp `semester DESC, student_code`.
+### `GET /api/tuition?q=<từ khóa>`
+Học phí kèm thông tin sinh viên và số còn nợ. Sắp xếp `semester DESC, student_code`. `q` (tùy chọn) khớp `LIKE %q%` trên mã SV, họ tên, học kỳ; không có `q` thì trả đủ.
 ```json
 [{
   "id": 5, "student_id": 5, "semester": "HK2-2025",
