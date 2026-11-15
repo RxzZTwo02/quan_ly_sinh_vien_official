@@ -672,7 +672,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for s in students %}
+            {% for s in students | editing_first(editing) %}
             <tr data-id="{{ s.id }}" tabindex="0"{% if editing and editing.id == s.id %} class="is-editing"{% endif %}>
               <td>{{ s.student_code }}</td>
               <td>{{ s.full_name }}</td>
@@ -755,7 +755,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for sub in subjects %}
+            {% for sub in subjects | editing_first(editing_subject) %}
             {% set sub_grade_count = all_grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
             <tr data-id="{{ sub.id }}" tabindex="0"{% if editing_subject and editing_subject.id == sub.id %} class="is-editing"{% endif %}>
               <td>{{ sub.subject_code }}</td>
@@ -873,7 +873,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for g in grades %}
+            {% for g in grades | editing_first(editing_grade) %}
             <tr data-id="{{ g.id }}" tabindex="0"{% if editing_grade and editing_grade.id == g.id %} class="is-editing"{% endif %}>
               <td>{{ g.student_code }}</td>
               <td>{{ g.full_name }}</td>
@@ -990,7 +990,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for t in tuition %}
+            {% for t in tuition | editing_first(editing_tuition) %}
             <tr data-id="{{ t.id }}" tabindex="0"{% if editing_tuition and editing_tuition.id == t.id %} class="is-editing"{% endif %}>
               <td>{{ t.student_code }}</td>
               <td>{{ t.full_name }}</td>

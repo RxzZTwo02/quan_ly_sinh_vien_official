@@ -100,6 +100,18 @@ def plain_number(value):
 
 app.jinja_env.filters["plain_number"] = plain_number
 
+
+def editing_first(rows, record):
+    """Bộ lọc Jinja (FR-33): dòng của bản ghi đang sửa lên đầu bảng, các dòng khác giữ thứ tự cũ
+    (sắp xếp ổn định). Không sửa gì thì giữ nguyên; lưu xong hoặc Hủy thì URL không còn tham số
+    sửa, nên dòng tự về vị trí cũ."""
+    if not record:
+        return rows
+    return sorted(rows, key=lambda row: row["id"] != record["id"])
+
+
+app.jinja_env.filters["editing_first"] = editing_first
+
 # Tham số URL -> (endpoint API, thông báo khi không tìm thấy) cho từng chế độ sửa.
 EDIT_PARAMS = {
     "edit": ("students", "Không tìm thấy sinh viên cần sửa."),

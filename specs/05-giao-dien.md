@@ -83,7 +83,8 @@ Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), �
 - Chọn dòng rồi bấm **Sửa** ở hàng nút: mở `/?<tham số>=<id>`. Front-end gọi `GET /api/<…>/<id>` rồi điền sẵn form; ô chọn sinh viên / môn học được chọn sẵn.
 - Số tiền và điểm hiển thị gọn nhờ bộ lọc Jinja `plain_number`, ví dụ `8000000` thay vì `8000000.0`.
 - Form có trường ẩn `id` và thuộc tính `data-editing-label` (mã, tên của bản ghi đang sửa, dùng trong hộp thoại ở mục 7). Dòng đang sửa trong bảng được tô vàng, có thêm vạch cam bên trái (`tr.is-editing`) để phân biệt với dòng đang chọn. Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
-- Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
+- Dòng đang sửa được đưa lên **đầu bảng** (FR-33), kể cả khi bảng đang hiện kết quả tìm kiếm; các dòng khác giữ thứ tự cũ. Việc này làm ở phía server bằng bộ lọc Jinja `editing_first` (sắp xếp ổn định) trên vòng lặp của 4 bảng, không áp dụng cho ô chọn sinh viên / môn học, và vẫn đúng khi tắt JavaScript.
+- Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa; địa chỉ không còn tham số sửa nên dòng về lại vị trí cũ và hết tô vàng. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
 - Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
 - Mỗi lúc chỉ sửa một bản ghi trên cả trang, vì link Sửa chỉ mang một tham số sửa. Đang sửa mà bấm **Sửa** bản ghi khác (cùng mục hay mục khác) thì luôn hỏi trước "Chưa hoàn tất sửa thông tin", kể cả khi chưa đổi gì (mục 7).
 - Khi sửa, nút **Làm mới** bị ẩn; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy**. Sửa / Xóa bên phải vẫn giữ.
