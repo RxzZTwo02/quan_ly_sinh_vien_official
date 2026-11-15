@@ -230,7 +230,18 @@
     }
 
     form .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
       margin-top: 14px;
+    }
+
+    /* Làm mới: nút viền, khác nút Hủy (xám) để tránh bấm nhầm */
+    .outline {
+      background: white;
+      color: #334155;
+      box-shadow: inset 0 0 0 1px #cbd5e1;
     }
 
     /* Chế độ sửa: dòng nhắc trên form và tô sáng dòng đang sửa trong bảng */
@@ -568,6 +579,7 @@
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing else "Thêm sinh viên" }}</button>
           {% if editing %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="students">Hủy</a>{% endif %}
+          {% if not editing %}<button type="reset" class="outline">Làm mới</button>{% endif %}
         </div>
       </form>
 
@@ -646,6 +658,7 @@
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing_subject else "Thêm môn học" }}</button>
           {% if editing_subject %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="subjects">Hủy</a>{% endif %}
+          {% if not editing_subject %}<button type="reset" class="outline">Làm mới</button>{% endif %}
         </div>
       </form>
       <div class="table-wrap">
@@ -744,6 +757,7 @@
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing_grade else "Lưu điểm" }}</button>
           {% if editing_grade %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="grades">Hủy</a>{% endif %}
+          {% if not editing_grade %}<button type="reset" class="outline">Làm mới</button>{% endif %}
         </div>
       </form>
       <div class="table-wrap">
@@ -846,6 +860,7 @@
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing_tuition else "Lưu học phí" }}</button>
           {% if editing_tuition %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="tuition">Hủy</a>{% endif %}
+          {% if not editing_tuition %}<button type="reset" class="outline">Làm mới</button>{% endif %}
         </div>
       </form>
       <div class="table-wrap">
@@ -1242,8 +1257,10 @@
       /*
        * Mọi thao tác thành công đều thay toàn bộ các vùng dữ liệu, nên dữ liệu đang gõ dở ở
        * các form khác sẽ mất. Trước khi điều đó xảy ra, hỏi người dùng có muốn lưu trước không.
-       * "Đang nhập dở" = một trong 4 form nhập liệu (data-entry) có ô khác giá trị lúc trang
-       * được tạo (thuộc tính value / selected trong HTML, tức là defaultValue / defaultSelected).
+       * "Đang nhập dở" = một trong 4 form nhập liệu (data-entry) có ô khác giá trị lúc trang được
+       * tạo (thuộc tính value / selected trong HTML, tức là defaultValue / defaultSelected).
+       * Form đang thêm mới: ô để trống không tính (không có gì để mất, vd sau khi bấm Làm mới).
+       * Form đang sửa: xóa trắng một ô cũng là một thay đổi so với bản ghi.
        */
       const unsavedDialog = document.getElementById('unsaved-dialog');
       const entryForms = () => [...document.querySelectorAll('main form[data-entry]')];
@@ -1253,12 +1270,15 @@
         && (el.tagName === 'SELECT' || (el.tagName === 'INPUT' && el.type !== 'hidden')));
 
       function isChanged(el) {
+        // badInput: ô số đang chứa ký tự không hợp lệ (value rỗng nhưng người dùng đã gõ).
+        if (el.validity.badInput) return true;
+        // Đang thêm mới: ô trống (gõ rồi xóa hết, hoặc vừa bấm Làm mới) không có dữ liệu để mất.
+        if (!el.value.trim() && !el.form.elements.id?.value) return false;
         if (el.tagName === 'SELECT') {
           const initial = [...el.options].find(o => o.defaultSelected) ?? el.options[0];
           return el.value !== (initial ? initial.value : '');
         }
-        // badInput: ô số đang chứa ký tự không hợp lệ (value rỗng nhưng người dùng đã gõ).
-        return el.validity.badInput || el.value.trim() !== el.defaultValue.trim();
+        return el.value.trim() !== el.defaultValue.trim();
       }
 
       const changedFields = form => fieldsOf(form).filter(isChanged);
@@ -1395,6 +1415,17 @@
         return new Promise(resolve => deleteDialog.addEventListener(
           'close', () => resolve(deleteDialog.returnValue === 'delete'), { once: true }));
       }
+
+      // ===================================================== Làm mới
+      /* Làm mới (chỉ có khi đang thêm mới; khi sửa chỉ có Lưu thay đổi và Hủy): làm trống mọi ô của form. */
+      document.addEventListener('reset', event => {
+        const form = event.target;
+        if (!form.matches('main form[data-entry]')) return;
+        event.preventDefault();  // không trả về giá trị ban đầu như nút reset mặc định
+        const fields = fieldsOf(form);
+        fields.forEach(el => { el.value = ''; });
+        fields[0]?.focus();
+      });
 
       document.addEventListener('submit', event => {
         const form = event.target;

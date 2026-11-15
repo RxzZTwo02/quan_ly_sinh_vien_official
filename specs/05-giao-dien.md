@@ -71,6 +71,18 @@ Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), �
 - Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
 - Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
 - Mỗi lúc chỉ sửa một bản ghi: nút **Sửa** mới thay cho bản ghi đang sửa trước đó.
+- Khi sửa, nút **Làm mới** bị ẩn; hàng nút chỉ còn **Lưu thay đổi** và **Hủy**.
+
+### Hàng nút (chung cho 4 mục)
+Hàng nút dưới mỗi form, từ trái sang:
+
+| Nút | Khi nào hiện | Tác dụng |
+|---|---|---|
+| **Thêm …** / **Lưu điểm** / **Lưu học phí** / **Lưu thay đổi** | Luôn | Gửi form |
+| **Hủy** | Đang sửa | Bỏ thay đổi, thoát chế độ sửa, form trở về thêm mới |
+| **Làm mới** | Chỉ khi **thêm mới** (đang sửa thì ẩn) | Làm trống mọi ô của form trước khi lưu thành dữ liệu chính thức, kể cả ô có giá trị mặc định (tín chỉ 3, điểm 8, đã đóng 0) và ô chọn. Không hỏi lại. Con trỏ về ô đầu tiên. |
+
+Khi tắt JavaScript, **Làm mới** là nút `type="reset"` thông thường: đưa form về giá trị lúc mở trang, tức là trống trừ các giá trị mặc định.
 
 ## 4. Kiểm tra phía trình duyệt
 Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc ở back-end. Đây chỉ là hỗ trợ người dùng; **back-end mới là nơi kiểm tra chính thức**.
@@ -112,7 +124,9 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 **Form "đang nhập dở"**
 - Là một trong 4 form nhập liệu (thuộc tính `data-entry` = tên mục, `data-edit-param` = tham số sửa của mục).
 - Form đó có ít nhất một ô khác giá trị lúc trang được tạo, tức là `defaultValue` / `defaultSelected` lấy từ HTML. So sánh sau khi bỏ khoảng trắng đầu/cuối; ô số chứa ký tự không hợp lệ (`validity.badInput`) cũng tính là đã đổi.
-- Vì so với giá trị ban đầu, bấm **Sửa** chỉ để xem mà không đổi gì thì **không** bị hỏi; gõ rồi xóa hết cũng vậy.
+- Form **đang thêm mới**: ô để trống (hoặc ô chọn ở "Chọn …") **không** tính, vì không có dữ liệu để mất. Vì vậy gõ rồi xóa hết, hoặc vừa bấm **Làm mới**, thì không bị hỏi. Gõ lại bất kỳ ô nào thì form lại là "đang nhập dở".
+- Form **đang sửa**: xóa trắng một ô cũng tính là thay đổi so với bản ghi.
+- Vì so với giá trị ban đầu, bấm **Sửa** chỉ để xem mà không đổi gì thì **không** bị hỏi.
 
 **Khi nào hỏi**
 | Thao tác | Form được xét |
@@ -124,7 +138,7 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 | F5, đóng tab, mở liên kết khác (`/health`) | Mọi form nhập dở. Trình duyệt hiện hộp thoại "Rời khỏi trang?" của chính nó (sự kiện `beforeunload`) |
 | Bấm menu (`#neo`) | Không hỏi, vì chỉ cuộn trang và không mất gì |
 
-Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **Hủy** ở đó thì dừng luôn, không hỏi gì thêm.
+Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **Hủy** ở đó thì dừng luôn, không hỏi gì thêm. Bấm **Làm mới** không làm thay trang nên không hỏi.
 
 **Hộp thoại** (`<dialog id="unsaved-dialog">`, mở bằng `showModal()`)
 - Liệt kê từng mục đang nhập dở, ví dụ: **Môn học** (đang thêm mới): Mã môn, Tên môn học.
