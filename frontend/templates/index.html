@@ -601,7 +601,7 @@
     <!-- Sinh viên -->
     <section class="card" id="students">
       <h2>{{ "Cập nhật sinh viên" if editing else "Thêm sinh viên" }}</h2>
-      <form method="post" action="{{ url_for('save_student') }}" data-entry="Sinh viên" data-edit-param="edit">
+      <form method="post" action="{{ url_for('save_student') }}" data-entry="Sinh viên" data-edit-param="edit"{% if editing %} data-editing-label="{{ editing.student_code }} — {{ editing.full_name }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing['id'] if editing else '' }}">
         <div class="grid">
@@ -688,7 +688,7 @@
     <!-- Môn học -->
     <section class="card" id="subjects">
       <h2>Quản lý môn học</h2>
-      <form method="post" action="{{ url_for('save_subject') }}" data-entry="Môn học" data-edit-param="edit_subject">
+      <form method="post" action="{{ url_for('save_subject') }}" data-entry="Môn học" data-edit-param="edit_subject"{% if editing_subject %} data-editing-label="{{ editing_subject.subject_code }} — {{ editing_subject.subject_name }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing_subject.id if editing_subject else '' }}">
         {% if editing_subject %}
@@ -767,7 +767,7 @@
         Điểm tổng kết minh họa: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ.
         Điều chỉnh tỷ trọng theo quy định của trường.
       </p>
-      <form method="post" action="{{ url_for('save_grade') }}" data-entry="Bảng điểm" data-edit-param="edit_grade">
+      <form method="post" action="{{ url_for('save_grade') }}" data-entry="Bảng điểm" data-edit-param="edit_grade"{% if editing_grade %} data-editing-label="{{ editing_grade.student_code }} — {{ editing_grade.full_name }}, môn {{ editing_grade.subject_code }}, học kỳ {{ editing_grade.semester }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing_grade.id if editing_grade else '' }}">
         {% if editing_grade %}
@@ -881,7 +881,7 @@
         Mỗi sinh viên có một bản ghi học phí cho mỗi học kỳ.
         Có thể cập nhật lại số phải đóng và số đã đóng.
       </p>
-      <form method="post" action="{{ url_for('save_tuition') }}" data-entry="Học phí" data-edit-param="edit_tuition">
+      <form method="post" action="{{ url_for('save_tuition') }}" data-entry="Học phí" data-edit-param="edit_tuition"{% if editing_tuition %} data-editing-label="{{ editing_tuition.student_code }} — {{ editing_tuition.full_name }}, học kỳ {{ editing_tuition.semester }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ editing_tuition.id if editing_tuition else '' }}">
         {% if editing_tuition %}
@@ -996,9 +996,10 @@
     <form method="dialog">
       <h2 id="unsaved-title">Dữ liệu đang nhập chưa được lưu</h2>
       <div id="unsaved-desc">
-        <p>Bạn đang nhập dở ở:</p>
+        <p id="unsaved-lead">Bạn đang nhập dở ở:</p>
         <ul id="unsaved-list"></ul>
-        <p class="muted">Có muốn lưu trước khi tiếp tục không? Chọn <strong>Không lưu</strong> thì dữ liệu đang nhập sẽ bị xóa.</p>
+        <p class="muted" data-note="entry">Có muốn lưu trước khi tiếp tục không? Chọn <strong>Không lưu</strong> thì dữ liệu đang nhập sẽ bị xóa.</p>
+        <p class="muted" data-note="edit" hidden>Có muốn lưu thay đổi trước khi tiếp tục không? Chọn <strong>Không lưu</strong> thì bỏ phần đang sửa, bản ghi giữ nguyên như trước khi sửa.</p>
       </div>
       <div class="dialog-actions">
         <button value="save" autofocus>Lưu rồi tiếp tục</button>
@@ -1336,6 +1337,8 @@
        * tạo (thuộc tính value / selected trong HTML, tức là defaultValue / defaultSelected).
        * Form đang thêm mới: ô để trống không tính (không có gì để mất, vd sau khi bấm Làm mới).
        * Form đang sửa: xóa trắng một ô cũng là một thay đổi so với bản ghi.
+       * Ngoài ra, đang sửa một bản ghi mà bấm Sửa bản ghi khác thì cũng hỏi, kể cả khi chưa đổi gì
+       * ("Chưa hoàn tất sửa thông tin").
        */
       const unsavedDialog = document.getElementById('unsaved-dialog');
       const entryForms = () => [...document.querySelectorAll('main form[data-entry]')];
@@ -1359,6 +1362,18 @@
       const changedFields = form => fieldsOf(form).filter(isChanged);
       const dirtyForms = (except = null) => entryForms().filter(f => f !== except && changedFields(f).length);
       const entryForm = name => document.querySelector(`main form[data-entry="${CSS.escape(name)}"]`);
+      const editingId = form => form.elements.id?.value ?? '';
+
+      /*
+       * href là link Sửa (có tham số sửa, vd ?edit_grade=5): trả về các form đang sửa bản ghi khác,
+       * tức là việc sửa ở đó chưa hoàn tất (chưa Lưu thay đổi / Hủy) mà sắp bị bỏ. Link khác: [].
+       */
+      function unfinishedEdits(href) {
+        const url = new URL(href, location.href);
+        if (!entryForms().some(f => url.searchParams.has(f.dataset.editParam))) return [];
+        return entryForms().filter(f => editingId(f)
+          && url.searchParams.get(f.dataset.editParam) !== editingId(f));
+      }
 
       /* Nhãn của ô: label gắn bằng for=, hoặc label đứng cùng khung với ô. */
       const labelOf = el => (el.labels?.[0] ?? el.closest('div')?.querySelector('label'))
@@ -1366,12 +1381,21 @@
 
       /* Hiện hộp thoại; trả về 'save' | 'discard' | 'stay' (Esc hoặc đóng hộp thoại = 'stay'). */
       function askUnsaved(forms) {
+        // Chỉ có form đang sửa: hỏi theo kiểu "Chưa hoàn tất sửa thông tin".
+        const onlyEdits = forms.every(editingId);
+        unsavedDialog.querySelector('#unsaved-title').textContent =
+          onlyEdits ? 'Chưa hoàn tất sửa thông tin' : 'Dữ liệu đang nhập chưa được lưu';
+        unsavedDialog.querySelector('#unsaved-lead').textContent =
+          onlyEdits ? 'Bạn chưa sửa xong:' : 'Bạn đang nhập dở ở:';
+        unsavedDialog.querySelector('[data-note="entry"]').hidden = onlyEdits;
+        unsavedDialog.querySelector('[data-note="edit"]').hidden = !onlyEdits;
         unsavedDialog.querySelector('#unsaved-list').replaceChildren(...forms.map(form => {
           const item = document.createElement('li');
           const name = document.createElement('strong');
           name.textContent = form.dataset.entry;
-          const mode = form.elements.id?.value ? 'đang sửa' : 'đang thêm mới';
-          item.append(name, ` (${mode}): ${changedFields(form).map(labelOf).join(', ')}`);
+          const mode = editingId(form) ? `đang sửa ${form.dataset.editingLabel ?? ''}`.trim() : 'đang thêm mới';
+          const changed = changedFields(form).map(labelOf);
+          item.append(name, ` (${mode}): ${changed.length ? changed.join(', ') : 'chưa thay đổi gì'}`);
           return item;
         }));
         unsavedDialog.returnValue = 'stay';
@@ -1430,17 +1454,21 @@
        *  - Không lưu: làm tiếp, dữ liệu đang nhập bị bỏ.
        *  - Ở lại nhập tiếp: không làm gì, đưa con trỏ về ô đang nhập dở.
        * action(carry) trả về giá trị khác null khi thành công; carry là thông báo của các lần lưu.
+       * unfinished: các form đang sửa dở sẽ bị bỏ (xem unfinishedEdits); được hỏi kể cả khi
+       * chưa đổi gì. Form đang sửa mà chưa đổi gì thì "Lưu rồi tiếp tục" không cần gửi lại.
        */
-      async function guard(action, except = null) {
+      async function guard(action, except = null, unfinished = []) {
         if (busy || unsavedDialog.open) return;
-        const forms = dirtyForms(except);
+        const forms = entryForms().filter(f => f !== except
+          && (unfinished.includes(f) || changedFields(f).length));
         if (!forms.length) return run(() => action([]));
 
         const choice = await askUnsaved(forms);
         if (choice === 'stay') return focusEntry(forms[0].dataset.entry);
         if (choice === 'discard') return run(() => action([]));
 
-        const invalid = forms.find(f => !f.checkValidity());
+        const toSave = forms.filter(f => changedFields(f).length);
+        const invalid = toSave.find(f => !f.checkValidity());
         if (invalid) {
           showNotice(`Chưa lưu được mục ${invalid.dataset.entry}: còn ô chưa nhập hoặc nhập chưa đúng. `
             + 'Hãy hoàn tất rồi thử lại.', 'error');
@@ -1451,7 +1479,7 @@
         return run(async () => {
           const carry = [];
           const saved = [];
-          for (const form of forms) {
+          for (const form of toSave) {
             // Chỉ gửi, chưa thay trang: các form khác vẫn giữ nguyên dữ liệu đang nhập.
             form.setAttribute('aria-busy', 'true');
             const page = await fetchPage(form.action, { method: 'POST', body: new FormData(form) });
@@ -1572,8 +1600,10 @@
         event.preventDefault();
         // Nút Hủy nằm trong form nhập liệu: việc của nó là bỏ thay đổi của chính form đó và thoát
         // chế độ sửa, nên không hỏi về form này; chỉ hỏi nếu form ở bảng khác đang nhập dở.
+        // Bấm Sửa khi đang sửa bản ghi khác: hỏi trước, kể cả khi chưa đổi gì.
         const cancelledForm = link.closest('main form[data-entry]');
-        guard(carry => navigate(link.href, link.dataset.ajax, link, carry), cancelledForm);
+        guard(carry => navigate(link.href, link.dataset.ajax, link, carry), cancelledForm,
+          unfinishedEdits(link.href));
       });
 
       window.addEventListener('popstate', () => {

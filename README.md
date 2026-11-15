@@ -28,7 +28,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 
 **Cách thao tác**
 - **Chọn dòng**: nhấp **chuột phải** vào một dòng trong bảng để chọn. Dòng được tô vàng, nút **Sửa** (xanh lá) và **Xóa** (đỏ) ở hàng nút của form cùng mục sáng lên. Nhấp chuột phải lần nữa để bỏ chọn; khi chưa chọn dòng nào, hai nút màu đen và không bấm được. Bàn phím: Tab tới dòng rồi bấm phím Menu (hoặc Shift+F10).
-- **Sửa**: chọn dòng rồi bấm **Sửa**. Dữ liệu được đưa lên form, dòng đó được tô vàng (có vạch cam bên trái) và nút lưu đổi thành **Lưu thay đổi**; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy** (Sửa / Xóa bên phải vẫn giữ). Bấm **Hủy** để bỏ các thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại.
+- **Sửa**: chọn dòng rồi bấm **Sửa**. Dữ liệu được đưa lên form, dòng đó được tô vàng (có vạch cam bên trái) và nút lưu đổi thành **Lưu thay đổi**; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy** (Sửa / Xóa bên phải vẫn giữ). Bấm **Hủy** để bỏ các thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại. Đang sửa mà bấm **Sửa** bản ghi khác thì chương trình hỏi trước "Chưa hoàn tất sửa thông tin", kể cả khi chưa đổi gì. Các thao tác khác (xóa, lưu mục khác, tìm kiếm, Back) chỉ hỏi khi form đang sửa đã có thay đổi; chưa đổi gì thì thoát chế độ sửa.
 - **Xóa**: chọn dòng rồi bấm **Xóa**. Luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
 - **Làm mới** (chỉ khi thêm mới): làm trống mọi ô của form để nhập lại từ đầu. Nút **Tất cả** ở bảng sinh viên chỉ bỏ kết quả tìm kiếm.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.

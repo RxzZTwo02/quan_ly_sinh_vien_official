@@ -72,10 +72,10 @@ Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), �
 
 - Chọn dòng rồi bấm **Sửa** ở hàng nút: mở `/?<tham số>=<id>`. Front-end gọi `GET /api/<…>/<id>` rồi điền sẵn form; ô chọn sinh viên / môn học được chọn sẵn.
 - Số tiền và điểm hiển thị gọn nhờ bộ lọc Jinja `plain_number`, ví dụ `8000000` thay vì `8000000.0`.
-- Form có trường ẩn `id`. Dòng đang sửa trong bảng được tô vàng, có thêm vạch cam bên trái (`tr.is-editing`) để phân biệt với dòng đang chọn. Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
+- Form có trường ẩn `id` và thuộc tính `data-editing-label` (mã, tên của bản ghi đang sửa, dùng trong hộp thoại ở mục 7). Dòng đang sửa trong bảng được tô vàng, có thêm vạch cam bên trái (`tr.is-editing`) để phân biệt với dòng đang chọn. Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
 - Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
 - Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
-- Mỗi lúc chỉ sửa một bản ghi: nút **Sửa** mới thay cho bản ghi đang sửa trước đó.
+- Mỗi lúc chỉ sửa một bản ghi trên cả trang, vì link Sửa chỉ mang một tham số sửa. Đang sửa mà bấm **Sửa** bản ghi khác (cùng mục hay mục khác) thì luôn hỏi trước "Chưa hoàn tất sửa thông tin", kể cả khi chưa đổi gì (mục 7).
 - Khi sửa, nút **Làm mới** bị ẩn; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy**. Sửa / Xóa bên phải vẫn giữ.
 
 ### Hàng nút và chọn dòng (chung cho 4 mục)
@@ -148,12 +148,13 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 - Form đó có ít nhất một ô khác giá trị lúc trang được tạo, tức là `defaultValue` / `defaultSelected` lấy từ HTML. So sánh sau khi bỏ khoảng trắng đầu/cuối; ô số chứa ký tự không hợp lệ (`validity.badInput`) cũng tính là đã đổi.
 - Form **đang thêm mới**: ô để trống (hoặc ô chọn ở "Chọn …") **không** tính, vì không có dữ liệu để mất. Vì vậy gõ rồi xóa hết, hoặc vừa bấm **Làm mới**, thì không bị hỏi. Gõ lại bất kỳ ô nào thì form lại là "đang nhập dở".
 - Form **đang sửa**: xóa trắng một ô cũng tính là thay đổi so với bản ghi.
-- Vì so với giá trị ban đầu, bấm **Sửa** chỉ để xem mà không đổi gì thì **không** bị hỏi.
+- Bấm **Sửa** chỉ để xem, không đổi gì, thì form không "nhập dở". Riêng thao tác bấm **Sửa** bản ghi khác thì vẫn hỏi (xem "Chưa hoàn tất sửa thông tin" bên dưới).
 
 **Khi nào hỏi**
 | Thao tác | Form được xét |
 |---|---|
 | Bấm Sửa / Tất cả, tìm kiếm, xóa một dòng | Mọi form nhập dở |
+| Đang sửa một bản ghi, bấm **Sửa** bản ghi khác (cùng mục hay mục khác) | Form đang sửa, **kể cả khi chưa đổi gì**, cùng các form nhập dở khác |
 | Bấm **Hủy** ở form đang sửa | Các form nhập dở ở mục **khác**. Thay đổi của chính form có nút Hủy bị bỏ luôn, không hỏi, vì việc của nút Hủy là bỏ thay đổi và thoát chế độ sửa |
 | Lưu một form | Các form nhập dở **khác**; form đang lưu không tính |
 | Back / Forward làm đổi nội dung | Mọi form nhập dở. Địa chỉ được trả về trạng thái đang hiển thị rồi mới hỏi |
@@ -162,13 +163,28 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 
 Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **Hủy** ở đó thì dừng luôn, không hỏi gì thêm. Chọn dòng, bỏ chọn hay bấm **Làm mới** không làm thay trang nên không hỏi.
 
+**Chưa hoàn tất sửa thông tin**
+- Đang sửa mà bấm **Sửa** bản ghi khác thì chế độ sửa hiện tại sẽ bị bỏ, nên luôn hỏi trước, dù đã đổi gì hay chưa.
+- Các thao tác khác làm thay trang (xóa, lưu mục khác, tìm kiếm, Tất cả, Back / Forward) chỉ hỏi khi form đang sửa đã có thay đổi (bảng "Khi nào hỏi" ở trên); chưa đổi gì thì thoát chế độ sửa mà không hỏi, vì không có gì để mất ([07](07-han-che.md) L-13).
+- Script nhận ra trường hợp này khi link Sửa (`unfinishedEdits`) có tham số sửa khác với form đang sửa.
+
 **Hộp thoại** (`<dialog id="unsaved-dialog">`, mở bằng `showModal()`)
-- Liệt kê từng mục đang nhập dở, ví dụ: **Môn học** (đang thêm mới): Mã môn, Tên môn học.
+- Liệt kê từng mục, mỗi mục ghi chế độ và các ô đã đổi:
+  - **Môn học** (đang thêm mới): Mã môn, Tên môn học
+  - **Sinh viên** (đang sửa SV003 — Lê Hoàng Cường): Email
+  - **Sinh viên** (đang sửa SV005 — Hoàng Minh Đức): chưa thay đổi gì
+- Tiêu đề và lời dẫn đổi theo trường hợp:
+
+| Trường hợp | Tiêu đề | Lời dẫn | Ghi chú cuối |
+|---|---|---|---|
+| Chỉ có form **đang sửa** | Chưa hoàn tất sửa thông tin | Bạn chưa sửa xong: | Chọn **Không lưu** thì bỏ phần đang sửa, bản ghi giữ nguyên như trước khi sửa. |
+| Có form **đang thêm mới** | Dữ liệu đang nhập chưa được lưu | Bạn đang nhập dở ở: | Chọn **Không lưu** thì dữ liệu đang nhập sẽ bị xóa. |
+
 - Ba lựa chọn:
 
 | Lựa chọn | Kết quả |
 |---|---|
-| **Lưu rồi tiếp tục** (con trỏ mặc định ở nút này) | 1. Kiểm tra hợp lệ **tất cả** các form trước (`checkValidity`). Có form còn thiếu hoặc sai thì không lưu form nào: hiện thông báo "Chưa lưu được mục …", rồi trình duyệt chỉ ra ô cần sửa (`reportValidity`).<br>2. Gửi lần lượt từng form (`fetchPage`, **chưa** thay trang, nên các form khác vẫn giữ dữ liệu).<br>3. Lưu được hết thì làm tiếp thao tác ban đầu. Thông báo của các lần lưu hiện kèm phía trên thông báo của thao tác.<br>4. Một form bị back-end từ chối (ví dụ trùng mã) thì dừng ở form đó và hiện lỗi. Nếu trước đó đã lưu được form nào, trang được tải lại để bảng hiện dữ liệu mới, còn các form chưa lưu được điền lại bản nháp (`refreshKeeping` / `restoreDraft`), giữ nguyên chế độ sửa của chúng. |
+| **Lưu rồi tiếp tục** (con trỏ mặc định ở nút này) | 0. Form đang sửa mà chưa đổi gì thì không có gì để lưu, không gửi lại.<br>1. Kiểm tra hợp lệ **tất cả** các form cần lưu trước (`checkValidity`). Có form còn thiếu hoặc sai thì không lưu form nào: hiện thông báo "Chưa lưu được mục …", rồi trình duyệt chỉ ra ô cần sửa (`reportValidity`).<br>2. Gửi lần lượt từng form (`fetchPage`, **chưa** thay trang, nên các form khác vẫn giữ dữ liệu).<br>3. Lưu được hết thì làm tiếp thao tác ban đầu. Thông báo của các lần lưu hiện kèm phía trên thông báo của thao tác.<br>4. Một form bị back-end từ chối (ví dụ trùng mã) thì dừng ở form đó và hiện lỗi. Nếu trước đó đã lưu được form nào, trang được tải lại để bảng hiện dữ liệu mới, còn các form chưa lưu được điền lại bản nháp (`refreshKeeping` / `restoreDraft`), giữ nguyên chế độ sửa của chúng. |
 | **Không lưu** | Làm tiếp thao tác; dữ liệu đang nhập bị bỏ. |
 | **Ở lại nhập tiếp** (hoặc phím Esc) | Không làm gì; cuộn tới và đặt con trỏ vào ô đang nhập dở. |
 
