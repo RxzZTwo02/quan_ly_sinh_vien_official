@@ -43,6 +43,7 @@ services:
       FRONTEND_PORT: 5000
       SECRET_KEY: ${SECRET_KEY:-}
       API_TOKEN: ${API_TOKEN:-}
+      API_TIMEOUT: 10
     ports:
       - "127.0.0.1:5000:5000"
     depends_on:

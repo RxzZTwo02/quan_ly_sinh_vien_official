@@ -63,7 +63,7 @@ docker compose down -v     # xóa cả volume dữ liệu
 |---|---|---|
 | `mysql` | `mysql:8.4` | `utf8mb4`; healthcheck `mysqladmin ping`; **không** mở cổng 3306 ra host (tránh xung đột Laragon); dữ liệu ở volume `mysql_data` |
 | `backend` | `qlsv-backend:2.0` (build `./backend`) | Chờ `mysql` healthy; thử kết nối 30 lần; chỉ truy cập nội bộ |
-| `frontend` | `qlsv-frontend:2.0` (build `./frontend`) | Mở `127.0.0.1:5000` trên host; gọi `http://backend:5001` |
+| `frontend` | `qlsv-frontend:2.0` (build `./frontend`) | Mở `127.0.0.1:5000` trên host; gọi `http://backend:5001`; chờ back-end tối đa 10 giây (`API_TIMEOUT: 10`, thay cho mặc định 5) |
 
 Biến tùy chọn trong `.env` cạnh `compose.yaml`: `MYSQL_ROOT_PASSWORD` (mặc định `qlsv_root`), `SECRET_KEY`, `API_TOKEN`, `SEED_DATA` (mặc định `yes`).
 
