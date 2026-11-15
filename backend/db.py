@@ -93,7 +93,8 @@ def init_database():
             break
         except pymysql.err.OperationalError as exc:
             if attempt == retries:
-                raise RuntimeError(
+                # SystemExit: Python chỉ in thông báo rồi thoát (mã 1), không in traceback.
+                raise SystemExit(
                     f"Không kết nối được MySQL tại {config.DB_HOST}:{config.DB_PORT} "
                     f"(user '{config.DB_USER}'). Hãy bật MySQL trong Laragon (Start All) "
                     f"hoặc kiểm tra cấu hình trong backend/.env. Chi tiết: {exc}"
