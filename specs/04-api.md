@@ -211,4 +211,4 @@ Invoke-RestMethod "$api/api/students/$($r.id)" -Method Put -ContentType $json `
 Invoke-RestMethod "$api/api/students/$($r.id)" -Method Delete
 ```
 - Lỗi (4xx/5xx) làm `Invoke-RestMethod` ném ngoại lệ; mã HTTP nằm ở `$_.Exception.Response.StatusCode` trong khối `catch`.
-- Phản hồi có `Content-Type: application/json` **không kèm** `charset`. Vì vậy Windows PowerShell 5.1 hiển thị sai tiếng Việt trong kết quả (ví dụ `ÄÃ£ thÃªm sinh viÃªn.`), dù dữ liệu gửi lên và lưu trong DB vẫn đúng. Xem JSON bằng trình duyệt nếu cần đọc tiếng Việt (xem [07](07-han-che.md) L-14).
+- Phản hồi có `Content-Type: application/json; charset=utf-8`, nên Windows PowerShell 5.1 đọc đúng tiếng Việt trong kết quả (xem [07](07-han-che.md) L-14).

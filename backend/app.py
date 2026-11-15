@@ -13,6 +13,8 @@ from db import ER_DUP_ENTRY, ER_NO_REFERENCED_ROW, init_database, to_jsonable, t
 app = Flask(__name__)
 app.json.ensure_ascii = False  # trả tiếng Việt có dấu nguyên vẹn
 app.json.sort_keys = False
+# Ghi rõ charset: thiếu nó, Windows PowerShell 5.1 (Invoke-RestMethod) đọc theo ISO-8859-1, lỗi tiếng Việt.
+app.json.mimetype = "application/json; charset=utf-8"
 
 TOTAL_EXPR = "ROUND(attendance*0.1 + midterm*0.3 + final*0.6, 2)" # công thức tính điểm tổng kết theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ
 GRADE_LABELS = ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]  # theo điểm tổng kết

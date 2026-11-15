@@ -229,7 +229,7 @@ Invoke-RestMethod http://127.0.0.1:5000/health                # front-end → fr
 (Invoke-RestMethod http://127.0.0.1:5001/api/students).Count  # số sinh viên (10 với dữ liệu mẫu)
 ```
 
-**Xem dữ liệu JSON**: mở thẳng địa chỉ API trong trình duyệt, ví dụ http://127.0.0.1:5001/api/students hoặc http://127.0.0.1:5001/api/stats. Không nên in bằng `Invoke-RestMethod`, vì Windows PowerShell 5.1 hiển thị sai tiếng Việt (xem [Xử lý sự cố](#xử-lý-sự-cố)).
+**Xem dữ liệu JSON**: mở thẳng địa chỉ API trong trình duyệt, ví dụ http://127.0.0.1:5001/api/students hoặc http://127.0.0.1:5001/api/stats, hoặc dùng `Invoke-RestMethod` (đọc đúng tiếng Việt).
 
 **Nếu đã đặt `API_TOKEN`**: trình duyệt không gửi được header, nên hãy dùng
 ```powershell
@@ -410,7 +410,6 @@ Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng t
 | Báo `Thiếu hoặc sai API key.` | `API_TOKEN` ở hai app khác nhau | Đặt cùng một giá trị trong `backend\.env` và `frontend\.env`, rồi khởi động lại cả hai |
 | Biểu đồ báo `Không tải được thư viện biểu đồ…` | Không có Internet (Chart.js tải từ CDN) | Kết nối mạng rồi tải lại trang. Các chức năng khác vẫn dùng được |
 | Đã sửa code / template nhưng trang vẫn như cũ | App chưa được chạy lại; hoặc một bản cũ vẫn đang chạy ở cửa sổ khác. Trên Windows, chạy `app.py` lần thứ hai **không báo lỗi trùng cổng**: cả hai bản cùng nghe một cổng, nên request có thể vẫn tới bản cũ | Dừng app (Ctrl+C) rồi chạy lại. Kiểm tra còn bản nào đang chạy bằng `Get-NetTCPConnection -LocalPort 5000,5001 -State Listen`, rồi dừng bằng `Stop-Process -Id <OwningProcess>`. Docker thì chạy `docker compose up --build -d` |
-| Tiếng Việt bị lỗi font (ví dụ `ÄÃ£ thÃªm`) khi in kết quả `Invoke-RestMethod` | Windows PowerShell 5.1 đọc sai bảng mã của phản hồi. Dữ liệu trong database vẫn đúng | Xem JSON bằng trình duyệt (mở thẳng địa chỉ API) |
 | `py -m venv .venv` báo *Unable to copy … venvlauncher.exe* | `.venv` vẫn còn, và `python.exe` bên trong đang bị VS Code hoặc một terminal khác dùng | Đóng chương trình đó, xóa `.venv` rồi tạo lại |
 | Kích hoạt venv thì PowerShell báo *running scripts is disabled on this system* | Chính sách chạy script của PowerShell | Chạy `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` rồi kích hoạt lại (chỉ áp dụng cho cửa sổ hiện tại) |
 

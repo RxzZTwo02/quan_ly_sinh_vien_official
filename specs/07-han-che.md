@@ -14,7 +14,6 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 | L-11 | Chart.js tải từ CDN. | Không có Internet thì không có biểu đồ (phần còn lại vẫn dùng được). | `index.html` |
 | L-12 | Chưa có kiểm thử tự động. | Sửa mã cần kiểm tra thủ công. | — |
 | L-13 | Sau một thao tác **thành công**, toàn bộ các vùng dữ liệu được thay bằng bản mới từ máy chủ. Mỗi lần vẫn tải lại toàn bộ HTML của trang chính: 5 lần gọi API (6 khi đang tìm kiếm), thêm 1 lần cho mỗi tham số sửa. | Form nhập dở ở mục khác không thể giữ lại song song: người dùng được hỏi trước (FR-27) và phải chọn lưu hoặc bỏ. Đang ở chế độ Sửa hoặc đang lọc tìm kiếm thì bị thoát, giống khi tải lại trang. Khi tắt JavaScript thì không có hộp thoại hỏi lưu và hộp xác nhận xóa. | `index.html` (script), `frontend/app.py` |
-| L-14 | Phản hồi JSON của back-end có `Content-Type: application/json` **không kèm** `charset`. | Windows PowerShell 5.1 (`Invoke-RestMethod`) đọc phản hồi theo ISO-8859-1, nên tiếng Việt hiển thị sai (ví dụ `ÄÃ£ thÃªm`). Dữ liệu lưu trong DB vẫn đúng; trình duyệt và front-end (`requests`) đọc đúng. | `backend/app.py` |
 | L-15 | Waitress luôn bật `SO_REUSEADDR`; trên Windows, tùy chọn này cho phép nhiều process cùng nghe một cổng. | Chạy `app.py` lần thứ hai (cửa sổ cũ chưa tắt) **không báo lỗi trùng cổng**. Request có thể tới bản cũ, khiến thay đổi mã như không có tác dụng. | `backend/app.py`, `frontend/app.py` (`serve`) |
 | L-16 | Không có `.gitignore` ở thư mục gốc. `backend/.gitignore` và `frontend/.gitignore` chỉ bỏ qua `.env` trong thư mục của từng app. | File `.env` cạnh `compose.yaml` (chứa `MYSQL_ROOT_PASSWORD`, `API_TOKEN`, `SECRET_KEY` khi chạy Docker) có thể bị commit nhầm lên Git. | thư mục gốc |
 | L-17 | Chọn dòng để Sửa / Xóa dựa vào sự kiện chuột phải (`contextmenu`). Màn hình cảm ứng không có chuột phải: Android thường phát sự kiện này khi giữ lâu, còn Safari trên iPhone / iPad thì không. Chưa thử trên thiết bị thật. | Trên iPhone / iPad có thể không chọn được dòng, nên không Sửa / Xóa được từ giao diện (dù vẫn thêm mới được). | `index.html` (script) |
@@ -25,10 +24,9 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 3. Thêm đăng nhập cho front-end (Flask-Login hoặc session tự viết) trước khi đưa lên mạng (L-10).
 4. Đóng gói Chart.js cùng ứng dụng để chạy offline (L-11).
 5. Viết kiểm thử `pytest` cho các endpoint API với database thử nghiệm (L-12).
-6. Đặt `app.json.mimetype = "application/json; charset=utf-8"` trong `backend/app.py` (L-14).
-7. Trước khi gọi `serve()`, thử bind cổng với `SO_EXCLUSIVEADDRUSE` và dừng kèm thông báo rõ ràng nếu cổng đã bị dùng (L-15).
-8. Thêm `.gitignore` ở thư mục gốc với dòng `/.env` (L-16).
-9. Trên màn hình cảm ứng, cho chọn dòng bằng cách giữ lâu (tự đo bằng sự kiện `touchstart` / `touchend`) hoặc chạm (L-17).
+6. Trước khi gọi `serve()`, thử bind cổng với `SO_EXCLUSIVEADDRUSE` và dừng kèm thông báo rõ ràng nếu cổng đã bị dùng (L-15).
+7. Thêm `.gitignore` ở thư mục gốc với dòng `/.env` (L-16).
+8. Trên màn hình cảm ứng, cho chọn dòng bằng cách giữ lâu (tự đo bằng sự kiện `touchstart` / `touchend`) hoặc chạm (L-17).
 
 ## 3. Đã khắc phục
 | # | Hạn chế cũ | Cách khắc phục | Commit |
@@ -37,4 +35,5 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 | L-02 | Màu biểu đồ vành khuyên gán theo vị trí, còn thứ tự nhãn do `GROUP BY` quyết định, nên cùng một xếp loại có thể đổi màu. | `/api/stats` luôn trả đủ 4 nhãn theo thứ tự cố định `GRADE_LABELS` (Giỏi → Khá → Trung bình → Cần cố gắng), nhãn không có bản ghi thì giá trị 0. Chưa có bản ghi điểm nào thì trả mảng rỗng. | `5f098a0`, `d1d4975` |
 | L-05 | `due_date` chỉ giới hạn độ dài, không kiểm tra định dạng ngày. | Kiểm tra bằng `date.fromisoformat()` rồi lưu dạng chuẩn `YYYY-MM-DD` (ví dụ `20261231` → `2026-12-31`). Ngày sai như `2026-02-30` bị từ chối (400). | `3e77d27`, `d1d4975` |
 | L-06 | `NaN` (và `inf` với học phí) lọt qua kiểm tra khoảng, gây lỗi 500. | Điều kiện viết dạng `0 <= x <= 10` (điểm) và `0 <= đã đóng <= phải đóng < 1e13` (học phí). So sánh với NaN luôn sai nên NaN bị loại; `inf` vượt giới hạn trên. Kết quả: trả 400. | `3e77d27` |
+| L-14 | Phản hồi JSON của back-end có `Content-Type: application/json` **không kèm** `charset`, nên Windows PowerShell 5.1 (`Invoke-RestMethod`) đọc theo ISO-8859-1 và hiển thị sai tiếng Việt (ví dụ `ÄÃ£ thÃªm`). | Đặt `app.json.mimetype = "application/json; charset=utf-8"` trong `backend/app.py`. Mọi phản hồi JSON, kể cả lỗi 4xx / 5xx, đều kèm `charset=utf-8`; `Invoke-RestMethod` đọc đúng tiếng Việt. | — |
 | — | Xếp loại tính từ điểm tổng kết **chưa làm tròn**, trong khi bảng điểm hiện số đã làm tròn 2 chữ số. Bản ghi ở sát ngưỡng có thể bị xếp loại lệch với số hiển thị. | Bảng điểm và thống kê dùng chung một biểu thức `TOTAL_EXPR` (có `ROUND(…, 2)`). | `ee56d8e` |
