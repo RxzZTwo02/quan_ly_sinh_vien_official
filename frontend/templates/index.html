@@ -318,6 +318,11 @@
       min-width: 0;
     }
 
+    /* Môn học, Bảng điểm, Học phí: ô tìm kiếm nằm ngay dưới form nhập liệu */
+    form[data-entry] + .search {
+      margin-top: 18px;
+    }
+
     /* ===== Bảng dữ liệu ===== */
     .table-wrap {
       overflow-x: auto;
@@ -721,6 +726,11 @@
           </span>
         </div>
       </form>
+      <form class="search" method="get">
+        <input name="q_subject" value="{{ subject_keyword }}" placeholder="Tìm theo mã hoặc tên môn...">
+        <button>Tìm kiếm</button>
+        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
+      </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
         <table>
@@ -734,7 +744,7 @@
           </thead>
           <tbody>
             {% for sub in subjects %}
-            {% set sub_grade_count = grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
+            {% set sub_grade_count = all_grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
             <tr data-id="{{ sub.id }}" tabindex="0"{% if editing_subject and editing_subject.id == sub.id %} class="is-editing"{% endif %}>
               <td>{{ sub.subject_code }}</td>
               <td>{{ sub.subject_name }}</td>
@@ -751,7 +761,7 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="3">Chưa có môn học. Hãy thêm môn trước khi nhập điểm.</td>
+              <td colspan="3">{{ "Không có môn học phù hợp." if subject_keyword else "Chưa có môn học. Hãy thêm môn trước khi nhập điểm." }}</td>
               <td class="col-actions"></td>
             </tr>
             {% endfor %}
@@ -790,7 +800,7 @@
             <label>Môn học</label>
             <select name="subject_id" required>
               <option value="">Chọn môn học</option>
-              {% for sub in subjects %}
+              {% for sub in all_subjects %}
               <option value="{{ sub.id }}"{% if editing_grade and editing_grade.subject_id == sub.id %} selected{% endif %}>{{ sub.subject_code }} — {{ sub.subject_name }}</option>
               {% endfor %}
             </select>
@@ -825,6 +835,11 @@
             <button type="button" class="danger" data-row-action="delete" disabled>Xóa</button>
           </span>
         </div>
+      </form>
+      <form class="search" method="get">
+        <input name="q_grade" value="{{ grade_keyword }}" placeholder="Tìm theo mã SV, họ tên, môn học hoặc học kỳ...">
+        <button>Tìm kiếm</button>
+        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
       </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
@@ -865,7 +880,7 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="8">Chưa có dữ liệu điểm.</td>
+              <td colspan="8">{{ "Không có bản ghi điểm phù hợp." if grade_keyword else "Chưa có dữ liệu điểm." }}</td>
               <td class="col-actions"></td>
             </tr>
             {% endfor %}
@@ -935,6 +950,11 @@
           </span>
         </div>
       </form>
+      <form class="search" method="get">
+        <input name="q_tuition" value="{{ tuition_keyword }}" placeholder="Tìm theo mã SV, họ tên hoặc học kỳ...">
+        <button>Tìm kiếm</button>
+        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
+      </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
         <table>
@@ -979,7 +999,7 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="8">Chưa có dữ liệu học phí.</td>
+              <td colspan="8">{{ "Không có bản ghi học phí phù hợp." if tuition_keyword else "Chưa có dữ liệu học phí." }}</td>
               <td class="col-actions"></td>
             </tr>
             {% endfor %}
@@ -1282,11 +1302,12 @@
       /*
        * target = id của section (students, subjects, grades, tuition): cuộn tới form của mục đó
        * và đặt con trỏ vào ô nhập đầu tiên (dùng cho nút Sửa / Hủy). target = 'search': giữ
-       * con trỏ ở ô tìm kiếm.
+       * con trỏ ở ô tìm kiếm của mục `sectionId` (mục có ô tìm kiếm / nút Tất cả vừa dùng).
        */
-      function focusAfterNavigation(target) {
+      function focusAfterNavigation(target, sectionId = 'students') {
         if (target === 'search') {
-          const box = document.querySelector('#students form.search input[name="q"]');
+          const box = document.querySelector(`#${CSS.escape(sectionId)} form.search input:not([type="hidden"])`);
+          if (!box) return;
           box.focus({ preventScroll: true });
           box.setSelectionRange(box.value.length, box.value.length);
           return;
@@ -1307,10 +1328,11 @@
 
       /* Điều hướng GET (tìm kiếm, Sửa, Hủy, Tất cả): cập nhật địa chỉ để nút Back vẫn dùng được. */
       async function navigate(url, focusTarget, anchorEl, carry = []) {
+        const sectionId = anchorEl?.closest('section[id]')?.id;  // đo trước: anchorEl sắp bị thay
         const finalUrl = await load(url, { method: 'GET' }, anchorEl, carry);
         if (finalUrl === null) return null;
         setUrl(finalUrl, true);
-        if (focusTarget) focusAfterNavigation(focusTarget);
+        if (focusTarget) focusAfterNavigation(focusTarget, sectionId);
         return finalUrl;
       }
 

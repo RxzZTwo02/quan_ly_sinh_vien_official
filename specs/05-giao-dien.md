@@ -8,7 +8,7 @@
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
 |---|---|---|---|
-| GET | `/` | Trang chính. Tham số: `q` (tìm kiếm); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa); `message`, `error` (thông báo) | `GET /api/students?q=` (bảng sinh viên), `GET /api/students` không lọc (chỉ khi có `q`, cho ô chọn sinh viên ở Bảng điểm và Học phí), `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades`, `GET /api/tuition`, `GET /api/stats` |
+| GET | `/` | Trang chính. Tham số: `q`, `q_subject`, `q_grade`, `q_tuition` (từ khóa tìm kiếm của bảng sinh viên / môn học / điểm / học phí); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa); `message`, `error` (thông báo) | `GET /api/students?q=` (bảng sinh viên), `GET /api/students` không lọc (chỉ khi có `q`, cho ô chọn sinh viên ở Bảng điểm và Học phí), `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades` (luôn gọi không lọc: ô chọn môn ở Bảng điểm, số bản ghi điểm của môn), thêm `GET /api/subjects?q=` / `GET /api/grades?q=` khi có `q_subject` / `q_grade`, `GET /api/tuition?q=`, `GET /api/stats` |
 | POST | `/save` | Thêm sinh viên (không có `id`) hoặc sửa (có `id`) | `POST /api/students` / `PUT /api/students/<id>` |
 | POST | `/delete/<id>` | Xóa sinh viên | `DELETE /api/students/<id>` |
 | POST | `/subjects/save` | Thêm môn học (không có `id`) hoặc sửa (có `id`) | `POST /api/subjects` / `PUT /api/subjects/<id>` |
@@ -48,13 +48,15 @@ Mỗi mục 6–9 gồm form, hàng nút (xem "Hàng nút và chọn dòng" bên
    - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`).
    - Ô tìm kiếm + nút **Tất cả**.
    - Bảng: Mã SV · Họ tên · Lớp · Email.
-7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc. Bảng Mã môn · Tên môn · Tín chỉ. Nếu môn đã có điểm, hộp xác nhận xóa nêu số bản ghi điểm sẽ bị xóa theo.
+7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc. Ô tìm kiếm (`q_subject`) + nút **Tất cả**. Bảng Mã môn · Tên môn · Tín chỉ. Nếu môn đã có điểm, hộp xác nhận xóa nêu số bản ghi điểm sẽ bị xóa theo.
 8. **Bảng điểm** (`#grades`)
-   - Form: chọn sinh viên (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc.
+   - Form: chọn sinh viên và chọn môn (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc.
+   - Ô tìm kiếm (`q_grade`) + nút **Tất cả**.
    - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết.
    - Ba cột điểm thành phần hiển thị gọn bằng bộ lọc `plain_number` (`9` thay vì `9.0`, giữ `8.5`). Cột Tổng kết luôn có 2 chữ số thập phân.
 9. **Học phí và công nợ** (`#tuition`)
    - Form: chọn sinh viên (luôn đủ danh sách, như ở Bảng điểm), học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc.
+   - Ô tìm kiếm (`q_tuition`) + nút **Tất cả**.
    - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam).
 10. **Chân trang**: công nghệ và liên kết `/health`.
 
@@ -130,7 +132,7 @@ Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía ser
    - Tìm kiếm, Sửa, Hủy, Tất cả dùng `history.pushState`, nên nút Back/Forward vẫn quay lại đúng trạng thái (sự kiện `popstate` tải lại nội dung tại chỗ);
    - thao tác ghi dùng `replaceState`;
    - bấm menu (`#students`, `#grades`…) cũng phát `popstate` nhưng chỉ đổi phần `#neo`. Script so đường dẫn mới với nội dung đang hiển thị (`shownPath`); nếu chỉ khác `#neo` thì **không tải lại**, trình duyệt chỉ cuộn trang. Trước đây bước này tải lại các vùng dữ liệu và xóa mọi form đang nhập.
-6. Con trỏ: lưu thành công thì đặt vào ô đầu tiên của form vừa dùng để nhập tiếp; bấm Sửa / Hủy thì cuộn tới form của mục đó và đặt vào ô nhập đầu tiên; tìm kiếm thì giữ con trỏ ở ô tìm kiếm.
+6. Con trỏ: lưu thành công thì đặt vào ô đầu tiên của form vừa dùng để nhập tiếp; bấm Sửa / Hủy thì cuộn tới form của mục đó và đặt vào ô nhập đầu tiên; tìm kiếm hoặc bấm Tất cả thì giữ con trỏ ở ô tìm kiếm của đúng mục vừa dùng.
 
 **Trường hợp đặc biệt**
 | Tình huống | Hiển thị |

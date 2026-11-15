@@ -101,9 +101,19 @@ def load_editing():
     return editing, error
 
 
+def search_list(collection, keyword):
+    """(danh sách hiện trong bảng, danh sách đầy đủ). Có từ khóa thì bảng chỉ hiện kết quả tìm
+    kiếm, còn danh sách đầy đủ vẫn dùng cho ô chọn và số liệu (gọi thêm 1 lần API không lọc)."""
+    everything = api.get(f"/api/{collection}")
+    return (api.get(f"/api/{collection}", {"q": keyword}) if keyword else everything), everything
+
+
 @app.get("/")
 def index():
     keyword = request.args.get("q", "").strip()
+    subject_keyword = request.args.get("q_subject", "").strip()
+    grade_keyword = request.args.get("q_grade", "").strip()
+    tuition_keyword = request.args.get("q_tuition", "").strip()
     error = request.args.get("error", "")
     status = 200
     try:
@@ -111,19 +121,22 @@ def index():
         all_students = api.get("/api/students") if keyword else students
         editing, edit_error = load_editing()
         error = error or edit_error
-        subjects = api.get("/api/subjects")
-        grades = api.get("/api/grades")
-        tuition = api.get("/api/tuition")
+        subjects, all_subjects = search_list("subjects", subject_keyword)
+        grades, all_grades = search_list("grades", grade_keyword)
+        tuition = api.get("/api/tuition", {"q": tuition_keyword})
         stats = api.get("/api/stats")
     except ApiError as exc:
         students, all_students, editing, subjects, grades, tuition = [], [], {}, [], [], []
+        all_subjects, all_grades = [], []
         stats = {"total": 0, "subject_count": 0, "grade_count": 0, "tuition_balance": 0,
                  "chart_data": EMPTY_CHART}
         error = exc.message
         status = 503 if exc.status == 503 else 502
     return render_template("index.html", students=students, all_students=all_students, keyword=keyword,
+        subject_keyword=subject_keyword, grade_keyword=grade_keyword, tuition_keyword=tuition_keyword,
         editing=editing.get("edit"), editing_subject=editing.get("edit_subject"),
         editing_grade=editing.get("edit_grade"), editing_tuition=editing.get("edit_tuition"),
+        all_subjects=all_subjects, all_grades=all_grades,
         total=stats["total"], subjects=subjects, grades=grades, tuition=tuition,
         subject_count=stats["subject_count"], grade_count=stats["grade_count"],
         tuition_balance=stats["tuition_balance"], chart_data=stats["chart_data"],

@@ -21,16 +21,16 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 | Mục | Thao tác | Ghi chú |
 |---|---|---|
 | Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở Bảng điểm và Học phí vẫn đủ danh sách. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. |
-| Môn học | Thêm, sửa, xóa | Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
-| Bảng điểm | Thêm, sửa, xóa | Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ, làm tròn 2 chữ số. Xếp loại Giỏi (≥ 8) / Khá (≥ 6,5) / Trung bình (≥ 5) / Cần cố gắng dựa trên đúng số đã làm tròn này. |
-| Học phí | Thêm, sửa, xóa | Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. Hạn đóng (tùy chọn) phải là ngày có thật. |
+| Môn học | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã hoặc tên môn. Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
+| Bảng điểm | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên, môn học hoặc học kỳ; ô chọn môn ở form vẫn đủ danh sách. Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ, làm tròn 2 chữ số. Xếp loại Giỏi (≥ 8) / Khá (≥ 6,5) / Trung bình (≥ 5) / Cần cố gắng dựa trên đúng số đã làm tròn này. |
+| Học phí | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên hoặc học kỳ. Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. Hạn đóng (tùy chọn) phải là ngày có thật. |
 | Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). Biểu đồ phân loại luôn đủ 4 xếp loại, mỗi xếp loại một màu cố định. |
 
 **Cách thao tác**
 - **Chọn dòng**: nhấp **chuột phải** vào một dòng trong bảng để chọn. Dòng được tô vàng, nút **Sửa** (xanh lá) và **Xóa** (đỏ) ở hàng nút của form cùng mục sáng lên. Nhấp chuột phải lần nữa để bỏ chọn; khi chưa chọn dòng nào, hai nút màu đen và không bấm được. Bàn phím: Tab tới dòng rồi bấm phím Menu (hoặc Shift+F10).
 - **Sửa**: chọn dòng rồi bấm **Sửa**. Dữ liệu được đưa lên form, dòng đó được tô vàng (có vạch cam bên trái) và nút lưu đổi thành **Lưu thay đổi**; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy** (Sửa / Xóa bên phải vẫn giữ). Bấm **Hủy** để bỏ các thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại. Đang sửa mà bấm **Sửa** bản ghi khác thì chương trình hỏi trước "Chưa hoàn tất sửa thông tin", kể cả khi chưa đổi gì. Các thao tác khác (xóa, lưu mục khác, tìm kiếm, Back) chỉ hỏi khi form đang sửa đã có thay đổi; chưa đổi gì thì thoát chế độ sửa.
 - **Xóa**: chọn dòng rồi bấm **Xóa**. Luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
-- **Làm mới** (chỉ khi thêm mới): làm trống mọi ô của form để nhập lại từ đầu. Nút **Tất cả** ở bảng sinh viên chỉ bỏ kết quả tìm kiếm.
+- **Làm mới** (chỉ khi thêm mới): làm trống mọi ô của form để nhập lại từ đầu. Nút **Tất cả** cạnh ô tìm kiếm chỉ bỏ kết quả tìm kiếm.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
 - **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường, Sửa / Xóa nằm ở cột **Thao tác** trên từng dòng, và nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
