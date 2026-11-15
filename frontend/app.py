@@ -48,13 +48,37 @@ def form_data(*fields):
     return {f: request.form.get(f, "") for f in fields}
 
 
+# Từ khóa tìm kiếm của bảng Sinh viên, Môn học, Bảng điểm, Học phí. Được giữ qua mọi thao tác
+# (Sửa, Hủy, lưu, xóa, tìm ở bảng khác); chỉ nút "Tất cả" của bảng đó mới bỏ (FR-32).
+SEARCH_PARAMS = ("q", "q_subject", "q_grade", "q_tuition")
+
+
+def active_searches(source):
+    """Các từ khóa đang dùng (bỏ ô rỗng), đọc từ query string (GET) hoặc ô ẩn của form (POST)."""
+    searches = {}
+    for param in SEARCH_PARAMS:
+        value = source.get(param, "").strip()
+        if value:
+            searches[param] = value
+    return searches
+
+
+def without(searches, param):
+    """Bộ lọc Jinja: bỏ một từ khóa, dùng cho nút "Tất cả" và ô ẩn của form tìm kiếm."""
+    return {k: v for k, v in searches.items() if k != param}
+
+
+app.jinja_env.filters["without"] = without
+
+
 def call_and_redirect(func, *args):
-    """Gọi API rồi quay về trang chính với thông báo thành công hoặc lỗi."""
+    """Gọi API rồi quay về trang chính với thông báo thành công hoặc lỗi, giữ nguyên tìm kiếm."""
+    searches = active_searches(request.form)
     try:
         result = func(*args)
     except ApiError as exc:
-        return redirect(url_for("index", error=exc.message))
-    return redirect(url_for("index", message=result.get("message", "Thành công.")))
+        return redirect(url_for("index", error=exc.message, **searches))
+    return redirect(url_for("index", message=result.get("message", "Thành công."), **searches))
 
 
 def save_record(collection, fields):
@@ -134,6 +158,7 @@ def index():
         status = 503 if exc.status == 503 else 502
     return render_template("index.html", students=students, all_students=all_students, keyword=keyword,
         subject_keyword=subject_keyword, grade_keyword=grade_keyword, tuition_keyword=tuition_keyword,
+        searches=active_searches(request.args),
         editing=editing.get("edit"), editing_subject=editing.get("edit_subject"),
         editing_grade=editing.get("edit_grade"), editing_tuition=editing.get("edit_tuition"),
         all_subjects=all_subjects, all_grades=all_grades,

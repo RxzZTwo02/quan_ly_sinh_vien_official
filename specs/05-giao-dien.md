@@ -19,8 +19,16 @@
 | POST | `/tuition/delete/<id>` | Xóa học phí | `DELETE /api/tuition/<id>` |
 | GET | `/health` | `200 {"frontend":"ok","backend":{...}}` hoặc `503` khi back-end lỗi | `GET /api/health` |
 
+### Giữ kết quả tìm kiếm (FR-32)
+- Hằng `SEARCH_PARAMS = ("q", "q_subject", "q_grade", "q_tuition")` và hàm `active_searches()` trong `frontend/app.py` lấy các từ khóa đang dùng (bỏ ô rỗng); template nhận chúng qua biến `searches`.
+- Link **Sửa** và **Hủy** ở cả 4 mục: `url_for('index', <tham số sửa>, **searches)`, nên giữ mọi từ khóa.
+- Mọi form POST (4 form nhập liệu, 4 loại form xóa) có ô ẩn chứa các từ khóa (macro Jinja `keep_search`). `call_and_redirect()` đọc lại chúng từ form và đưa vào địa chỉ chuyển hướng `/?message=…` / `/?error=…`. Ô ẩn không được tính khi xét "đang nhập dở" (mục 7).
+- Form tìm kiếm của mỗi mục có ô ẩn chứa từ khóa của 3 mục kia, nên tìm ở bảng này không bỏ kết quả của bảng khác.
+- Nút **Tất cả** của mỗi mục chỉ bỏ từ khóa của mục đó (bộ lọc Jinja `without`).
+- Không có từ khóa nào thì các địa chỉ giữ dạng cũ, không có tham số rỗng.
+
 ### Xử lý lỗi
-- Lỗi từ API khi ghi → chuyển hướng `/?error=<thông điệp của back-end>`.
+- Lỗi từ API khi ghi → chuyển hướng `/?error=<thông điệp của back-end>` (kèm các từ khóa đang tìm).
 - Lỗi khi tải trang chính (back-end tắt, MySQL tắt…) → vẫn render trang với dữ liệu rỗng và thông báo lỗi; mã HTTP `503` nếu back-end trả/không kết nối được (503), ngược lại `502`.
 - Tham số sửa trỏ tới bản ghi không tồn tại → thông báo "Không tìm thấy sinh viên / môn học / bản ghi điểm / bản ghi học phí cần sửa."
 - `id` trong form sửa không phải số → `400`.

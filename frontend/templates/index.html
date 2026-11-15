@@ -531,6 +531,13 @@
   </style>
 </head>
 <body>
+  {#- Ô ẩn giữ từ khóa tìm kiếm của các bảng khi gửi form (FR-32): lưu, xóa hay tìm ở bảng
+      này không làm mất kết quả tìm kiếm ở bảng khác. Chỉ nút "Tất cả" mới bỏ từ khóa. #}
+  {%- macro keep_search(values) %}
+  {%- for name, value in values.items() %}
+  <input type="hidden" name="{{ name }}" value="{{ value }}">
+  {%- endfor %}
+  {%- endmacro %}
   <main class="container">
     <!-- Đầu trang -->
     <header class="header">
@@ -608,6 +615,7 @@
       <h2>{{ "Cập nhật sinh viên" if editing else "Thêm sinh viên" }}</h2>
       <form method="post" action="{{ url_for('save_student') }}" data-entry="Sinh viên" data-edit-param="edit"{% if editing %} data-editing-label="{{ editing.student_code }} — {{ editing.full_name }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ keep_search(searches) }}
         <input type="hidden" name="id" value="{{ editing['id'] if editing else '' }}">
         <div class="grid">
           <div>
@@ -633,7 +641,7 @@
         </div>
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing else "Thêm sinh viên" }}</button>
-          {% if editing %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="students">Hủy</a>{% endif %}
+          {% if editing %}<a class="button secondary" href="{{ url_for('index', **searches) }}" data-ajax="students">Hủy</a>{% endif %}
           {% if not editing %}<button type="reset" class="outline">Làm mới</button>{% endif %}
           <span class="row-actions">
             <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
@@ -646,9 +654,10 @@
 
       <h2>Danh sách sinh viên</h2>
       <form class="search" method="get">
+        {{ keep_search(searches | without('q')) }}
         <input name="q" value="{{ keyword }}" placeholder="Tìm theo mã, họ tên hoặc lớp...">
         <button>Tìm kiếm</button>
-        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
+        <a class="button secondary" href="{{ url_for('index', **(searches | without('q'))) }}" data-ajax="search">Tất cả</a>
       </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
@@ -670,11 +679,12 @@
               <td>{{ s.class_name }}</td>
               <td>{{ s.email }}</td>
               <td class="col-actions">
-                <a class="button" href="{{ url_for('index', edit=s.id) }}" data-ajax="students">Sửa</a>
+                <a class="button" href="{{ url_for('index', edit=s.id, **searches) }}" data-ajax="students">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_student', student_id=s.id) }}"
                       data-confirm-what="sinh viên" data-confirm-target="{{ s.student_code }} — {{ s.full_name }}"
                       data-confirm-note="Toàn bộ điểm và học phí của sinh viên này cũng bị xóa.">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {{ keep_search(searches) }}
                   <button class="danger">Xóa</button>
                 </form>
               </td>
@@ -695,6 +705,7 @@
       <h2>Quản lý môn học</h2>
       <form method="post" action="{{ url_for('save_subject') }}" data-entry="Môn học" data-edit-param="edit_subject"{% if editing_subject %} data-editing-label="{{ editing_subject.subject_code }} — {{ editing_subject.subject_name }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ keep_search(searches) }}
         <input type="hidden" name="id" value="{{ editing_subject.id if editing_subject else '' }}">
         {% if editing_subject %}
         <p class="editing-banner">Đang sửa môn học <strong>{{ editing_subject.subject_code }}</strong>.</p>
@@ -718,7 +729,7 @@
         </div>
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing_subject else "Thêm môn học" }}</button>
-          {% if editing_subject %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="subjects">Hủy</a>{% endif %}
+          {% if editing_subject %}<a class="button secondary" href="{{ url_for('index', **searches) }}" data-ajax="subjects">Hủy</a>{% endif %}
           {% if not editing_subject %}<button type="reset" class="outline">Làm mới</button>{% endif %}
           <span class="row-actions">
             <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
@@ -727,9 +738,10 @@
         </div>
       </form>
       <form class="search" method="get">
+        {{ keep_search(searches | without('q_subject')) }}
         <input name="q_subject" value="{{ subject_keyword }}" placeholder="Tìm theo mã hoặc tên môn...">
         <button>Tìm kiếm</button>
-        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
+        <a class="button secondary" href="{{ url_for('index', **(searches | without('q_subject'))) }}" data-ajax="search">Tất cả</a>
       </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
@@ -750,11 +762,12 @@
               <td>{{ sub.subject_name }}</td>
               <td>{{ sub.credits }}</td>
               <td class="col-actions">
-                <a class="button" href="{{ url_for('index', edit_subject=sub.id) }}" data-ajax="subjects">Sửa</a>
+                <a class="button" href="{{ url_for('index', edit_subject=sub.id, **searches) }}" data-ajax="subjects">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_subject', subject_id=sub.id) }}"
                       data-confirm-what="môn học" data-confirm-target="{{ sub.subject_code }} — {{ sub.subject_name }}"
                       data-confirm-note="{% if sub_grade_count %}Môn này có {{ sub_grade_count }} bản ghi điểm, sẽ bị xóa theo.{% endif %}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {{ keep_search(searches) }}
                   <button class="danger">Xóa</button>
                 </form>
               </td>
@@ -779,6 +792,7 @@
       </p>
       <form method="post" action="{{ url_for('save_grade') }}" data-entry="Bảng điểm" data-edit-param="edit_grade"{% if editing_grade %} data-editing-label="{{ editing_grade.student_code }} — {{ editing_grade.full_name }}, môn {{ editing_grade.subject_code }}, học kỳ {{ editing_grade.semester }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ keep_search(searches) }}
         <input type="hidden" name="id" value="{{ editing_grade.id if editing_grade else '' }}">
         {% if editing_grade %}
         <p class="editing-banner">
@@ -828,7 +842,7 @@
         </div>
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing_grade else "Lưu điểm" }}</button>
-          {% if editing_grade %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="grades">Hủy</a>{% endif %}
+          {% if editing_grade %}<a class="button secondary" href="{{ url_for('index', **searches) }}" data-ajax="grades">Hủy</a>{% endif %}
           {% if not editing_grade %}<button type="reset" class="outline">Làm mới</button>{% endif %}
           <span class="row-actions">
             <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
@@ -837,9 +851,10 @@
         </div>
       </form>
       <form class="search" method="get">
+        {{ keep_search(searches | without('q_grade')) }}
         <input name="q_grade" value="{{ grade_keyword }}" placeholder="Tìm theo mã SV, họ tên, môn học hoặc học kỳ...">
         <button>Tìm kiếm</button>
-        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
+        <a class="button secondary" href="{{ url_for('index', **(searches | without('q_grade'))) }}" data-ajax="search">Tất cả</a>
       </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
@@ -869,11 +884,12 @@
               <td>{{ g.final | plain_number }}</td>
               <td><strong>{{ "%.2f"|format(g.total) }}</strong></td>
               <td class="col-actions">
-                <a class="button" href="{{ url_for('index', edit_grade=g.id) }}" data-ajax="grades">Sửa</a>
+                <a class="button" href="{{ url_for('index', edit_grade=g.id, **searches) }}" data-ajax="grades">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_grade', grade_id=g.id) }}"
                       data-confirm-what="bản ghi điểm"
                       data-confirm-target="{{ g.student_code }} — {{ g.full_name }}, môn {{ g.subject_code }} — {{ g.subject_name }}, học kỳ {{ g.semester }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {{ keep_search(searches) }}
                   <button class="danger">Xóa</button>
                 </form>
               </td>
@@ -898,6 +914,7 @@
       </p>
       <form method="post" action="{{ url_for('save_tuition') }}" data-entry="Học phí" data-edit-param="edit_tuition"{% if editing_tuition %} data-editing-label="{{ editing_tuition.student_code }} — {{ editing_tuition.full_name }}, học kỳ {{ editing_tuition.semester }}"{% endif %}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ keep_search(searches) }}
         <input type="hidden" name="id" value="{{ editing_tuition.id if editing_tuition else '' }}">
         {% if editing_tuition %}
         <p class="editing-banner">
@@ -942,7 +959,7 @@
         </div>
         <div class="form-actions">
           <button type="submit">{{ "Lưu thay đổi" if editing_tuition else "Lưu học phí" }}</button>
-          {% if editing_tuition %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="tuition">Hủy</a>{% endif %}
+          {% if editing_tuition %}<a class="button secondary" href="{{ url_for('index', **searches) }}" data-ajax="tuition">Hủy</a>{% endif %}
           {% if not editing_tuition %}<button type="reset" class="outline">Làm mới</button>{% endif %}
           <span class="row-actions">
             <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
@@ -951,9 +968,10 @@
         </div>
       </form>
       <form class="search" method="get">
+        {{ keep_search(searches | without('q_tuition')) }}
         <input name="q_tuition" value="{{ tuition_keyword }}" placeholder="Tìm theo mã SV, họ tên hoặc học kỳ...">
         <button>Tìm kiếm</button>
-        <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
+        <a class="button secondary" href="{{ url_for('index', **(searches | without('q_tuition'))) }}" data-ajax="search">Tất cả</a>
       </form>
       <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
@@ -989,10 +1007,11 @@
                 {% endif %}
               </td>
               <td class="col-actions">
-                <a class="button" href="{{ url_for('index', edit_tuition=t.id) }}" data-ajax="tuition">Sửa</a>
+                <a class="button" href="{{ url_for('index', edit_tuition=t.id, **searches) }}" data-ajax="tuition">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_tuition', tuition_id=t.id) }}"
                       data-confirm-what="bản ghi học phí" data-confirm-target="{{ t.student_code }} — {{ t.full_name }}, học kỳ {{ t.semester }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {{ keep_search(searches) }}
                   <button class="danger">Xóa</button>
                 </form>
               </td>
