@@ -5,6 +5,8 @@
   <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Quản lý sinh viên</title>
+  <!-- Có JavaScript: ẩn cột Thao tác, dùng nút Sửa / Xóa ở hàng nút của form (chạy trước khi vẽ trang để không bị nháy) -->
+  <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <style>
     /* ===== Bố cục chung ===== */
@@ -237,11 +239,32 @@
       margin-top: 14px;
     }
 
+    /* Nút Sửa / Xóa cho dòng đang chọn trong bảng, nằm bên phải hàng nút */
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .edit-action {
+      background: #16a34a;
+    }
+
     /* Làm mới: nút viền, khác nút Hủy (xám) để tránh bấm nhầm */
     .outline {
       background: white;
       color: #334155;
       box-shadow: inset 0 0 0 1px #cbd5e1;
+    }
+
+    /* Chưa chọn dòng nào: Sửa / Xóa màu đen, bị vô hiệu */
+    button:disabled,
+    button:disabled:hover {
+      background: #1f2937 !important;
+      color: #9ca3af !important;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
     }
 
     /* Chế độ sửa: dòng nhắc trên form và tô sáng dòng đang sửa trong bảng */
@@ -253,8 +276,35 @@
       color: #854d0e;
     }
 
-    tr.is-editing td {
+    tr.is-editing td,
+    tr.is-selected td {
       background: #fef9c3;
+    }
+
+    /* Dòng đang sửa có thêm vạch cam bên trái để phân biệt với dòng đang chọn */
+    tr.is-editing td:first-child {
+      box-shadow: inset 4px 0 #f59e0b;
+    }
+
+    /* Chọn / bỏ chọn dòng bằng chuột phải (hoặc phím Menu khi dòng đang được chọn bằng Tab) */
+    .js tbody tr[data-id]:not(.is-editing) {
+      cursor: context-menu;
+    }
+
+    tbody tr[data-id]:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: -2px;
+    }
+
+    /* Có JavaScript: ẩn cột Thao tác. Không có JavaScript: dùng cột Thao tác như cũ. */
+    .js .col-actions,
+    html:not(.js) .row-actions,
+    html:not(.js) .row-hint {
+      display: none;
+    }
+
+    .row-hint {
+      margin: 0 0 10px;
     }
 
     .search {
@@ -580,6 +630,10 @@
           <button type="submit">{{ "Lưu thay đổi" if editing else "Thêm sinh viên" }}</button>
           {% if editing %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="students">Hủy</a>{% endif %}
           {% if not editing %}<button type="reset" class="outline">Làm mới</button>{% endif %}
+          <span class="row-actions">
+            <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
+            <button type="button" class="danger" data-row-action="delete" disabled>Xóa</button>
+          </span>
         </div>
       </form>
 
@@ -591,6 +645,7 @@
         <button>Tìm kiếm</button>
         <a class="button secondary" href="{{ url_for('index') }}" data-ajax="search">Tất cả</a>
       </form>
+      <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -599,17 +654,17 @@
               <th>Họ tên</th>
               <th>Lớp</th>
               <th>Email</th>
-              <th>Thao tác</th>
+              <th class="col-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for s in students %}
-            <tr{% if editing and editing.id == s.id %} class="is-editing"{% endif %}>
+            <tr data-id="{{ s.id }}" tabindex="0"{% if editing and editing.id == s.id %} class="is-editing"{% endif %}>
               <td>{{ s.student_code }}</td>
               <td>{{ s.full_name }}</td>
               <td>{{ s.class_name }}</td>
               <td>{{ s.email }}</td>
-              <td>
+              <td class="col-actions">
                 <a class="button" href="{{ url_for('index', edit=s.id) }}" data-ajax="students">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_student', student_id=s.id) }}"
                       data-confirm-what="sinh viên" data-confirm-target="{{ s.student_code }} — {{ s.full_name }}"
@@ -621,7 +676,8 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="5">Chưa có sinh viên phù hợp.</td>
+              <td colspan="4">Chưa có sinh viên phù hợp.</td>
+              <td class="col-actions"></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -659,8 +715,13 @@
           <button type="submit">{{ "Lưu thay đổi" if editing_subject else "Thêm môn học" }}</button>
           {% if editing_subject %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="subjects">Hủy</a>{% endif %}
           {% if not editing_subject %}<button type="reset" class="outline">Làm mới</button>{% endif %}
+          <span class="row-actions">
+            <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
+            <button type="button" class="danger" data-row-action="delete" disabled>Xóa</button>
+          </span>
         </div>
       </form>
+      <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -668,17 +729,17 @@
               <th>Mã môn</th>
               <th>Tên môn</th>
               <th>Tín chỉ</th>
-              <th>Thao tác</th>
+              <th class="col-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for sub in subjects %}
             {% set sub_grade_count = grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
-            <tr{% if editing_subject and editing_subject.id == sub.id %} class="is-editing"{% endif %}>
+            <tr data-id="{{ sub.id }}" tabindex="0"{% if editing_subject and editing_subject.id == sub.id %} class="is-editing"{% endif %}>
               <td>{{ sub.subject_code }}</td>
               <td>{{ sub.subject_name }}</td>
               <td>{{ sub.credits }}</td>
-              <td>
+              <td class="col-actions">
                 <a class="button" href="{{ url_for('index', edit_subject=sub.id) }}" data-ajax="subjects">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_subject', subject_id=sub.id) }}"
                       data-confirm-what="môn học" data-confirm-target="{{ sub.subject_code }} — {{ sub.subject_name }}"
@@ -690,7 +751,8 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="4">Chưa có môn học. Hãy thêm môn trước khi nhập điểm.</td>
+              <td colspan="3">Chưa có môn học. Hãy thêm môn trước khi nhập điểm.</td>
+              <td class="col-actions"></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -758,8 +820,13 @@
           <button type="submit">{{ "Lưu thay đổi" if editing_grade else "Lưu điểm" }}</button>
           {% if editing_grade %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="grades">Hủy</a>{% endif %}
           {% if not editing_grade %}<button type="reset" class="outline">Làm mới</button>{% endif %}
+          <span class="row-actions">
+            <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
+            <button type="button" class="danger" data-row-action="delete" disabled>Xóa</button>
+          </span>
         </div>
       </form>
+      <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -772,12 +839,12 @@
               <th>Giữa kỳ</th>
               <th>Cuối kỳ</th>
               <th>Tổng kết</th>
-              <th>Thao tác</th>
+              <th class="col-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for g in grades %}
-            <tr{% if editing_grade and editing_grade.id == g.id %} class="is-editing"{% endif %}>
+            <tr data-id="{{ g.id }}" tabindex="0"{% if editing_grade and editing_grade.id == g.id %} class="is-editing"{% endif %}>
               <td>{{ g.student_code }}</td>
               <td>{{ g.full_name }}</td>
               <td>{{ g.subject_code }} — {{ g.subject_name }}</td>
@@ -786,7 +853,7 @@
               <td>{{ g.midterm | plain_number }}</td>
               <td>{{ g.final | plain_number }}</td>
               <td><strong>{{ "%.2f"|format(g.total) }}</strong></td>
-              <td>
+              <td class="col-actions">
                 <a class="button" href="{{ url_for('index', edit_grade=g.id) }}" data-ajax="grades">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_grade', grade_id=g.id) }}"
                       data-confirm-what="bản ghi điểm"
@@ -798,7 +865,8 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="9">Chưa có dữ liệu điểm.</td>
+              <td colspan="8">Chưa có dữ liệu điểm.</td>
+              <td class="col-actions"></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -861,8 +929,13 @@
           <button type="submit">{{ "Lưu thay đổi" if editing_tuition else "Lưu học phí" }}</button>
           {% if editing_tuition %}<a class="button secondary" href="{{ url_for('index') }}" data-ajax="tuition">Hủy</a>{% endif %}
           {% if not editing_tuition %}<button type="reset" class="outline">Làm mới</button>{% endif %}
+          <span class="row-actions">
+            <button type="button" class="edit-action" data-row-action="edit" disabled>Sửa</button>
+            <button type="button" class="danger" data-row-action="delete" disabled>Xóa</button>
+          </span>
         </div>
       </form>
+      <p class="muted row-hint">Nhấp chuột phải vào một dòng để chọn rồi bấm Sửa hoặc Xóa; nhấp chuột phải lần nữa để bỏ chọn.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -875,12 +948,12 @@
               <th>Còn nợ</th>
               <th>Hạn đóng</th>
               <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th class="col-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {% for t in tuition %}
-            <tr{% if editing_tuition and editing_tuition.id == t.id %} class="is-editing"{% endif %}>
+            <tr data-id="{{ t.id }}" tabindex="0"{% if editing_tuition and editing_tuition.id == t.id %} class="is-editing"{% endif %}>
               <td>{{ t.student_code }}</td>
               <td>{{ t.full_name }}</td>
               <td>{{ t.semester }}</td>
@@ -895,7 +968,7 @@
                 <span style="color:#b45309">Còn nợ</span>
                 {% endif %}
               </td>
-              <td>
+              <td class="col-actions">
                 <a class="button" href="{{ url_for('index', edit_tuition=t.id) }}" data-ajax="tuition">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_tuition', tuition_id=t.id) }}"
                       data-confirm-what="bản ghi học phí" data-confirm-target="{{ t.student_code }} — {{ t.full_name }}, học kỳ {{ t.semester }}">
@@ -906,7 +979,8 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="9">Chưa có dữ liệu học phí.</td>
+              <td colspan="8">Chưa có dữ liệu học phí.</td>
+              <td class="col-actions"></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -1184,6 +1258,7 @@
           if (current && fresh) current.replaceWith(fresh);
         }
         updateCharts(readChartData(page.doc));
+        syncSelection();  // bảng vừa được thay: chọn lại các dòng còn tồn tại
 
         if (anchorId) {
           window.scrollBy(0, document.getElementById(anchorId).getBoundingClientRect().top - before);
@@ -1416,6 +1491,49 @@
           'close', () => resolve(deleteDialog.returnValue === 'delete'), { once: true }));
       }
 
+      // ===================================================== Chọn dòng, nút Sửa / Xóa
+      /*
+       * Mỗi bảng chọn được một dòng: chuột phải lần 1 chọn (tô vàng), lần 2 bỏ chọn; chuột phải
+       * dòng khác thì chuyển sang dòng đó. Có dòng được chọn thì nút Sửa / Xóa ở hàng nút của form
+       * cùng mục mới bật. Dòng đang sửa đã được tô vàng sẵn nên không chọn được (thoát sửa bằng Hủy).
+       * Hai nút này gọi đúng link Sửa / form Xóa của dòng (nằm trong cột Thao tác, bị ẩn khi có
+       * JavaScript), nên vẫn đi qua hộp xác nhận xóa và bước hỏi lưu dữ liệu đang nhập dở.
+       */
+      const selected = {};  // id của section (students, subjects…) -> data-id của dòng đang chọn
+
+      function syncSelection() {
+        for (const form of entryForms()) {
+          const section = form.closest('section[id]');
+          const id = selected[section.id];
+          const row = id && section.querySelector(`tbody tr[data-id="${CSS.escape(id)}"]`);
+          // Dòng đã bị xóa hoặc đang được sửa: bỏ chọn.
+          if (!row || row.classList.contains('is-editing')) delete selected[section.id];
+          section.querySelectorAll('tbody tr.is-selected').forEach(tr => tr.classList.remove('is-selected'));
+          if (selected[section.id]) row.classList.add('is-selected');
+          section.querySelectorAll('[data-row-action]').forEach(btn => { btn.disabled = !selected[section.id]; });
+        }
+      }
+
+      document.addEventListener('contextmenu', event => {
+        const row = event.target.closest('main tbody tr[data-id]');
+        if (!row) return;  // ngoài các dòng dữ liệu: giữ menu chuột phải của trình duyệt
+        event.preventDefault();
+        if (row.classList.contains('is-editing')) return;
+        const table = row.closest('section[id]').id;
+        if (selected[table] === row.dataset.id) delete selected[table];
+        else selected[table] = row.dataset.id;
+        syncSelection();
+      });
+
+      document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-row-action]');
+        if (!button || button.disabled) return;
+        const row = button.closest('section[id]').querySelector('tbody tr.is-selected');
+        if (!row) return;
+        if (button.dataset.rowAction === 'edit') row.querySelector('a[data-ajax]').click();
+        else row.querySelector('form').requestSubmit();
+      });
+
       // ===================================================== Làm mới
       /* Làm mới (chỉ có khi đang thêm mới; khi sửa chỉ có Lưu thay đổi và Hủy): làm trống mọi ô của form. */
       document.addEventListener('reset', event => {
@@ -1490,6 +1608,7 @@
       // ===================================================== Khởi động
       initCharts(readChartData(document));
       decorateNotices();
+      syncSelection();
       history.replaceState(null, '', shownPath + location.hash);
     })();
   </script>

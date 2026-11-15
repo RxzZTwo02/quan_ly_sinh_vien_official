@@ -17,6 +17,7 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 | L-14 | Phản hồi JSON của back-end có `Content-Type: application/json` **không kèm** `charset`. | Windows PowerShell 5.1 (`Invoke-RestMethod`) đọc phản hồi theo ISO-8859-1, nên tiếng Việt hiển thị sai (ví dụ `ÄÃ£ thÃªm`). Dữ liệu lưu trong DB vẫn đúng; trình duyệt và front-end (`requests`) đọc đúng. | `backend/app.py` |
 | L-15 | Waitress luôn bật `SO_REUSEADDR`; trên Windows, tùy chọn này cho phép nhiều process cùng nghe một cổng. | Chạy `app.py` lần thứ hai (cửa sổ cũ chưa tắt) **không báo lỗi trùng cổng**. Request có thể tới bản cũ, khiến thay đổi mã như không có tác dụng. | `backend/app.py`, `frontend/app.py` (`serve`) |
 | L-16 | Không có `.gitignore` ở thư mục gốc. `backend/.gitignore` và `frontend/.gitignore` chỉ bỏ qua `.env` trong thư mục của từng app. | File `.env` cạnh `compose.yaml` (chứa `MYSQL_ROOT_PASSWORD`, `API_TOKEN`, `SECRET_KEY` khi chạy Docker) có thể bị commit nhầm lên Git. | thư mục gốc |
+| L-17 | Chọn dòng để Sửa / Xóa dựa vào sự kiện chuột phải (`contextmenu`). Màn hình cảm ứng không có chuột phải: Android thường phát sự kiện này khi giữ lâu, còn Safari trên iPhone / iPad thì không. Chưa thử trên thiết bị thật. | Trên iPhone / iPad có thể không chọn được dòng, nên không Sửa / Xóa được từ giao diện (dù vẫn thêm mới được). | `index.html` (script) |
 
 ## 2. Hướng cải tiến đề xuất
 1. Kiểm tra email bằng biểu thức chính quy (L-04).
@@ -27,6 +28,7 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 6. Đặt `app.json.mimetype = "application/json; charset=utf-8"` trong `backend/app.py` (L-14).
 7. Trước khi gọi `serve()`, thử bind cổng với `SO_EXCLUSIVEADDRUSE` và dừng kèm thông báo rõ ràng nếu cổng đã bị dùng (L-15).
 8. Thêm `.gitignore` ở thư mục gốc với dòng `/.env` (L-16).
+9. Trên màn hình cảm ứng, cho chọn dòng bằng cách giữ lâu (tự đo bằng sự kiện `touchstart` / `touchend`) hoặc chạm (L-17).
 
 ## 3. Đã khắc phục
 | # | Hạn chế cũ | Cách khắc phục | Commit |

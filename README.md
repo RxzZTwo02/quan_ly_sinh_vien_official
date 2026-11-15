@@ -27,12 +27,13 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 | Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). Biểu đồ phân loại luôn đủ 4 xếp loại, mỗi xếp loại một màu cố định. |
 
 **Cách thao tác**
-- **Sửa**: bấm **Sửa** ở một dòng. Dữ liệu được đưa lên form, dòng đó được tô vàng và nút lưu đổi thành **Lưu thay đổi**. Bấm **Hủy** để bỏ các thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại.
-- **Xóa**: luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
+- **Chọn dòng**: nhấp **chuột phải** vào một dòng trong bảng để chọn. Dòng được tô vàng, nút **Sửa** (xanh lá) và **Xóa** (đỏ) ở hàng nút của form cùng mục sáng lên. Nhấp chuột phải lần nữa để bỏ chọn; khi chưa chọn dòng nào, hai nút màu đen và không bấm được. Bàn phím: Tab tới dòng rồi bấm phím Menu (hoặc Shift+F10).
+- **Sửa**: chọn dòng rồi bấm **Sửa**. Dữ liệu được đưa lên form, dòng đó được tô vàng (có vạch cam bên trái) và nút lưu đổi thành **Lưu thay đổi**; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy** (Sửa / Xóa bên phải vẫn giữ). Bấm **Hủy** để bỏ các thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại.
+- **Xóa**: chọn dòng rồi bấm **Xóa**. Luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
 - **Làm mới** (chỉ khi thêm mới): làm trống mọi ô của form để nhập lại từ đầu. Nút **Tất cả** ở bảng sinh viên chỉ bỏ kết quả tìm kiếm.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
-- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường; riêng nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
+- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường, Sửa / Xóa nằm ở cột **Thao tác** trên từng dòng, và nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
 - **Không mất dữ liệu đang nhập dở**:
   - Bấm menu (Sinh viên, Môn học, Bảng điểm, Học phí) chỉ cuộn trang, dữ liệu đang gõ vẫn còn.
   - Đang nhập dở mà bấm Sửa / Tất cả, tìm kiếm, xóa, lưu hoặc Hủy ở mục khác hay nhấn Back, chương trình hỏi trước:

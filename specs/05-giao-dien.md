@@ -3,7 +3,7 @@
 - Địa chỉ mặc định: `http://127.0.0.1:5000`
 - Mã nguồn: `frontend/app.py`, `frontend/api_client.py`, `frontend/templates/index.html`.
 - Ứng dụng **một trang**: mọi chức năng nằm ở `/`; form POST xong chuyển hướng về `/` (Post/Redirect/Get).
-- Trên trình duyệt có JavaScript, form và các nút Sửa / Hủy / Tất cả được gửi bằng `fetch` và **cập nhật trang tại chỗ, không tải lại** (xem mục 6). Đang nhập dở mà làm thao tác khác thì được hỏi lưu trước (mục 7). Bấm Hủy ở form đang sửa thì bỏ thay đổi ngay, không hỏi. Bấm Xóa thì hiện hộp xác nhận của chương trình (mục 8).
+- Trên trình duyệt có JavaScript, form và các nút Sửa / Hủy / Tất cả được gửi bằng `fetch` và **cập nhật trang tại chỗ, không tải lại** (xem mục 6). Đang nhập dở mà làm thao tác khác thì được hỏi lưu trước (mục 7). Bấm Hủy ở form đang sửa thì bỏ thay đổi ngay, không hỏi. Bấm Xóa thì hiện hộp xác nhận của chương trình (mục 8). Sửa / Xóa thực hiện bằng cách chọn dòng (chuột phải) rồi bấm nút ở hàng nút của form (mục 3, "Hàng nút và chọn dòng").
 
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
@@ -41,19 +41,24 @@
    | Phân loại kết quả học tập | Vành khuyên | Số bản ghi theo xếp loại, luôn theo thứ tự và màu cố định: Giỏi (xanh dương) · Khá (xanh lá) · Trung bình (vàng cam) · Cần cố gắng (đỏ) |
    | Sinh viên theo lớp | Cột ngang | Tối đa 8 lớp |
 5. **Thanh điều hướng**: liên kết neo `#students`, `#subjects`, `#grades`, `#tuition`.
+
+Mỗi mục 6–9 gồm form, hàng nút (xem "Hàng nút và chọn dòng" bên dưới), dòng gợi ý "Nhấp chuột phải vào một dòng để chọn…" và bảng dữ liệu.
+
 6. **Sinh viên** (`#students`)
-   - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`); khi sửa có nút **Hủy**.
+   - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`).
    - Ô tìm kiếm + nút **Tất cả**.
-   - Bảng: Mã SV · Họ tên · Lớp · Email · Thao tác (**Sửa**, **Xóa** có hộp xác nhận, mục 8).
-7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**. Bảng Mã môn · Tên môn · Tín chỉ · Thao tác (**Sửa**, **Xóa** có hộp xác nhận; nếu môn đã có điểm, hộp xác nhận nêu số bản ghi điểm sẽ bị xóa theo).
+   - Bảng: Mã SV · Họ tên · Lớp · Email.
+7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc. Bảng Mã môn · Tên môn · Tín chỉ. Nếu môn đã có điểm, hộp xác nhận xóa nêu số bản ghi điểm sẽ bị xóa theo.
 8. **Bảng điểm** (`#grades`)
-   - Form: chọn sinh viên (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
-   - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết · Thao tác (**Sửa**, **Xóa** có xác nhận).
+   - Form: chọn sinh viên (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), chọn môn, học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc.
+   - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết.
    - Ba cột điểm thành phần hiển thị gọn bằng bộ lọc `plain_number` (`9` thay vì `9.0`, giữ `8.5`). Cột Tổng kết luôn có 2 chữ số thập phân.
 9. **Học phí và công nợ** (`#tuition`)
-   - Form: chọn sinh viên (luôn đủ danh sách, như ở Bảng điểm), học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc, nút **Lưu thay đổi** và **Hủy**.
-   - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam) · Thao tác (**Sửa**, **Xóa** có xác nhận).
+   - Form: chọn sinh viên (luôn đủ danh sách, như ở Bảng điểm), học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc.
+   - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam).
 10. **Chân trang**: công nghệ và liên kết `/health`.
+
+Mỗi bảng vẫn có cột **Thao tác** (link Sửa, nút Xóa trên từng dòng) trong HTML, nhưng cột này bị ẩn khi có JavaScript. Xem "Khi tắt JavaScript" bên dưới.
 
 Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), để trình duyệt không tự gọi `/favicon.ico` và báo lỗi 404 trong console.
 
@@ -65,15 +70,15 @@ Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), �
 | Bảng điểm | `edit_grade` | Dòng nhắc vàng "Đang sửa điểm của **<mã SV — họ tên>**, môn **<mã môn>**, học kỳ **<học kỳ>**." |
 | Học phí | `edit_tuition` | Dòng nhắc vàng "Đang sửa học phí của **<mã SV — họ tên>**, học kỳ **<học kỳ>**." |
 
-- Nút **Sửa** mở `/?<tham số>=<id>`. Front-end gọi `GET /api/<…>/<id>` rồi điền sẵn form; ô chọn sinh viên / môn học được chọn sẵn.
+- Chọn dòng rồi bấm **Sửa** ở hàng nút: mở `/?<tham số>=<id>`. Front-end gọi `GET /api/<…>/<id>` rồi điền sẵn form; ô chọn sinh viên / môn học được chọn sẵn.
 - Số tiền và điểm hiển thị gọn nhờ bộ lọc Jinja `plain_number`, ví dụ `8000000` thay vì `8000000.0`.
-- Form có trường ẩn `id`. Dòng đang sửa trong bảng được tô vàng (`tr.is-editing`). Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
+- Form có trường ẩn `id`. Dòng đang sửa trong bảng được tô vàng, có thêm vạch cam bên trái (`tr.is-editing`) để phân biệt với dòng đang chọn. Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
 - Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
 - Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
 - Mỗi lúc chỉ sửa một bản ghi: nút **Sửa** mới thay cho bản ghi đang sửa trước đó.
-- Khi sửa, nút **Làm mới** bị ẩn; hàng nút chỉ còn **Lưu thay đổi** và **Hủy**.
+- Khi sửa, nút **Làm mới** bị ẩn; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy**. Sửa / Xóa bên phải vẫn giữ.
 
-### Hàng nút (chung cho 4 mục)
+### Hàng nút và chọn dòng (chung cho 4 mục)
 Hàng nút dưới mỗi form, từ trái sang:
 
 | Nút | Khi nào hiện | Tác dụng |
@@ -81,8 +86,25 @@ Hàng nút dưới mỗi form, từ trái sang:
 | **Thêm …** / **Lưu điểm** / **Lưu học phí** / **Lưu thay đổi** | Luôn | Gửi form |
 | **Hủy** | Đang sửa | Bỏ thay đổi, thoát chế độ sửa, form trở về thêm mới |
 | **Làm mới** | Chỉ khi **thêm mới** (đang sửa thì ẩn) | Làm trống mọi ô của form trước khi lưu thành dữ liệu chính thức, kể cả ô có giá trị mặc định (tín chỉ 3, điểm 8, đã đóng 0) và ô chọn. Không hỏi lại. Con trỏ về ô đầu tiên. |
+| **Sửa** (xanh lá) | Luôn, nằm bên phải | Sửa dòng đang chọn trong bảng của mục |
+| **Xóa** (đỏ) | Luôn, nằm bên phải | Xóa dòng đang chọn, sau hộp xác nhận (mục 8) |
 
-Khi tắt JavaScript, **Làm mới** là nút `type="reset"` thông thường: đưa form về giá trị lúc mở trang, tức là trống trừ các giá trị mặc định.
+**Chọn dòng**
+- Chưa chọn dòng nào: **Sửa** và **Xóa** màu đen, bị vô hiệu (`disabled`).
+- Nhấp chuột phải vào một dòng: dòng được chọn, tô vàng (`tr.is-selected`, cùng màu với dòng đang sửa); **Sửa** sáng xanh lá, **Xóa** sáng đỏ.
+- Nhấp chuột phải lần nữa vào dòng đó: bỏ chọn, dòng và hai nút trở về như ban đầu. Nhấp chuột phải dòng khác: chuyển lựa chọn sang dòng đó.
+- Mỗi mục chọn riêng một dòng. Menu chuột phải của trình duyệt chỉ bị chặn trên các dòng dữ liệu; chỗ khác vẫn như thường.
+- Bàn phím: mỗi dòng nhận focus bằng Tab (`tabindex="0"`); phím Menu hoặc Shift+F10 có tác dụng như chuột phải.
+- Dòng đang sửa đã được tô vàng nên không chọn được; thoát sửa bằng **Hủy**.
+- Lựa chọn được giữ khi trang cập nhật do thao tác khác, nếu dòng còn tồn tại. Bấm **Sửa** thì dòng chuyển sang "đang sửa"; xóa xong thì dòng biến mất; cả hai trường hợp đều tự bỏ chọn.
+- Dòng "Chưa có …" khi bảng rỗng không chọn được.
+
+**Cách làm**: nút **Sửa** gọi `click()` link Sửa của dòng, nút **Xóa** gọi `requestSubmit()` form xóa của dòng (cả hai nằm trong cột Thao tác bị ẩn). Vì vậy hai nút đi qua đúng luồng cũ: cập nhật tại chỗ (mục 6), hỏi lưu dữ liệu đang nhập dở (mục 7) và hộp xác nhận xóa (mục 8).
+
+**Khi tắt JavaScript**
+- Thẻ `<html>` không có class `js`, nên cột **Thao tác** hiện như cũ (link Sửa, nút Xóa trên từng dòng; xóa không có hộp xác nhận).
+- Nút **Sửa** / **Xóa** ở hàng nút và dòng gợi ý bị ẩn.
+- **Làm mới** là nút `type="reset"` thông thường: đưa form về giá trị lúc mở trang, tức là trống trừ các giá trị mặc định.
 
 ## 4. Kiểm tra phía trình duyệt
 Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc ở back-end. Đây chỉ là hỗ trợ người dùng; **back-end mới là nơi kiểm tra chính thức**.
@@ -96,11 +118,11 @@ Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc 
 Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía server **không đổi**: vẫn là Post/Redirect/Get, nên khi tắt JavaScript trang hoạt động như cũ (tải lại trang).
 
 **Luồng xử lý**
-1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy ở cả 4 mục; Tất cả). Giá trị `data-ajax` là id của mục cần cuộn tới và đặt con trỏ sau khi tải (`students`, `subjects`, `grades`, `tuition`), hoặc `search`. Form xóa thì hiện hộp xác nhận xóa trước (mục 8); người dùng bấm **Hủy** thì không gửi gì. Nếu đang có form nhập dở thì hỏi trước (mục 7).
+1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy ở cả 4 mục; Tất cả). Nút Sửa / Xóa ở hàng nút gọi lại đúng link Sửa / form Xóa của dòng đang chọn (mục 3). Giá trị `data-ajax` là id của mục cần cuộn tới và đặt con trỏ sau khi tải (`students`, `subjects`, `grades`, `tuition`), hoặc `search`. Form xóa thì hiện hộp xác nhận xóa trước (mục 8); người dùng bấm **Hủy** thì không gửi gì. Nếu đang có form nhập dở thì hỏi trước (mục 7).
 2. Gửi bằng `fetch` (form POST gửi `FormData` kèm `csrf_token`; form GET và link thì gửi GET). Với POST, `fetch` tự đi theo redirect về `/?message=…` hoặc `/?error=…`.
 3. Phân tích HTML trả về bằng `DOMParser`, rồi:
    - luôn thay vùng thông báo `#notices`;
-   - nếu **thành công**: thay các vùng `#stats`, `#students`, `#subjects`, `#grades`, `#tuition` và cập nhật 3 biểu đồ;
+   - nếu **thành công**: thay các vùng `#stats`, `#students`, `#subjects`, `#grades`, `#tuition`, cập nhật 3 biểu đồ, rồi chọn lại các dòng đang chọn còn tồn tại (`syncSelection`);
    - nếu **có lỗi** (trang mới có `.notice.error`): chỉ hiện thông báo, **không** thay các vùng khác, nên form giữ nguyên dữ liệu đã nhập.
 4. Giữ vị trí cuộn: đo vị trí của vùng (`section`) chứa form/link vừa dùng trước và sau khi thay nội dung rồi `scrollBy` phần chênh lệch.
 5. Địa chỉ trình duyệt:
@@ -138,7 +160,7 @@ Mỗi thao tác thành công đều thay toàn bộ các vùng dữ liệu (mụ
 | F5, đóng tab, mở liên kết khác (`/health`) | Mọi form nhập dở. Trình duyệt hiện hộp thoại "Rời khỏi trang?" của chính nó (sự kiện `beforeunload`) |
 | Bấm menu (`#neo`) | Không hỏi, vì chỉ cuộn trang và không mất gì |
 
-Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **Hủy** ở đó thì dừng luôn, không hỏi gì thêm. Bấm **Làm mới** không làm thay trang nên không hỏi.
+Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **Hủy** ở đó thì dừng luôn, không hỏi gì thêm. Chọn dòng, bỏ chọn hay bấm **Làm mới** không làm thay trang nên không hỏi.
 
 **Hộp thoại** (`<dialog id="unsaved-dialog">`, mở bằng `showModal()`)
 - Liệt kê từng mục đang nhập dở, ví dụ: **Môn học** (đang thêm mới): Mã môn, Tên môn học.
@@ -151,7 +173,7 @@ Với thao tác xóa, hộp xác nhận xóa (mục 8) hiện trước. Bấm **
 | **Ở lại nhập tiếp** (hoặc phím Esc) | Không làm gì; cuộn tới và đặt con trỏ vào ô đang nhập dở. |
 
 ## 8. Xác nhận xóa
-Bấm **Xóa** ở bất kỳ bảng nào sẽ hiện hộp thoại của chương trình (`<dialog id="delete-dialog">`, cùng kiểu với mục 7). Chương trình không dùng hộp `confirm()` của trình duyệt, vì hộp đó luôn có dòng tiêu đề "localhost:5000 says" mà trang web không đổi được.
+Chọn dòng rồi bấm **Xóa** ở bất kỳ mục nào sẽ hiện hộp thoại của chương trình (`<dialog id="delete-dialog">`, cùng kiểu với mục 7). Chương trình không dùng hộp `confirm()` của trình duyệt, vì hộp đó luôn có dòng tiêu đề "localhost:5000 says" mà trang web không đổi được.
 
 | Bảng | Tiêu đề | Câu hỏi | Ghi chú (chữ đỏ) |
 |---|---|---|---|
