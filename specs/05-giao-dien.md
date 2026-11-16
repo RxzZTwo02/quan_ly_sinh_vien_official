@@ -8,7 +8,7 @@
 ## 1. Route
 | Method | Đường dẫn | Xử lý | API back-end gọi tới |
 |---|---|---|---|
-| GET | `/` | Trang chính. Tham số: `q`, `q_subject`, `q_grade`, `q_tuition` (từ khóa tìm kiếm của bảng sinh viên / môn học / điểm / học phí); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa); `message`, `error` (thông báo) | `GET /api/students?q=` (bảng sinh viên), `GET /api/students` không lọc (chỉ khi có `q`, cho ô chọn sinh viên ở Bảng điểm và Học phí), `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades` (luôn gọi không lọc: ô chọn môn ở Bảng điểm, số bản ghi điểm của môn), thêm `GET /api/subjects?q=` / `GET /api/grades?q=` khi có `q_subject` / `q_grade`, `GET /api/tuition?q=`, `GET /api/stats` |
+| GET | `/` | Trang chính. Tham số: `q`, `q_subject`, `q_grade`, `q_tuition` (từ khóa tìm kiếm của bảng sinh viên / môn học / điểm / học phí); `edit`, `edit_subject`, `edit_grade`, `edit_tuition` (id bản ghi sinh viên / môn / điểm / học phí cần sửa). Tham số `message` / `error` của link cũ bị bỏ qua (xem "Thông báo" bên dưới) | `GET /api/students?q=` (bảng sinh viên), `GET /api/students` không lọc (chỉ khi có `q`, cho ô chọn sinh viên ở Bảng điểm và Học phí), `GET /api/<students\|subjects\|grades\|tuition>/<id>` (khi có tham số sửa), `GET /api/subjects`, `GET /api/grades` (luôn gọi không lọc: ô chọn môn ở Bảng điểm, số bản ghi điểm của môn), thêm `GET /api/subjects?q=` / `GET /api/grades?q=` khi có `q_subject` / `q_grade`, `GET /api/tuition?q=`, `GET /api/stats` |
 | POST | `/save` | Thêm sinh viên (không có `id`) hoặc sửa (có `id`) | `POST /api/students` / `PUT /api/students/<id>` |
 | POST | `/delete/<id>` | Xóa sinh viên | `DELETE /api/students/<id>` |
 | POST | `/subjects/save` | Thêm môn học (không có `id`) hoặc sửa (có `id`) | `POST /api/subjects` / `PUT /api/subjects/<id>` |
@@ -22,13 +22,18 @@
 ### Giữ kết quả tìm kiếm (FR-32)
 - Hằng `SEARCH_PARAMS = ("q", "q_subject", "q_grade", "q_tuition")` và hàm `active_searches()` trong `frontend/app.py` lấy các từ khóa đang dùng (bỏ ô rỗng); template nhận chúng qua biến `searches`.
 - Link **Sửa** và **Hủy** ở cả 4 mục: `url_for('index', <tham số sửa>, **searches)`, nên giữ mọi từ khóa.
-- Mọi form POST (4 form nhập liệu, 4 loại form xóa) có ô ẩn chứa các từ khóa (macro Jinja `keep_search`). `call_and_redirect()` đọc lại chúng từ form và đưa vào địa chỉ chuyển hướng `/?message=…` / `/?error=…`. Ô ẩn không được tính khi xét "đang nhập dở" (mục 7).
+- Mọi form POST (4 form nhập liệu, 4 loại form xóa) có ô ẩn chứa các từ khóa (macro Jinja `keep_search`). `call_and_redirect()` đọc lại chúng từ form và đưa vào địa chỉ chuyển hướng `/?q=…`. Ô ẩn không được tính khi xét "đang nhập dở" (mục 7).
 - Form tìm kiếm của mỗi mục có ô ẩn chứa từ khóa của 3 mục kia, nên tìm ở bảng này không bỏ kết quả của bảng khác.
 - Nút **Tất cả** của mỗi mục chỉ bỏ từ khóa của mục đó (bộ lọc Jinja `without`).
 - Không có từ khóa nào thì các địa chỉ giữ dạng cũ, không có tham số rỗng.
 
+### Thông báo (chống giả mạo, BUG-05)
+- Sau khi lưu / xóa, `call_and_redirect()` ghi thông báo của back-end vào session bằng `flash(…, "success" | "error")` rồi chuyển hướng về `/` (kèm các từ khóa đang tìm). `index()` đọc `get_flashed_messages(with_categories=True)`: mỗi thông báo hiện **một lần**, F5 không hiện lại.
+- Trang chính **không** đọc thông báo từ URL. Trước đây `/?error=<chữ bất kỳ>` hiện thành hộp đỏ giống thông báo thật, nên có thể gửi link chứa thông báo giả (content spoofing).
+- Thông báo lỗi khác do chính server tạo khi tải trang (không tìm thấy bản ghi cần sửa, back-end tắt) vẫn hiện như cũ.
+
 ### Xử lý lỗi
-- Lỗi từ API khi ghi → chuyển hướng `/?error=<thông điệp của back-end>` (kèm các từ khóa đang tìm).
+- Lỗi từ API khi ghi → flash thông điệp của back-end (hộp đỏ) rồi chuyển hướng về `/` (kèm các từ khóa đang tìm).
 - Lỗi khi tải trang chính (back-end tắt, MySQL tắt…) → vẫn render trang với dữ liệu rỗng và thông báo lỗi; mã HTTP `503` nếu back-end trả/không kết nối được (503), ngược lại `502`.
 - Tham số sửa trỏ tới bản ghi không tồn tại → thông báo "Không tìm thấy sinh viên / môn học / bản ghi điểm / bản ghi học phí cần sửa."
 - `id` trong form sửa không phải số → `400`.
@@ -40,7 +45,7 @@
 
 ## 3. Bố cục trang (từ trên xuống)
 1. **Đầu trang**: tiêu đề "🎓 Quản lý sinh viên" và mô tả.
-2. **Thông báo** (`#notices`): hộp xanh (`message`) / đỏ (`error`), nổi cố định ở giữa phía trên màn hình, có nút × để đóng; hộp xanh tự ẩn sau 4 giây.
+2. **Thông báo** (`#notices`): hộp xanh (thành công) / đỏ (lỗi), chỉ do server tạo (mục 1, "Thông báo"), nổi cố định ở giữa phía trên màn hình, có nút × để đóng; hộp xanh tự ẩn sau 4 giây.
 3. **Thẻ KPI** (4 thẻ): Tổng sinh viên · Môn học · Bản ghi điểm · Học phí còn nợ (định dạng `1,234,567 đ`).
 4. **Dashboard** (3 biểu đồ Chart.js):
    | Biểu đồ | Loại | Dữ liệu |
@@ -85,7 +90,7 @@ Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), �
 - Form có trường ẩn `id` và thuộc tính `data-editing-label` (mã, tên của bản ghi đang sửa, dùng trong hộp thoại ở mục 7). Dòng đang sửa trong bảng được tô vàng, có thêm vạch cam bên trái (`tr.is-editing`) để phân biệt với dòng đang chọn. Nút lưu đổi thành **Lưu thay đổi**, có thêm nút **Hủy**.
 - Dòng đang sửa được đưa lên **đầu bảng** (FR-33), kể cả khi bảng đang hiện kết quả tìm kiếm; các dòng khác giữ thứ tự cũ. Việc này làm ở phía server bằng bộ lọc Jinja `editing_first` (sắp xếp ổn định) trên vòng lặp của 4 bảng, không áp dụng cho ô chọn sinh viên / môn học, và vẫn đúng khi tắt JavaScript.
 - Lưu thành công hoặc bấm **Hủy** thì thoát chế độ sửa; địa chỉ không còn tham số sửa nên dòng về lại vị trí cũ và hết tô vàng. Bấm **Hủy** là bỏ mọi thay đổi chưa lưu của form đó, không hỏi lại (mục 7).
-- Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/?error=…` nên thoát chế độ sửa.
+- Lưu bị lỗi (ví dụ trùng, 409) thì vẫn ở chế độ sửa và giữ dữ liệu đã nhập (mục 6). Riêng khi tắt JavaScript, trang chuyển hướng về `/` (kèm thông báo lỗi) nên thoát chế độ sửa.
 - Mỗi lúc chỉ sửa một bản ghi trên cả trang, vì link Sửa chỉ mang một tham số sửa. Đang sửa mà bấm **Sửa** bản ghi khác (cùng mục hay mục khác) thì luôn hỏi trước "Chưa hoàn tất sửa thông tin", kể cả khi chưa đổi gì (mục 7).
 - Khi sửa, nút **Làm mới** bị ẩn; nhóm nút bên trái chỉ còn **Lưu thay đổi** và **Hủy**. Sửa / Xóa bên phải vẫn giữ.
 
@@ -126,18 +131,18 @@ Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc 
 - Sau mỗi thao tác, biểu đồ được cập nhật tại chỗ (`chart.update()`) từ dữ liệu `dashboard-data` của trang mới, có hiệu ứng chuyển.
 
 ## 6. Cập nhật tại chỗ (không tải lại trang)
-Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía server **không đổi**: vẫn là Post/Redirect/Get, nên khi tắt JavaScript trang hoạt động như cũ (tải lại trang).
+Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía server vẫn là Post/Redirect/Get, nên khi tắt JavaScript trang hoạt động như cũ (tải lại trang).
 
 **Luồng xử lý**
 1. Bắt sự kiện `submit` của mọi form trong `<main>` và `click` của các link có thuộc tính `data-ajax` (Sửa, Hủy ở cả 4 mục; Tất cả). Nút Sửa / Xóa ở hàng nút gọi lại đúng link Sửa / form Xóa của dòng đang chọn (mục 3). Giá trị `data-ajax` là id của mục cần cuộn tới và đặt con trỏ sau khi tải (`students`, `subjects`, `grades`, `tuition`), hoặc `search`. Form xóa thì hiện hộp xác nhận xóa trước (mục 8); người dùng bấm **Hủy** thì không gửi gì. Nếu đang có form nhập dở thì hỏi trước (mục 7).
-2. Gửi bằng `fetch` (form POST gửi `FormData` kèm `csrf_token`; form GET và link thì gửi GET). Với POST, `fetch` tự đi theo redirect về `/?message=…` hoặc `/?error=…`.
+2. Gửi bằng `fetch` (form POST gửi `FormData` kèm `csrf_token`; form GET và link thì gửi GET). Với POST, `fetch` tự đi theo redirect về `/` (kèm cookie session), nên trang kết quả đã có sẵn thông báo flash.
 3. Phân tích HTML trả về bằng `DOMParser`, rồi:
    - luôn thay vùng thông báo `#notices`;
    - nếu **thành công**: thay các vùng `#stats`, `#students`, `#subjects`, `#grades`, `#tuition`, cập nhật 3 biểu đồ, rồi chọn lại các dòng đang chọn còn tồn tại (`syncSelection`);
    - nếu **có lỗi** (trang mới có `.notice.error`): chỉ hiện thông báo, **không** thay các vùng khác, nên form giữ nguyên dữ liệu đã nhập.
 4. Giữ vị trí cuộn: đo vị trí của vùng (`section`) chứa form/link vừa dùng trước và sau khi thay nội dung rồi `scrollBy` phần chênh lệch.
 5. Địa chỉ trình duyệt:
-   - luôn bỏ `message`/`error`, để F5 không hiện lại thông báo cũ;
+   - luôn bỏ `message`/`error` còn sót ở link cũ (server không còn đặt chúng lên URL);
    - Tìm kiếm, Sửa, Hủy, Tất cả dùng `history.pushState`, nên nút Back/Forward vẫn quay lại đúng trạng thái (sự kiện `popstate` tải lại nội dung tại chỗ);
    - thao tác ghi dùng `replaceState`;
    - bấm menu (`#students`, `#grades`…) cũng phát `popstate` nhưng chỉ đổi phần `#neo`. Script so đường dẫn mới với nội dung đang hiển thị (`shownPath`); nếu chỉ khác `#neo` thì **không tải lại**, trình duyệt chỉ cuộn trang. Trước đây bước này tải lại các vùng dữ liệu và xóa mọi form đang nhập.

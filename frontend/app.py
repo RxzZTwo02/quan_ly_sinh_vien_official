@@ -15,7 +15,8 @@ for _stream in (sys.stdout, sys.stderr):
 
 load_dotenv(Path(__file__).resolve().parent / ".env")  # phải nạp trước khi import api_client
 
-from flask import Flask, abort, redirect, render_template, request, session, url_for  # noqa: E402
+from flask import (Flask, abort, flash, get_flashed_messages, redirect, render_template,  # noqa: E402
+                   request, session, url_for)
 from waitress import serve  # noqa: E402
 
 import api_client as api  # noqa: E402
@@ -79,13 +80,17 @@ app.jinja_env.filters["without"] = without
 
 
 def call_and_redirect(func, *args):
-    """Gọi API rồi quay về trang chính với thông báo thành công hoặc lỗi, giữ nguyên tìm kiếm."""
+    """Gọi API rồi quay về trang chính (giữ nguyên tìm kiếm). Thông báo thành công / lỗi được lưu
+    trong session (flash) và hiện một lần ở trang tiếp theo, không đặt lên URL: như vậy không ai
+    tạo được link hiện thông báo giả (BUG-05), và F5 không hiện lại thông báo cũ."""
     searches = active_searches(request.form)
     try:
         result = func(*args)
     except ApiError as exc:
-        return redirect(url_for("index", error=exc.message, **searches))
-    return redirect(url_for("index", message=result.get("message", "Thành công."), **searches))
+        flash(exc.message, "error")
+    else:
+        flash(result.get("message", "Thành công."), "success")
+    return redirect(url_for("index", **searches))
 
 
 def save_record(collection, fields):
@@ -157,13 +162,17 @@ def index():
     subject_keyword = request.args.get("q_subject", "").strip()
     grade_keyword = request.args.get("q_grade", "").strip()
     tuition_keyword = request.args.get("q_tuition", "").strip()
-    error = request.args.get("error", "")
+    # Không đọc ?message= / ?error=: chỉ hiện thông báo do chính server tạo.
+    flashed = get_flashed_messages(with_categories=True)
+    messages = [text for kind, text in flashed if kind == "success"]
+    errors = [text for kind, text in flashed if kind != "success"]
     status = 200
     try:
         students = api.get("/api/students", {"q": keyword})
         all_students = api.get("/api/students") if keyword else students
         editing, edit_error = load_editing()
-        error = error or edit_error
+        if edit_error:
+            errors.append(edit_error)
         subjects, all_subjects = search_list("subjects", subject_keyword)
         grades, all_grades = search_list("grades", grade_keyword)
         tuition = api.get("/api/tuition", {"q": tuition_keyword})
@@ -173,7 +182,7 @@ def index():
         all_subjects, all_grades = [], []
         stats = {"total": 0, "subject_count": 0, "grade_count": 0, "tuition_balance": 0,
                  "chart_data": EMPTY_CHART}
-        error = exc.message
+        errors.append(exc.message)
         status = 503 if exc.status == 503 else 502
     return render_template("index.html", students=students, all_students=all_students, keyword=keyword,
         subject_keyword=subject_keyword, grade_keyword=grade_keyword, tuition_keyword=tuition_keyword,
@@ -184,7 +193,7 @@ def index():
         total=stats["total"], subjects=subjects, grades=grades, tuition=tuition,
         subject_count=stats["subject_count"], grade_count=stats["grade_count"],
         tuition_balance=stats["tuition_balance"], chart_data=stats["chart_data"],
-        message=request.args.get("message", ""), error=error), status
+        messages=messages, errors=errors), status
 
 
 @app.post("/save")

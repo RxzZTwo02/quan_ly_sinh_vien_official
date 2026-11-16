@@ -546,14 +546,14 @@
       <p>Quản lý hồ sơ, môn học, bảng điểm và học phí trên một giao diện.</p>
     </header>
 
-    <!-- Thông báo -->
+    <!-- Thông báo: chỉ do server tạo (flash sau khi lưu / xóa, hoặc lỗi khi tải trang), không lấy từ URL -->
     <div id="notices" class="notices">
-      {% if message %}
+      {% for message in messages %}
       <div class="notice success" role="status">{{ message }}</div>
-      {% endif %}
-      {% if error %}
+      {% endfor %}
+      {% for error in errors %}
       <div class="notice error" role="alert">{{ error }}</div>
-      {% endif %}
+      {% endfor %}
     </div>
 
     <!-- Thẻ thống kê -->
@@ -1245,7 +1245,8 @@
       const showNotice = (text, kind) => setNotices([makeNotice(text, kind)]);
 
       // ===================================================== Gửi yêu cầu, thay nội dung tại chỗ
-      /* Bỏ ?message=/?error= khỏi địa chỉ để F5 không hiện lại thông báo cũ. */
+      /* Bỏ ?message=/?error= (của link cũ) khỏi địa chỉ. Server không còn đặt thông báo lên URL:
+         thông báo đi qua session (flash) và chỉ hiện một lần. */
       function cleanUrl(href) {
         const url = new URL(href, location.href);
         url.searchParams.delete('message');

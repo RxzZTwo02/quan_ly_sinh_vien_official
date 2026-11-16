@@ -39,7 +39,7 @@ Trình duyệt ──HTTP (HTML form)──▶ Front-end Flask :5000 ──REST/
 1. Trình duyệt `POST /save` (form + `csrf_token`) tới front-end.
 2. Front-end kiểm tra CSRF, gọi `POST /api/students` (JSON) tới back-end.
 3. Back-end kiểm tra dữ liệu, ghi MySQL trong một transaction, trả `{"message": ...}` hoặc `{"error": ...}`.
-4. Front-end chuyển hướng `302` về `/?message=...` hoặc `/?error=...` (mẫu Post/Redirect/Get).
+4. Front-end lưu thông báo thành công / lỗi vào session (flash) rồi chuyển hướng `302` về `/` (mẫu Post/Redirect/Get). Thông báo hiện một lần ở trang tiếp theo, không nằm trên URL.
 5. Trang chủ gọi lại các API đọc và hiển thị thông báo.
 
 Khi trình duyệt bật JavaScript, bước 1 được gửi bằng `fetch` thay vì gửi form thông thường. Trang trả về ở bước 5 không thay cả cửa sổ; chỉ các vùng dữ liệu được thay tại chỗ (xem [05](05-giao-dien.md) mục 6). Phía server không đổi.
