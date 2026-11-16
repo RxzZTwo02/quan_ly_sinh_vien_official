@@ -51,14 +51,19 @@ def text(data, key, default=""):
 
 
 def keyword_filter(*columns):
-    """Tham số ?q=: trả về (" WHERE c1 LIKE %s OR c2 LIKE %s ...", tham số) để khớp một phần
+    """Tham số ?q=: trả về (" WHERE c1 LIKE %s ESCAPE '!' OR ...", tham số) để khớp một phần
     trên các cột đã cho. Không có q (hoặc chỉ toàn khoảng trắng) thì ("", None): không lọc
-    (None để pymysql không thay %s trong câu SQL)."""
+    (None để pymysql không thay %s trong câu SQL).
+    % và _ trong từ khóa được tìm như ký tự thường (thoát bằng '!'), không phải ký tự đại diện
+    của LIKE: tìm "QA_0" chỉ ra mã có đúng "QA_0". Dùng '!' thay cho '\\' để không phụ thuộc
+    chế độ NO_BACKSLASH_ESCAPES của MySQL."""
     keyword = request.args.get("q", "").strip()
     if not keyword:
         return "", None
-    like = f"%{keyword}%"
-    return " WHERE " + " OR ".join(f"{col} LIKE %s" for col in columns), (like,) * len(columns)
+    escaped = keyword.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+    like = f"%{escaped}%"
+    return (" WHERE " + " OR ".join(f"{col} LIKE %s ESCAPE '!'" for col in columns),
+            (like,) * len(columns))
 
 
 # ---------------------------------------------------------------- xử lý chung
@@ -121,12 +126,9 @@ def validate_student(data):
 
 @app.get("/api/students")
 def list_students():
-    keyword = request.args.get("q", "").strip()
-    like = f"%{keyword}%"
+    where, params = keyword_filter("student_code", "full_name", "class_name")
     with transaction() as cur:
-        cur.execute("""SELECT * FROM students
-            WHERE student_code LIKE %s OR full_name LIKE %s OR class_name LIKE %s
-            ORDER BY id DESC""", (like, like, like))
+        cur.execute("SELECT * FROM students" + where + " ORDER BY id DESC", params)
         return jsonify(rows(cur))
 
 

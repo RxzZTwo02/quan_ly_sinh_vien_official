@@ -4,7 +4,7 @@
 | Mã | Yêu cầu |
 |---|---|
 | FR-01 | Hiển thị danh sách sinh viên, mới nhất trước (sắp xếp `id` giảm dần). |
-| FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở form Bảng điểm và Học phí luôn có đủ sinh viên. |
+| FR-02 | Tìm sinh viên theo từ khóa; khớp **một phần** trên mã SV, họ tên hoặc lớp. Từ khóa rỗng thì hiển thị tất cả. Mọi ký tự trong từ khóa, kể cả `%` và `_`, được tìm đúng như đã gõ (áp dụng cho cả ô tìm kiếm của FR-31). Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở form Bảng điểm và Học phí luôn có đủ sinh viên. |
 | FR-03 | Thêm sinh viên gồm: mã SV, họ tên, lớp, email. |
 | FR-04 | Sửa sinh viên: chọn dòng (FR-29) rồi bấm **Sửa** đưa dữ liệu lên form, tiêu đề form đổi thành "Cập nhật sinh viên"; bấm **Hủy** để bỏ mọi thay đổi chưa lưu và thoát chế độ sửa, không hỏi lại (áp dụng cho nút Hủy ở cả 4 mục). Ở mọi mục, khi đang sửa thì dòng đang sửa trong bảng được tô vàng và nút lưu đổi thành **Lưu thay đổi**; form Môn học, Bảng điểm, Học phí còn hiện dòng nhắc "Đang sửa …". |
 | FR-05 | Xóa sinh viên: chọn dòng (FR-29) rồi bấm **Xóa**, sau khi người dùng xác nhận; xóa kèm toàn bộ điểm và học phí của sinh viên đó. Ở cả 4 mục, việc xác nhận xóa dùng hộp thoại của chương trình (không dùng hộp "localhost:5000 says" của trình duyệt), nêu rõ bản ghi sẽ bị xóa, có hai nút **Xóa** / **Hủy**. Chi tiết: [05](05-giao-dien.md) mục 8. |

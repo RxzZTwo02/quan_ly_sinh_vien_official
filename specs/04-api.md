@@ -40,7 +40,7 @@ Kiểm tra API và kết nối DB; không cần API key.
 ---
 
 ### `GET /api/students?q=<từ khóa>`
-Danh sách sinh viên, `id` giảm dần. `q` (tùy chọn) khớp `LIKE %q%` trên `student_code`, `full_name`, `class_name`.
+Danh sách sinh viên, `id` giảm dần. `q` (tùy chọn) khớp `LIKE %q%` trên `student_code`, `full_name`, `class_name`. Ký tự `%` và `_` trong `q` được tìm như ký tự thường, không phải ký tự đại diện (hàm `keyword_filter`, thoát bằng `ESCAPE '!'`); ví dụ `q=QA_0` không khớp `QA%015`. Quy tắc này dùng chung cho `q` của `/api/subjects`, `/api/grades`, `/api/tuition`.
 ```json
 [{"id": 10, "student_code": "SV010", "full_name": "Ngô Phương Mai", "class_name": "HTTT1", "email": "mai.np@example.edu.vn"}]
 ```
