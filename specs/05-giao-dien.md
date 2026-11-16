@@ -73,6 +73,8 @@ Mỗi mục 6–9 gồm form, hàng nút (xem "Hàng nút và chọn dòng" bên
    - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam).
 10. **Chân trang**: công nghệ và liên kết `/health`.
 
+Các cột chữ tự do (Họ tên, Lớp, Email; Tên môn; cột Sinh viên và Môn học ở Bảng điểm; cột Sinh viên ở Học phí) có class `wrap`: chữ được xuống dòng, kể cả chuỗi dài không có khoảng trắng (`overflow-wrap: anywhere`, tối thiểu `12ch`), nên bảng không bị kéo rộng ra ngoài khung (BUG-07). Các cột mã, học kỳ, số, tiền giữ trên một dòng. Màn hình hẹp hơn bảng thì vẫn cuộn ngang trong khung bảng (`.table-wrap`).
+
 Mỗi bảng vẫn có cột **Thao tác** (link Sửa, nút Xóa trên từng dòng) trong HTML, nhưng cột này bị ẩn khi có JavaScript. Xem "Khi tắt JavaScript" bên dưới.
 
 Trong `<head>` có `<link rel="icon" href="data:,">` (biểu tượng rỗng), để trình duyệt không tự gọi `/favicon.ico` và báo lỗi 404 trong console.

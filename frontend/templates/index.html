@@ -358,6 +358,14 @@
       color: #334155;
     }
 
+    /* Cột chữ tự do (họ tên, lớp, email, môn học): cho xuống dòng, kể cả chuỗi dài không có
+       khoảng trắng, để bảng không bị kéo rộng ra ngoài màn hình (BUG-07). Cột mã, số, tiền vẫn nowrap. */
+    td.wrap {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      min-width: 12ch;
+    }
+
     /* ===== Thông báo và tiện ích ===== */
     /* Thông báo nổi ở đầu màn hình để luôn nhìn thấy dù đang cuộn ở bảng nào */
     .notices {
@@ -681,9 +689,9 @@
             {% for s in students | editing_first(editing) %}
             <tr data-id="{{ s.id }}" tabindex="0"{% if editing and editing.id == s.id %} class="is-editing"{% endif %}>
               <td>{{ s.student_code }}</td>
-              <td>{{ s.full_name }}</td>
-              <td>{{ s.class_name }}</td>
-              <td>{{ s.email }}</td>
+              <td class="wrap">{{ s.full_name }}</td>
+              <td class="wrap">{{ s.class_name }}</td>
+              <td class="wrap">{{ s.email }}</td>
               <td class="col-actions">
                 <a class="button" href="{{ url_for('index', edit=s.id, **searches) }}" data-ajax="students">Sửa</a>
                 <form class="inline" method="post" action="{{ url_for('delete_student', student_id=s.id) }}"
@@ -766,7 +774,7 @@
             {% set sub_grade_count = all_grades | selectattr('subject_id', 'equalto', sub.id) | list | length %}
             <tr data-id="{{ sub.id }}" tabindex="0"{% if editing_subject and editing_subject.id == sub.id %} class="is-editing"{% endif %}>
               <td>{{ sub.subject_code }}</td>
-              <td>{{ sub.subject_name }}</td>
+              <td class="wrap">{{ sub.subject_name }}</td>
               <td>{{ sub.credits }}</td>
               <td class="col-actions">
                 <a class="button" href="{{ url_for('index', edit_subject=sub.id, **searches) }}" data-ajax="subjects">Sửa</a>
@@ -883,8 +891,8 @@
             {% for g in grades | editing_first(editing_grade) %}
             <tr data-id="{{ g.id }}" tabindex="0"{% if editing_grade and editing_grade.id == g.id %} class="is-editing"{% endif %}>
               <td>{{ g.student_code }}</td>
-              <td>{{ g.full_name }}</td>
-              <td>{{ g.subject_code }} — {{ g.subject_name }}</td>
+              <td class="wrap">{{ g.full_name }}</td>
+              <td class="wrap">{{ g.subject_code }} — {{ g.subject_name }}</td>
               <td>{{ g.semester }}</td>
               <td>{{ g.attendance | plain_number }}</td>
               <td>{{ g.midterm | plain_number }}</td>
@@ -1000,7 +1008,7 @@
             {% for t in tuition | editing_first(editing_tuition) %}
             <tr data-id="{{ t.id }}" tabindex="0"{% if editing_tuition and editing_tuition.id == t.id %} class="is-editing"{% endif %}>
               <td>{{ t.student_code }}</td>
-              <td>{{ t.full_name }}</td>
+              <td class="wrap">{{ t.full_name }}</td>
               <td>{{ t.semester }}</td>
               <td>{{ "{:,.0f}".format(t.amount_due) }} đ</td>
               <td>{{ "{:,.0f}".format(t.amount_paid) }} đ</td>
