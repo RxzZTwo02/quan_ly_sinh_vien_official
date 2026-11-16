@@ -8,9 +8,9 @@ Bộ tài liệu mô tả hệ thống **đúng như mã nguồn hiện tại** 
 | [02-yeu-cau-chuc-nang.md](02-yeu-cau-chuc-nang.md) | Yêu cầu chức năng và quy tắc nghiệp vụ |
 | [03-co-so-du-lieu.md](03-co-so-du-lieu.md) | Lược đồ MySQL, ràng buộc, seed dữ liệu mẫu |
 | [04-api.md](04-api.md) | Đặc tả REST API của back-end |
-| [05-giao-dien.md](05-giao-dien.md) | Route front-end, bố cục trang, chế độ sửa, cập nhật tại chỗ, hỏi lưu dữ liệu đang nhập dở, xác nhận xóa |
-| [06-cau-hinh-trien-khai.md](06-cau-hinh-trien-khai.md) | Biến môi trường, chạy trực tiếp, Docker, bảo mật |
-| [07-han-che.md](07-han-che.md) | Hạn chế đã biết và hướng cải tiến |
+| [05-giao-dien.md](05-giao-dien.md) | Route front-end, giữ kết quả tìm kiếm, thông báo, trang lỗi, bố cục trang, chế độ sửa, hàng nút và chọn dòng, cập nhật tại chỗ, hỏi lưu dữ liệu đang nhập dở, xác nhận xóa |
+| [06-cau-hinh-trien-khai.md](06-cau-hinh-trien-khai.md) | Biến môi trường, chạy trực tiếp, ghi log, Docker, bảo mật |
+| [07-han-che.md](07-han-che.md) | Hạn chế đã biết, hướng cải tiến, các hạn chế và lỗi (BUG-xx) đã khắc phục |
 
 Tài liệu lịch sử (giữ nguyên như lúc viết, **không** cập nhật theo mã):
 
@@ -21,4 +21,5 @@ Tài liệu lịch sử (giữ nguyên như lúc viết, **không** cập nhật
 
 ## Quy ước
 - Mã yêu cầu: `FR-xx` (chức năng), `NFR-xx` (phi chức năng), `BR-xx` (quy tắc nghiệp vụ).
+- Mã hạn chế: `L-xx` (hạn chế ghi nhận khi đọc mã), `BUG-xx` (lỗi trong báo cáo kiểm thử [08](08-bao-cao-kiem-thu-2026-11-16.md)); cả hai đều theo dõi ở [07](07-han-che.md).
 - Đường dẫn file tính từ thư mục gốc dự án.

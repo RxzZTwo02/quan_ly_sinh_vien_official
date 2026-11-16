@@ -156,6 +156,7 @@ Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía ser
 |---|---|
 | Đang gửi yêu cầu | Nút của form mờ đi (`aria-busy`), con trỏ chuột dạng chờ; bấm thêm lần nữa bị bỏ qua (chống gửi trùng). |
 | Sai/thiếu CSRF (phiên hết hạn) | Thông báo đỏ lấy từ trang lỗi 400: "Phiên làm việc hết hạn. Hãy tải lại trang." |
+| Trang trả về là trang lỗi khác (400 `id` sai, 404, 405, 500) | Thông báo đỏ lấy từ thẻ `<p>` đầu tiên của trang lỗi tiếng Việt (mục 1, "Xử lý lỗi"); trang hiện tại giữ nguyên. |
 | Back-end/MySQL tắt | Thông báo đỏ từ front-end; dữ liệu đang hiển thị được giữ nguyên. |
 | Front-end tắt (không gọi được `fetch`) | "Không kết nối được máy chủ front-end. Hãy kiểm tra frontend/app.py còn đang chạy." |
 

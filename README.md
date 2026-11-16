@@ -6,6 +6,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 
 ## Mục lục
 - [Tính năng](#tính-năng)
+  - [Quy tắc nhập liệu](#quy-tắc-nhập-liệu)
 - [Kiến trúc và công nghệ](#kiến-trúc-và-công-nghệ)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
 - [Lấy mã nguồn về máy](#lấy-mã-nguồn-về-máy)
@@ -20,8 +21,8 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 ## Tính năng
 | Mục | Thao tác | Ghi chú |
 |---|---|---|
-| Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở Bảng điểm và Học phí vẫn đủ danh sách. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. |
-| Môn học | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã hoặc tên môn. Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
+| Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở Bảng điểm và Học phí vẫn đủ danh sách. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. Quy tắc nhập: xem [Quy tắc nhập liệu](#quy-tắc-nhập-liệu). |
+| Môn học | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã hoặc tên môn. Mã môn chỉ gồm chữ cái không dấu và chữ số (ví dụ `INT1001`). Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
 | Bảng điểm | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên, môn học hoặc học kỳ; ô chọn môn ở form vẫn đủ danh sách. Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ, làm tròn 2 chữ số. Xếp loại Giỏi (≥ 8) / Khá (≥ 6,5) / Trung bình (≥ 5) / Cần cố gắng dựa trên đúng số đã làm tròn này. |
 | Học phí | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên hoặc học kỳ. Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. Hạn đóng (tùy chọn) phải là ngày có thật. |
 | Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). Biểu đồ phân loại luôn đủ 4 xếp loại, mỗi xếp loại một màu cố định. |
@@ -34,7 +35,10 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Giữ kết quả tìm kiếm**: đã tìm ở một bảng thì kết quả được giữ khi bấm Sửa, Hủy, lưu, xóa hay tìm ở bảng khác; bản ghi đang sửa vẫn nằm trong danh sách kết quả, được tô vàng. Chỉ nút **Tất cả** của bảng đó mới đưa bảng về danh sách đầy đủ.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
-- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Nhập sai thì form giữ nguyên dữ liệu để sửa lại. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường, Sửa / Xóa nằm ở cột **Thao tác** trên từng dòng, và nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
+- **Tìm kiếm**: khớp một phần, không phân biệt hoa / thường và có dấu / không dấu (tìm `nguyen` ra `Nguyễn`). Ký tự `%` và `_` được tìm đúng như đã gõ.
+- **Nhập sai**: thông báo đỏ nêu rõ từng ô sai và sai thế nào, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."; form giữ nguyên dữ liệu để sửa lại. Trùng mã thì báo riêng, ví dụ "Mã sinh viên SV001 đã tồn tại.".
+- **Thông báo**: chỉ do chương trình tạo ra sau mỗi thao tác, hiện **một lần** (F5 không hiện lại). Thông báo không nằm trên địa chỉ trang, nên không ai gửi được link chứa thông báo giả.
+- **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường, Sửa / Xóa nằm ở cột **Thao tác** trên từng dòng, và nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
 - **Không mất dữ liệu đang nhập dở**:
   - Bấm menu (Sinh viên, Môn học, Bảng điểm, Học phí) chỉ cuộn trang, dữ liệu đang gõ vẫn còn.
   - Đang nhập dở mà bấm Sửa / Tất cả, tìm kiếm, xóa, lưu hoặc Hủy ở mục khác hay nhấn Back, chương trình hỏi trước:
@@ -43,6 +47,20 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
     - **Ở lại nhập tiếp**: quay về ô đang nhập.
   - F5 hoặc đóng tab khi đang nhập dở thì trình duyệt hỏi "Rời khỏi trang?".
 - **Biểu đồ cần Internet**: Chart.js được tải từ CDN. Không có mạng thì chỉ biểu đồ không hiển thị, các phần khác vẫn dùng được.
+- **Chữ dài**: họ tên, lớp, email, tên môn dài tự xuống dòng trong bảng, nên bảng không bị tràn ra ngoài màn hình.
+
+### Quy tắc nhập liệu
+Back-end kiểm tra các quy tắc này cả khi gửi thẳng tới API; trình duyệt cũng báo sớm ngay trên ô nhập. Khoảng trắng đầu / cuối được tự cắt bỏ.
+
+| Ô | Quy tắc | Ví dụ hợp lệ | Bị từ chối |
+|---|---|---|---|
+| Mã SV, Mã môn | Tối đa 20 ký tự, chỉ chữ cái không dấu và chữ số, tự chuyển in hoa, không trùng | `SV001`, `int1001` → `INT1001` | `-1`, `QA 013`, `QA/014`, `SVĐ1` |
+| Họ tên | Tối đa 100 ký tự, bắt đầu bằng chữ cái; chỉ chữ cái (có dấu), khoảng trắng, `'` `.` `-` | `Nguyễn Văn An`, `O'Neil` | `12345 !@#$%`, `An1`, tên có xuống dòng |
+| Lớp | Tối đa 50 ký tự, bắt đầu bằng chữ hoặc số; chỉ chữ, số, khoảng trắng, `-` `_` `.` | `CNTT1`, `K65-CNTT` | `-A`, `A/B` |
+| Email | Tối đa 120 ký tự, dạng `tên@miền.đuôi`, không khoảng trắng | `an@example.com` | `@`, `a@`, `a@b`, `qa mail @ x y` |
+| Tên môn | Tối đa 120 ký tự, không giới hạn ký tự | `Lập trình C++` | *(để trống)* |
+
+Bản ghi đã lưu từ trước khi có các quy tắc này vẫn hiển thị bình thường; khi sửa bản ghi đó thì phải sửa các ô cho đúng quy tắc mới lưu được.
 
 ## Kiến trúc và công nghệ
 ```
@@ -73,7 +91,7 @@ frontend/                   giao diện web (cổng 5000)
   api_client.py             gọi back-end bằng requests
   templates/index.html      trang duy nhất: form, bảng, biểu đồ, hộp thoại, script cập nhật tại chỗ
   requirements.txt · .env.example · Dockerfile
-specs/                      tài liệu đặc tả hệ thống
+specs/                      tài liệu đặc tả hệ thống, báo cáo kiểm thử
 compose.yaml                chạy mysql + backend + frontend bằng Docker
 ```
 
@@ -157,7 +175,7 @@ Cần đã [lấy mã nguồn về máy](#lấy-mã-nguồn-về-máy) và cài 
 py --version    # phiên bản Python mặc định, cần 3.12 trở lên
 py -0           # liệt kê các phiên bản Python đã cài
 ```
-Nếu máy có nhiều phiên bản và muốn dùng đúng bản giống Docker, thay `py` bằng `py -3.12` ở bước tạo venv.
+Nếu máy có nhiều phiên bản và muốn dùng đúng bản giống Docker (image `python:3.14-slim`), thay `py` bằng `py -3.14` ở bước tạo venv.
 
 ### Bước 2 — Bật MySQL
 Mở **Laragon** → **Start All** (hoặc chỉ bật MySQL). Laragon mặc định dùng `root`, mật khẩu rỗng, cổng 3306. Ứng dụng dùng sẵn các giá trị này nên **không cần tạo file `.env`**.
@@ -206,6 +224,8 @@ Back-end API: http://127.0.0.1:5001  (MySQL root@127.0.0.1:3306/qlsv)
 Từ lần chạy sau, khi database đã có dữ liệu, dòng đầu đổi thành `Dùng dữ liệu hiện có trong database 'qlsv' (… sinh viên), không nạp dữ liệu mẫu.`
 
 Nếu không kết nối được MySQL, back-end dừng ngay và in hướng dẫn bật Laragon.
+
+**Ghi log ra file** (tùy chọn): `.\.venv\Scripts\python.exe app.py > log.txt 2>&1`. Tiếng Việt được ghi đúng dạng UTF-8, app không bị dừng vì lỗi bảng mã.
 
 Terminal 2 — front-end:
 ```powershell
@@ -273,6 +293,7 @@ Mở **http://localhost:5000**.
 
 - **3 service**: `mysql` (image `mysql:8.4`), `backend`, `frontend`.
 - **Cổng**: chỉ front-end mở cổng ra máy host (`127.0.0.1:5000`). MySQL và back-end chỉ truy cập được bên trong Docker, nên không xung đột với MySQL 3306 của Laragon. Tuy vậy, đừng chạy cùng lúc với front-end chạy trực tiếp, vì cả hai đều dùng cổng 5000.
+- **Thời gian chờ**: trong Docker, front-end chờ back-end trả lời tối đa 10 giây (`API_TIMEOUT: 10` trong `compose.yaml`), thay cho 5 giây khi chạy trực tiếp.
 - **Dữ liệu**: database trong Docker là database riêng, không dùng chung với `qlsv` của Laragon. Dữ liệu nằm trong volume `mysql_data`. Lần đầu chạy, khi volume còn trống, back-end tự nạp dữ liệu mẫu.
 - **Tùy chọn**: đặt trong file `.env` cạnh `compose.yaml`:
   - `MYSQL_ROOT_PASSWORD` (mặc định `qlsv_root`)
@@ -373,7 +394,9 @@ Biến dùng khi chạy Docker: xem [Chạy bằng Docker](#chạy-bằng-docker
 ## REST API
 Back-end chạy tại `http://127.0.0.1:5001`. Body gửi lên phải là JSON object.
 - Thành công: trả về `{"message": "..."}`; khi thêm mới thì kèm `"id"`.
-- Lỗi: trả về `{"error": "..."}`.
+- Lỗi: trả về `{"error": "..."}`. Lỗi dữ liệu sinh viên / môn học liệt kê từng ô sai, ví dụ `{"error": "Thông tin sinh viên chưa hợp lệ: Email không đúng định dạng (ví dụ an@example.com)."}`.
+- Tham số `?q=` khớp một phần; `%` và `_` được tìm như ký tự thường.
+- Phản hồi luôn có `Content-Type: application/json; charset=utf-8`, nên `Invoke-RestMethod` của PowerShell đọc đúng tiếng Việt.
 
 Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](specs/04-api.md).
 
@@ -392,13 +415,13 @@ Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](
 
 | Mã lỗi | Khi nào |
 |---|---|
-| 400 | Dữ liệu thiếu hoặc không hợp lệ (gồm cả số `nan` / `inf`, hạn đóng không phải ngày `YYYY-MM-DD` có thật), body không phải JSON, sinh viên / môn học được chọn không tồn tại |
+| 400 | Dữ liệu thiếu hoặc không hợp lệ (sai [quy tắc nhập liệu](#quy-tắc-nhập-liệu), số `nan` / `inf`, hạn đóng không phải ngày `YYYY-MM-DD` có thật), body không phải JSON, sinh viên / môn học được chọn không tồn tại |
 | 401 | Thiếu hoặc sai `X-API-Key` (khi có đặt `API_TOKEN`) |
 | 404 | Không tìm thấy bản ghi |
-| 409 | Trùng mã sinh viên / mã môn học; khi **sửa** điểm hoặc học phí, trùng với một bản ghi khác |
+| 409 | Trùng mã sinh viên / mã môn học (ví dụ "Mã sinh viên SV001 đã tồn tại."); khi **sửa** điểm hoặc học phí, trùng với một bản ghi khác |
 | 503 | Không kết nối được MySQL |
 
-Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng thái của cả front-end và back-end.
+Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng thái của cả front-end và back-end. Trang lỗi của front-end (400, 404, 405, 500) là trang tiếng Việt của chương trình, có link "Về trang chính".
 
 ## Xử lý sự cố
 | Hiện tượng | Nguyên nhân | Cách xử lý |
@@ -408,6 +431,8 @@ Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng t
 | Trang báo `Không kết nối được back-end tại http://127.0.0.1:5001…` | Back-end chưa chạy hoặc đã dừng | Chạy back-end ([Bước 4](#bước-4--chạy-chương-trình)) rồi tải lại trang |
 | Trang báo `Không kết nối được cơ sở dữ liệu MySQL.` | MySQL bị tắt trong lúc back-end đang chạy | Bật lại MySQL trong Laragon rồi tải lại trang |
 | Bấm lưu / xóa thì báo `Phiên làm việc hết hạn. Hãy tải lại trang.` | Front-end vừa khởi động lại mà chưa đặt `SECRET_KEY` | Tải lại trang (F5). Đặt `SECRET_KEY` cố định trong `frontend\.env` để không gặp lại |
+| Sửa một bản ghi cũ thì không lưu được, báo `Mã SV chỉ gồm chữ cái không dấu và chữ số…` hoặc `Email không đúng định dạng…` | Bản ghi được nhập từ trước khi có [quy tắc nhập liệu](#quy-tắc-nhập-liệu) hiện tại | Sửa các ô được nêu trong thông báo cho đúng quy tắc rồi lưu lại |
+| Trang hiện `Lỗi 404 · Không tìm thấy trang hoặc bản ghi.` | Mở địa chỉ không có, hoặc bản ghi đã bị xóa | Bấm **Về trang chính** |
 | Báo `Thiếu hoặc sai API key.` | `API_TOKEN` ở hai app khác nhau | Đặt cùng một giá trị trong `backend\.env` và `frontend\.env`, rồi khởi động lại cả hai |
 | Biểu đồ báo `Không tải được thư viện biểu đồ…` | Không có Internet (Chart.js tải từ CDN) | Kết nối mạng rồi tải lại trang. Các chức năng khác vẫn dùng được |
 | Đã sửa code / template nhưng trang vẫn như cũ | App chưa được chạy lại sau khi sửa | Dừng app (Ctrl+C) rồi chạy lại. Docker thì chạy `docker compose up --build -d` |
@@ -422,4 +447,5 @@ Thư mục [specs/](specs/README.md) mô tả hệ thống đúng như mã ngu�
 - đặc tả API;
 - giao diện;
 - cấu hình triển khai;
-- hạn chế đã biết.
+- hạn chế đã biết, các lỗi đã khắc phục;
+- báo cáo kiểm thử ngày 16/11/2026 ([08](specs/08-bao-cao-kiem-thu-2026-11-16.md)). Cách khắc phục 9 lỗi của báo cáo ghi ở [07](specs/07-han-che.md) mục 3.

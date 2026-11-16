@@ -21,6 +21,8 @@ Xóa sinh viên hoặc môn học sẽ xóa dây chuyền (`ON DELETE CASCADE`) 
 | `class_name` | VARCHAR(50) | NOT NULL |
 | `email` | VARCHAR(120) | NOT NULL |
 
+Quy tắc định dạng chỉ được kiểm tra ở back-end, **không** có CHECK trong DB ([02](02-yeu-cau-chuc-nang.md) BR-02, BR-03, BR-20): mã chỉ gồm `A–Z`, `0–9`; họ tên, lớp giới hạn ký tự; email đúng dạng. Dữ liệu nhập từ trước khi có các quy tắc này, hoặc nhập thẳng vào MySQL (phpMyAdmin), có thể không khớp; khi sửa trên giao diện thì phải sửa cho đúng mới lưu được.
+
 ## 3. Bảng `subjects`
 | Cột | Kiểu | Ràng buộc |
 |---|---|---|
@@ -74,11 +76,9 @@ Khóa duy nhất `uq_tuition (student_id, semester)`, dùng giống `uq_grades`:
 ## 7. Kết nối
 - PyMySQL, `DictCursor`, `autocommit=False`, `connect_timeout=5`.
 - Cờ `CLIENT.FOUND_ROWS`: `UPDATE` trả về số dòng **khớp** điều kiện. Vì vậy bấm **Lưu thay đổi** mà không đổi gì (ở cả 4 mục) vẫn được coi là thành công, không bị nhầm thành 404.
-- Lỗi `IntegrityError` được xử lý như sau:
-  - Sinh viên và môn học: mọi lỗi đều là trùng mã → `409`.
-  - Điểm và học phí: phân loại theo mã lỗi MySQL (hằng số trong `db.py`):
-    - `1062` (`ER_DUP_ENTRY`, trùng khóa UNIQUE) → `409`;
-    - `1452` (`ER_NO_REFERENCED_ROW`, khóa ngoại trỏ tới bản ghi không tồn tại) và các lỗi khác → `400`.
+- Lỗi `IntegrityError` được phân loại theo mã lỗi MySQL (hằng số trong `db.py`) ở cả 4 bảng:
+  - `1062` (`ER_DUP_ENTRY`, trùng khóa UNIQUE) → `409`. Sinh viên và môn học báo kèm mã bị trùng, ví dụ "Mã sinh viên SV001 đã tồn tại." (hàm `duplicate_error` trong `backend/app.py`);
+  - `1452` (`ER_NO_REFERENCED_ROW`, khóa ngoại trỏ tới bản ghi không tồn tại) và các lỗi khác → `400`.
 - Mỗi request mở một kết nối mới qua `db.transaction()`: commit khi thành công, rollback khi lỗi, luôn đóng kết nối. Không dùng connection pool.
 - Khởi động: thử kết nối `DB_CONNECT_RETRIES` lần, cách nhau `DB_CONNECT_DELAY` giây (Docker đặt 30 lần).
 

@@ -11,9 +11,10 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 ## 2. Phạm vi
 **Trong phạm vi**
 - Thêm / sửa / xóa / tìm kiếm sinh viên.
-- Thêm / sửa / xóa môn học, xem danh mục môn học.
-- Nhập, sửa, xóa điểm; tự tính điểm tổng kết.
-- Nhập, sửa, xóa học phí theo học kỳ; tự tính số còn nợ.
+- Thêm / sửa / xóa / tìm kiếm môn học.
+- Nhập, sửa, xóa, tìm kiếm điểm; tự tính điểm tổng kết.
+- Nhập, sửa, xóa, tìm kiếm học phí theo học kỳ; tự tính số còn nợ.
+- Kiểm tra dữ liệu nhập ở back-end (độ dài, định dạng mã, họ tên, lớp, email…), báo rõ ô nào sai.
 - Dashboard: 4 thẻ KPI, 3 biểu đồ.
 - Tự nạp dữ liệu mẫu khi database rỗng (tắt bằng `SEED_DATA=no`).
 
@@ -24,7 +25,7 @@ Website giúp cán bộ quản lý đào tạo theo dõi trên **một trang duy
 ## 3. Người dùng
 | Vai trò | Mô tả |
 |---|---|
-| Người quản lý | Người duy nhất dùng giao diện web; mọi người truy cập được trang đều có toàn quyền. |
+| Người quản lý (giảng viên) | Người duy nhất dùng giao diện web; mọi người truy cập được trang đều có toàn quyền. Đăng nhập / phân quyền là hướng phát triển ([07](07-han-che.md) L-10). |
 | Hệ thống khác (tùy chọn) | Gọi trực tiếp REST API của back-end, có thể yêu cầu `X-API-Key`. |
 
 ## 4. Kiến trúc
@@ -38,11 +39,11 @@ Trình duyệt ──HTTP (HTML form)──▶ Front-end Flask :5000 ──REST/
 ### Luồng xử lý một thao tác ghi (ví dụ thêm sinh viên)
 1. Trình duyệt `POST /save` (form + `csrf_token`) tới front-end.
 2. Front-end kiểm tra CSRF, gọi `POST /api/students` (JSON) tới back-end.
-3. Back-end kiểm tra dữ liệu, ghi MySQL trong một transaction, trả `{"message": ...}` hoặc `{"error": ...}`.
+3. Back-end kiểm tra dữ liệu (sai thì trả `400` liệt kê từng ô sai, BR-19), ghi MySQL trong một transaction, trả `{"message": ...}` hoặc `{"error": ...}`.
 4. Front-end lưu thông báo thành công / lỗi vào session (flash) rồi chuyển hướng `302` về `/` (mẫu Post/Redirect/Get). Thông báo hiện một lần ở trang tiếp theo, không nằm trên URL.
 5. Trang chủ gọi lại các API đọc và hiển thị thông báo.
 
-Khi trình duyệt bật JavaScript, bước 1 được gửi bằng `fetch` thay vì gửi form thông thường. Trang trả về ở bước 5 không thay cả cửa sổ; chỉ các vùng dữ liệu được thay tại chỗ (xem [05](05-giao-dien.md) mục 6). Phía server không đổi.
+Khi trình duyệt bật JavaScript, bước 1 được gửi bằng `fetch` thay vì gửi form thông thường. Trang trả về ở bước 5 không thay cả cửa sổ; chỉ các vùng dữ liệu được thay tại chỗ (xem [05](05-giao-dien.md) mục 6). Phía server xử lý giống hệt khi tắt JavaScript.
 
 ## 5. Công nghệ
 | Thành phần | Công nghệ |
@@ -58,18 +59,18 @@ Khi trình duyệt bật JavaScript, bước 1 được gửi bằng `fetch` tha
 ## 6. Cấu trúc mã nguồn
 ```
 backend/
-  app.py                    # route REST API, kiểm tra dữ liệu, xử lý lỗi
+  app.py                    # route REST API, kiểm tra dữ liệu, tìm kiếm, xử lý lỗi
   db.py                     # kết nối, transaction, khởi tạo/seed DB
   sql/schema.sql            # lược đồ bảng
   sql/seed.sql              # dữ liệu mẫu (nạp khi DB rỗng)
   config.py                 # đọc biến môi trường / .env
   Dockerfile, .env.example, requirements.txt
 frontend/
-  app.py                    # route giao diện, CSRF, chế độ sửa
+  app.py                    # route giao diện, CSRF, chế độ sửa, giữ tìm kiếm, thông báo (flash), trang lỗi
   api_client.py             # gọi back-end bằng requests
   templates/index.html      # giao diện một trang + Chart.js + script cập nhật tại chỗ
   Dockerfile, .env.example, requirements.txt
-specs/                      # tài liệu đặc tả (thư mục này)
+specs/                      # tài liệu đặc tả (thư mục này), báo cáo kiểm thử
 compose.yaml                # mysql + backend + frontend
 README.md                   # hướng dẫn cài đặt, chạy, xử lý sự cố
 ```

@@ -83,7 +83,10 @@ Front-end trong Docker dùng cổng `5000` của host, nên không chạy cùng 
 |---|---|
 | CSRF token cho mọi form POST | `frontend/app.py` |
 | Cookie session `HttpOnly`, `SameSite=Lax` | `frontend/app.py` |
-| SQL tham số hóa | `backend/app.py` |
+| SQL tham số hóa; từ khóa tìm kiếm thoát `%` `_` (`LIKE … ESCAPE '!'`) | `backend/app.py` |
+| Kiểm tra định dạng dữ liệu ở back-end (mã, họ tên, lớp, email), kể cả khi gọi thẳng API | `backend/app.py` (`validate_student`, `validate_subject`) |
+| Thông báo đi qua session (`flash`), không đọc từ URL, nên không tạo được link chứa thông báo giả | `frontend/app.py` |
+| Trang lỗi riêng của chương trình, không hiện trang mặc định của Flask | `frontend/app.py` (`handle_http_error`) |
 | API key tùy chọn, so sánh thời gian hằng | `backend/app.py` |
 | Jinja tự escape HTML (chống XSS) | `index.html` |
 | Back-end và MySQL không mở ra ngoài khi chạy Docker; mặc định chỉ lắng nghe `127.0.0.1` | `compose.yaml`, `config.py` |
@@ -96,3 +99,4 @@ Hệ thống **không có đăng nhập**: ai truy cập được cổng 5000 đ
 | `GET http://127.0.0.1:5001/api/health` | `{"status":"ok","database":"ok"}` |
 | `GET http://127.0.0.1:5000/health` | `{"frontend":"ok","backend":{"status":"ok",...}}` |
 | Mở `http://127.0.0.1:5000` | Thấy 4 thẻ KPI và 3 biểu đồ |
+| Mở `http://127.0.0.1:5000/khong-co` | Trang "Lỗi 404" tiếng Việt, có link "Về trang chính" |
