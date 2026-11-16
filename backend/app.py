@@ -3,6 +3,7 @@ import os
 import re
 import secrets
 import socket
+import unicodedata
 from datetime import date
 
 import pymysql
@@ -23,6 +24,11 @@ TOTAL_EXPR = "ROUND(attendance*0.1 + midterm*0.3 + final*0.6, 2)" # công thức
 GRADE_LABELS = ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]  # theo điểm tổng kết
 # Mã SV, mã môn (đã chuyển in hoa): chỉ chữ cái không dấu và chữ số, như SV001, INT1001.
 CODE_RE = re.compile(r"[A-Z0-9]+")
+# Họ tên: bắt đầu bằng chữ cái (kể cả chữ có dấu), sau đó chỉ có chữ cái, khoảng trắng và ' . -
+# ([^\W\d_] = chữ cái Unicode). Không nhận chữ số, ký hiệu, xuống dòng / tab.
+NAME_RE = re.compile(r"[^\W\d_](?:[^\W\d_]|[ '.\-])*")
+# Lớp: bắt đầu bằng chữ hoặc số, sau đó chỉ có chữ, số, khoảng trắng và - _ . (ví dụ CNTT1, K65-CNTT).
+CLASS_RE = re.compile(r"[^\W_][\w .\-]*")
 
 class ApiError(Exception):
     def __init__(self, message, status=400):
@@ -144,14 +150,19 @@ def health():
 
 def validate_student(data):
     student_code = text(data, "student_code").upper()
-    full_name = text(data, "full_name")
-    class_name = text(data, "class_name")
+    # NFC: chữ có dấu gõ theo kiểu tổ hợp (chữ + dấu rời) được gộp lại trước khi kiểm tra và lưu.
+    full_name = unicodedata.normalize("NFC", text(data, "full_name"))
+    class_name = unicodedata.normalize("NFC", text(data, "class_name"))
     email = text(data, "email")
     errors = []
     if check_text(errors, "Mã SV", student_code, 20) and not CODE_RE.fullmatch(student_code):
         errors.append("Mã SV chỉ gồm chữ cái không dấu và chữ số (ví dụ SV001)")
-    check_text(errors, "Họ tên", full_name, 100)
-    check_text(errors, "Lớp", class_name, 50)
+    if check_text(errors, "Họ tên", full_name, 100) and not NAME_RE.fullmatch(full_name):
+        errors.append("Họ tên phải bắt đầu bằng chữ cái và chỉ gồm chữ cái, khoảng trắng, dấu ' . - "
+                      "(ví dụ Nguyễn Văn An)")
+    if check_text(errors, "Lớp", class_name, 50) and not CLASS_RE.fullmatch(class_name):
+        errors.append("Lớp phải bắt đầu bằng chữ hoặc số và chỉ gồm chữ, số, khoảng trắng, dấu - _ . "
+                      "(ví dụ CNTT1)")
     if check_text(errors, "Email", email, 120) and "@" not in email:
         errors.append("Email phải có ký tự @")
     raise_if_invalid(errors, "sinh viên")

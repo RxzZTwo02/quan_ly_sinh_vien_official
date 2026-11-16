@@ -13,6 +13,7 @@
 - BR-01: Cả 4 trường bắt buộc; khoảng trắng đầu/cuối bị cắt bỏ.
 - BR-02: Mã SV tự chuyển thành **chữ in hoa**, tối đa 20 ký tự, **duy nhất**, và **chỉ gồm chữ cái không dấu và chữ số** (`A–Z`, `0–9`, ví dụ `SV001`): không có dấu `-`, khoảng trắng hay ký tự đặc biệt.
 - BR-03: Họ tên ≤ 100, lớp ≤ 50, email ≤ 120 ký tự; email phải chứa `@`.
+- BR-20: **Họ tên** bắt đầu bằng chữ cái (kể cả chữ có dấu), sau đó chỉ gồm chữ cái, khoảng trắng và các dấu `'` `.` `-` (ví dụ `Nguyễn Văn An`, `O'Neil`); không có chữ số, ký hiệu, xuống dòng. **Lớp** bắt đầu bằng chữ hoặc số, sau đó chỉ gồm chữ, số, khoảng trắng và `-` `_` `.` (ví dụ `CNTT1`, `K65-CNTT`). Hai ô này được chuẩn hóa Unicode NFC trước khi kiểm tra và lưu.
 - BR-04: Trùng mã SV → báo lỗi "Mã sinh viên <mã> đã tồn tại.".
 - BR-19: Nhập sai thì thông báo nêu **rõ ô nào sai và sai thế nào**, liệt kê mọi ô sai trong một câu, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)." Áp dụng cho Sinh viên và Môn học.
 

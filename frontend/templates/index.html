@@ -627,11 +627,15 @@
           <div>
             <label for="full_name">Họ và tên</label>
             <input id="full_name" name="full_name" maxlength="100" placeholder="Ví dụ: Nguyễn Văn An" required
+                   pattern="\s*\p{L}[\p{L}\p{M} '.\-]*\s*"
+                   title="Bắt đầu bằng chữ cái; chỉ gồm chữ cái, khoảng trắng và các dấu ' . -"
                    value="{{ editing['full_name'] if editing else '' }}">
           </div>
           <div>
             <label for="class_name">Lớp</label>
             <input id="class_name" name="class_name" maxlength="50" placeholder="Ví dụ: NTT01" required
+                   pattern="\s*[\p{L}\p{N}][\p{L}\p{M}\p{N}_ .\-]*\s*"
+                   title="Bắt đầu bằng chữ hoặc số; chỉ gồm chữ, số, khoảng trắng và các dấu - _ ."
                    value="{{ editing['class_name'] if editing else '' }}">
           </div>
           <div>
