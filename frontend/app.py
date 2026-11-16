@@ -2,9 +2,16 @@
 import os
 import secrets
 import socket
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+# Windows: khi chuyển đầu ra sang file / pipe, Python ghi theo bảng mã ANSI (cp1252...) nên in tiếng
+# Việt gây UnicodeEncodeError. Ép UTF-8 cho stdout / stderr (xem backend/app.py).
+for _stream in (sys.stdout, sys.stderr):
+    if _stream is not None and hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 load_dotenv(Path(__file__).resolve().parent / ".env")  # phải nạp trước khi import api_client
 

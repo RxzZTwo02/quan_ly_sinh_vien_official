@@ -3,8 +3,16 @@ import os
 import re
 import secrets
 import socket
+import sys
 import unicodedata
 from datetime import date
+
+# Windows: khi chuyển đầu ra sang file / pipe (vd `python app.py > log.txt`), Python ghi theo bảng mã
+# ANSI (cp1252...) nên mọi lệnh print tiếng Việt (kể cả trong db.py) gây UnicodeEncodeError và app
+# dừng ngay. Ép UTF-8 cho stdout / stderr, trước khi import config (config có thể báo lỗi tiếng Việt).
+for _stream in (sys.stdout, sys.stderr):
+    if _stream is not None and hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 import pymysql
 from flask import Flask, jsonify, request

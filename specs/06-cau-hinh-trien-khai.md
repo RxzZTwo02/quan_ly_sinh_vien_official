@@ -47,7 +47,9 @@ Hướng dẫn chi tiết từng lệnh (clone, tạo/kích hoạt/xóa venv, ki
 
 **Áp dụng thay đổi mã**: Waitress không tự nạp lại mã, và Flask (không bật debug) lưu cache template. Vì vậy sau khi sửa `.py` hoặc `templates/index.html` phải dừng (Ctrl+C) rồi chạy lại app tương ứng.
 
-**Chạy trùng**: trên Windows, chạy `app.py` lần thứ hai với cùng cổng **không** báo lỗi. Cả hai process cùng nghe cổng đó, và request có thể tới bản cũ. Kiểm tra bằng `Get-NetTCPConnection -LocalPort 5000,5001 -State Listen`.
+**Chạy trùng**: chạy `app.py` lần thứ hai với cùng cổng thì app dừng ngay, báo `Cổng … đang được dùng…` ([07](07-han-che.md) L-15). Xem process đang giữ cổng bằng `Get-NetTCPConnection -LocalPort 5000,5001 -State Listen`.
+
+**Ghi log ra file**: chạy `python app.py > log.txt 2>&1` (hoặc qua pipe) được bình thường. Cả hai app tự đặt `stdout` / `stderr` sang UTF-8 khi khởi động, nên tiếng Việt không làm app dừng vì `UnicodeEncodeError` (BUG-04); file log là UTF-8.
 
 Các lỗi thường gặp khác (venv, ExecutionPolicy, CSRF, API key…): xem mục *Xử lý sự cố* trong [README.md](../README.md).
 
