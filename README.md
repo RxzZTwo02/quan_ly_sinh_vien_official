@@ -35,7 +35,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Giữ kết quả tìm kiếm**: đã tìm ở một bảng thì kết quả được giữ khi bấm Sửa, Hủy, lưu, xóa hay tìm ở bảng khác; bản ghi đang sửa vẫn nằm trong danh sách kết quả, được tô vàng. Chỉ nút **Tất cả** của bảng đó mới đưa bảng về danh sách đầy đủ.
 - **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
 - **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
-- **Tìm kiếm**: khớp một phần, không phân biệt hoa / thường và có dấu / không dấu (tìm `nguyen` ra `Nguyễn`). Ký tự `%` và `_` được tìm đúng như đã gõ.
+- **Tìm kiếm**: khớp một phần, không phân biệt hoa / thường. Mọi ký tự được tìm đúng như đã gõ, kể cả `%` và `_`.
 - **Nhập sai**: thông báo đỏ nêu rõ từng ô sai và sai thế nào, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."; form giữ nguyên dữ liệu để sửa lại. Trùng mã thì báo riêng, ví dụ "Mã sinh viên SV001 đã tồn tại.".
 - **Thông báo**: chỉ do chương trình tạo ra sau mỗi thao tác, hiện **một lần** (F5 không hiện lại). Thông báo không nằm trên địa chỉ trang, nên không ai gửi được link chứa thông báo giả.
 - **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường, Sửa / Xóa nằm ở cột **Thao tác** trên từng dòng, và nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
