@@ -1,7 +1,7 @@
 # Báo cáo kiểm thử: Chương trình quản lý sinh viên
 
 - **Ngày kiểm thử:** 16/11/2026
-- **Ứng dụng:** Web quản lý sinh viên (Flask + MySQL), nhánh `expansion`, commit `6543574`
+- **Ứng dụng:** Web quản lý sinh viên (Flask + MySQL), nhánh `expansion`, commit `92f992d`
 - **Người dùng của chương trình:** chỉ giảng viên, dùng để quản lý sinh viên, môn học, điểm và học phí
 - **Phạm vi kiểm thử:** chức năng quản lý sinh viên (thêm, sửa, xóa, tìm kiếm), lỗi console/network
 
