@@ -641,6 +641,7 @@
           <div>
             <label for="email">Email</label>
             <input id="email" name="email" type="email" maxlength="120" placeholder="Ví dụ: an@example.com" required
+                   pattern="\s*[^@\s]+@[^@\s]+\.[^@\s]+\s*" title="Email dạng ten@mien.com, ví dụ an@example.com"
                    value="{{ editing['email'] if editing else '' }}">
           </div>
         </div>

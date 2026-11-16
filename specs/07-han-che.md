@@ -6,7 +6,6 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 | # | Hạn chế | Ảnh hưởng | Vị trí |
 |---|---|---|---|
 | L-03 | Xếp loại tính trên **từng bản ghi điểm**, không phải điểm trung bình của sinh viên; không tính trọng số tín chỉ. | Biểu đồ "Phân loại kết quả học tập" đếm lượt điểm, không đếm sinh viên. | `backend/app.py` (`stats`) |
-| L-04 | Kiểm tra email chỉ yêu cầu có ký tự `@`. | Có thể lưu email sai định dạng khi gọi API trực tiếp. | `backend/app.py` (`validate_student`) |
 | L-07 | Không phân trang; trang chính tải toàn bộ sinh viên, điểm, học phí trong mỗi lần mở. | Chậm dần khi dữ liệu lớn (hàng nghìn bản ghi). | `frontend/app.py` |
 | L-08 | Mỗi request mở kết nối MySQL mới, không dùng pool. | Đủ cho quy mô đồ án; tải cao sẽ tốn kết nối. | `backend/db.py` |
 | L-09 | Không có migration lược đồ (`CREATE TABLE IF NOT EXISTS`). | Thêm / đổi cột không tự áp dụng cho DB đã tồn tại. | `backend/db.py` |
@@ -18,19 +17,19 @@ Mục 1 ghi các hạn chế còn tồn tại, được ghi nhận khi đọc v�
 | L-17 | Chọn dòng để Sửa / Xóa dựa vào sự kiện chuột phải (`contextmenu`). Màn hình cảm ứng không có chuột phải: Android thường phát sự kiện này khi giữ lâu, còn Safari trên iPhone / iPad thì không. Chưa thử trên thiết bị thật. | Trên iPhone / iPad có thể không chọn được dòng, nên không Sửa / Xóa được từ giao diện (dù vẫn thêm mới được). | `index.html` (script) |
 
 ## 2. Hướng cải tiến đề xuất
-1. Kiểm tra email bằng biểu thức chính quy (L-04).
-2. Thêm phân trang cho `/api/students`, `/api/grades`, `/api/tuition` (L-07).
-3. Thêm đăng nhập cho front-end (Flask-Login hoặc session tự viết) trước khi đưa lên mạng (L-10).
-4. Đóng gói Chart.js cùng ứng dụng để chạy offline (L-11).
-5. Viết kiểm thử `pytest` cho các endpoint API với database thử nghiệm (L-12).
-6. Thêm `.gitignore` ở thư mục gốc với dòng `/.env` (L-16).
-7. Trên màn hình cảm ứng, cho chọn dòng bằng cách giữ lâu (tự đo bằng sự kiện `touchstart` / `touchend`) hoặc chạm (L-17).
+1. Thêm phân trang cho `/api/students`, `/api/grades`, `/api/tuition` (L-07).
+2. Thêm đăng nhập cho front-end (Flask-Login hoặc session tự viết) trước khi đưa lên mạng (L-10).
+3. Đóng gói Chart.js cùng ứng dụng để chạy offline (L-11).
+4. Viết kiểm thử `pytest` cho các endpoint API với database thử nghiệm (L-12).
+5. Thêm `.gitignore` ở thư mục gốc với dòng `/.env` (L-16).
+6. Trên màn hình cảm ứng, cho chọn dòng bằng cách giữ lâu (tự đo bằng sự kiện `touchstart` / `touchend`) hoặc chạm (L-17).
 
 ## 3. Đã khắc phục
 | # | Hạn chế cũ | Cách khắc phục | Commit |
 |---|---|---|---|
 | L-01 | Ô chọn sinh viên ở form **Bảng điểm** và **Học phí** lấy từ danh sách đã lọc theo ô tìm kiếm, nên đang tìm kiếm thì thiếu sinh viên để chọn. | Khi có từ khóa, `index()` gọi thêm `GET /api/students` (không lọc) cho hai ô chọn (`all_students`). Bảng sinh viên vẫn hiện kết quả tìm kiếm. | `42475f3` |
 | L-02 | Màu biểu đồ vành khuyên gán theo vị trí, còn thứ tự nhãn do `GROUP BY` quyết định, nên cùng một xếp loại có thể đổi màu. | `/api/stats` luôn trả đủ 4 nhãn theo thứ tự cố định `GRADE_LABELS` (Giỏi → Khá → Trung bình → Cần cố gắng), nhãn không có bản ghi thì giá trị 0. Chưa có bản ghi điểm nào thì trả mảng rỗng. | `5f098a0`, `d1d4975` |
+| L-04 (BUG-02) | Kiểm tra email chỉ yêu cầu có ký tự `@`, nên gửi thẳng tới API thì lưu được cả `@`, `a@`, `qa mail @ x y`. Mở bản ghi đó ra sửa thì trình duyệt chặn nút Lưu thay đổi. | `validate_student()` dùng `EMAIL_RE` (`<tên>@<miền>.<đuôi>`, không khoảng trắng, một dấu `@`), báo "Email không đúng định dạng (ví dụ an@example.com)". Ô Email có thêm `pattern` giống vậy. | — |
 | L-05 | `due_date` chỉ giới hạn độ dài, không kiểm tra định dạng ngày. | Kiểm tra bằng `date.fromisoformat()` rồi lưu dạng chuẩn `YYYY-MM-DD` (ví dụ `20261231` → `2026-12-31`). Ngày sai như `2026-02-30` bị từ chối (400). | `3e77d27`, `d1d4975` |
 | L-06 | `NaN` (và `inf` với học phí) lọt qua kiểm tra khoảng, gây lỗi 500. | Điều kiện viết dạng `0 <= x <= 10` (điểm) và `0 <= đã đóng <= phải đóng < 1e13` (học phí). So sánh với NaN luôn sai nên NaN bị loại; `inf` vượt giới hạn trên. Kết quả: trả 400. | `3e77d27` |
 | L-14 | Phản hồi JSON của back-end có `Content-Type: application/json` **không kèm** `charset`, nên Windows PowerShell 5.1 (`Invoke-RestMethod`) đọc theo ISO-8859-1 và hiển thị sai tiếng Việt (ví dụ `ÄÃ£ thÃªm`). | Đặt `app.json.mimetype = "application/json; charset=utf-8"` trong `backend/app.py`. Mọi phản hồi JSON, kể cả lỗi 4xx / 5xx, đều kèm `charset=utf-8`; `Invoke-RestMethod` đọc đúng tiếng Việt. | `deb9a80` |

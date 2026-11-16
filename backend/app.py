@@ -29,6 +29,8 @@ CODE_RE = re.compile(r"[A-Z0-9]+")
 NAME_RE = re.compile(r"[^\W\d_](?:[^\W\d_]|[ '.\-])*")
 # Lớp: bắt đầu bằng chữ hoặc số, sau đó chỉ có chữ, số, khoảng trắng và - _ . (ví dụ CNTT1, K65-CNTT).
 CLASS_RE = re.compile(r"[^\W_][\w .\-]*")
+# Email: <tên>@<miền>.<đuôi>, không có khoảng trắng và chỉ một dấu @ (ví dụ an@example.com).
+EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
 class ApiError(Exception):
     def __init__(self, message, status=400):
@@ -163,8 +165,8 @@ def validate_student(data):
     if check_text(errors, "Lớp", class_name, 50) and not CLASS_RE.fullmatch(class_name):
         errors.append("Lớp phải bắt đầu bằng chữ hoặc số và chỉ gồm chữ, số, khoảng trắng, dấu - _ . "
                       "(ví dụ CNTT1)")
-    if check_text(errors, "Email", email, 120) and "@" not in email:
-        errors.append("Email phải có ký tự @")
+    if check_text(errors, "Email", email, 120) and not EMAIL_RE.fullmatch(email):
+        errors.append("Email không đúng định dạng (ví dụ an@example.com)")
     raise_if_invalid(errors, "sinh viên")
     return student_code, full_name, class_name, email
 

@@ -118,7 +118,7 @@ Hàng nút dưới mỗi form, từ trái sang:
 - **Làm mới** là nút `type="reset"` thông thường: đưa form về giá trị lúc mở trang, tức là trống trừ các giá trị mặc định.
 
 ## 4. Kiểm tra phía trình duyệt
-Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc ở back-end. Ô Mã SV và Mã môn có thêm `pattern="\s*[A-Za-z0-9]+\s*"` (BR-02, BR-05; cho phép khoảng trắng hai đầu vì back-end tự cắt), kèm `title` giải thích để trình duyệt hiện khi nhập sai. Ô Họ tên và Lớp cũng có `pattern` theo BR-20 (dùng `\p{L}`, `\p{N}`: trình duyệt hiện nay biên dịch `pattern` với cờ `v` nên hiểu được). Đây chỉ là hỗ trợ người dùng; **back-end mới là nơi kiểm tra chính thức**.
+Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc ở back-end. Ô Mã SV và Mã môn có thêm `pattern="\s*[A-Za-z0-9]+\s*"` (BR-02, BR-05; cho phép khoảng trắng hai đầu vì back-end tự cắt), kèm `title` giải thích để trình duyệt hiện khi nhập sai. Ô Email (`type="email"`) có thêm `pattern` theo BR-03, vì `type="email"` vẫn nhận `a@b` (không có dấu chấm). Ô Họ tên và Lớp cũng có `pattern` theo BR-20 (dùng `\p{L}`, `\p{N}`: trình duyệt hiện nay biên dịch `pattern` với cờ `v` nên hiểu được). Đây chỉ là hỗ trợ người dùng; **back-end mới là nơi kiểm tra chính thức**.
 
 ## 5. Biểu đồ
 - Dữ liệu nhúng vào trang qua `<script type="application/json" id="dashboard-data">` (Jinja `tojson`).
