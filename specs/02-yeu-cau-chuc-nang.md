@@ -88,7 +88,7 @@
 ## 7. Yêu cầu phi chức năng
 | Mã | Yêu cầu |
 |---|---|
-| NFR-01 | Toàn bộ văn bản, dữ liệu dùng tiếng Việt có dấu (UTF-8 / `utf8mb4`). |
+| NFR-01 | Toàn bộ văn bản, dữ liệu dùng tiếng Việt có dấu (UTF-8 / `utf8mb4`), kể cả trang lỗi 400 / 404 / 405 / 500 của front-end. |
 | NFR-02 | Mọi form POST được bảo vệ bằng CSRF token. |
 | NFR-03 | Mọi truy vấn SQL dùng tham số hóa (chống SQL injection). |
 | NFR-04 | Mỗi request ghi chạy trong một transaction; lỗi thì rollback. |

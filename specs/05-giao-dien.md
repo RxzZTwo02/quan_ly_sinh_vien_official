@@ -36,7 +36,8 @@
 - Lỗi từ API khi ghi → flash thông điệp của back-end (hộp đỏ) rồi chuyển hướng về `/` (kèm các từ khóa đang tìm).
 - Lỗi khi tải trang chính (back-end tắt, MySQL tắt…) → vẫn render trang với dữ liệu rỗng và thông báo lỗi; mã HTTP `503` nếu back-end trả/không kết nối được (503), ngược lại `502`.
 - Tham số sửa trỏ tới bản ghi không tồn tại → thông báo "Không tìm thấy sinh viên / môn học / bản ghi điểm / bản ghi học phí cần sửa."
-- `id` trong form sửa không phải số → `400`.
+- `id` trong form sửa không phải số (vd `abc`, `-5`) → `400 "Mã bản ghi không hợp lệ."`.
+- Trang lỗi (`400`, `404`, `405`, `500`) là trang tiếng Việt của chương trình (`handle_http_error` + `ERROR_PAGE` trong `frontend/app.py`), không phải trang tiếng Anh mặc định của Flask (BUG-09). Mô tả đã đặt khi `abort()` được giữ nguyên (vd lỗi CSRF); mô tả mặc định thì thay bằng: 400 "Yêu cầu không hợp lệ.", 404 "Không tìm thấy trang hoặc bản ghi." (vd `POST /delete/-1`), 405 "Thao tác không được hỗ trợ.", 500 "Máy chủ gặp lỗi. Hãy thử lại sau.". Thông báo nằm trong thẻ `<p>` đầu tiên, nên khi có JavaScript nó hiện thành hộp đỏ ngay trong giao diện (mục 6, "Trường hợp đặc biệt"); khi tắt JavaScript thì trang lỗi có link "Về trang chính".
 
 ## 2. CSRF
 - Token 32 byte ngẫu nhiên lưu trong session (cookie `HttpOnly`, `SameSite=Lax`).

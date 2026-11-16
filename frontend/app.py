@@ -16,8 +16,9 @@ for _stream in (sys.stdout, sys.stderr):
 load_dotenv(Path(__file__).resolve().parent / ".env")  # phải nạp trước khi import api_client
 
 from flask import (Flask, abort, flash, get_flashed_messages, redirect, render_template,  # noqa: E402
-                   request, session, url_for)
+                   render_template_string, request, session, url_for)
 from waitress import serve  # noqa: E402
+from werkzeug.exceptions import HTTPException  # noqa: E402
 
 import api_client as api  # noqa: E402
 from api_client import ApiError  # noqa: E402
@@ -99,7 +100,7 @@ def save_record(collection, fields):
     record_id = request.form.get("id", "").strip()
     if record_id:
         if not record_id.isdecimal():
-            abort(400)
+            abort(400, description="Mã bản ghi không hợp lệ.")
         return call_and_redirect(api.put, f"/api/{collection}/{record_id}", data)
     return call_and_redirect(api.post, f"/api/{collection}", data)
 
@@ -234,6 +235,51 @@ def save_tuition():
 @app.post("/tuition/delete/<int:tuition_id>")
 def delete_tuition(tuition_id):
     return call_and_redirect(api.delete, f"/api/tuition/{tuition_id}")
+
+
+# Trang lỗi tiếng Việt thay cho trang mặc định tiếng Anh của Flask ("Bad Request", "Not Found"...).
+# Thông báo nằm trong thẻ <p> đầu tiên: script của trang chính (fetchPage) đọc nó và hiện thành
+# thông báo đỏ ngay trong giao diện, không chuyển trang.
+ERROR_MESSAGES = {
+    400: "Yêu cầu không hợp lệ.",
+    404: "Không tìm thấy trang hoặc bản ghi.",
+    405: "Thao tác không được hỗ trợ.",
+    500: "Máy chủ gặp lỗi. Hãy thử lại sau.",
+}
+ERROR_PAGE = """<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Lỗi {{ code }} · Quản lý sinh viên</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f1f5f9; color: #1e293b; }
+    main { max-width: 520px; margin: 80px auto; padding: 24px 28px; background: white;
+           border-radius: 12px; box-shadow: 0 10px 30px rgba(15, 23, 42, .08); }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    p { margin: 0 0 18px; color: #991b1b; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Lỗi {{ code }}</h1>
+    <p>{{ message }}</p>
+    <a href="{{ url_for('index') }}">Về trang chính</a>
+  </main>
+</body>
+</html>"""
+
+
+@app.errorhandler(HTTPException)
+def handle_http_error(exc):
+    """Giữ mô tả tiếng Việt đã đặt khi abort() (vd lỗi CSRF); mô tả mặc định tiếng Anh của Werkzeug
+    thì thay bằng câu tiếng Việt theo mã lỗi."""
+    message = exc.description
+    if not message or message == type(exc).description:
+        message = ERROR_MESSAGES.get(exc.code, "Đã có lỗi xảy ra.")
+    return render_template_string(ERROR_PAGE, code=exc.code, message=message), exc.code
 
 
 @app.get("/health")
