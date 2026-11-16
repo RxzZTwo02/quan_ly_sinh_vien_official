@@ -621,6 +621,7 @@
           <div>
             <label for="student_code">Mã sinh viên</label>
             <input id="student_code" name="student_code" maxlength="20" placeholder="Ví dụ: SV001" required
+                   pattern="\s*[A-Za-z0-9]+\s*" title="Chỉ gồm chữ cái không dấu và chữ số, ví dụ SV001"
                    value="{{ editing['student_code'] if editing else '' }}">
           </div>
           <div>
@@ -714,6 +715,7 @@
           <div>
             <label>Mã môn</label>
             <input name="subject_code" required maxlength="20" placeholder="Ví dụ: VCS101"
+                   pattern="\s*[A-Za-z0-9]+\s*" title="Chỉ gồm chữ cái không dấu và chữ số, ví dụ INT1001"
                    value="{{ editing_subject.subject_code if editing_subject else '' }}">
           </div>
           <div>

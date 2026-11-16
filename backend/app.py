@@ -1,5 +1,6 @@
 """Back-end: REST API JSON cho hệ thống quản lý sinh viên (MySQL)."""
 import os
+import re
 import secrets
 import socket
 from datetime import date
@@ -20,6 +21,8 @@ app.json.mimetype = "application/json; charset=utf-8"
 
 TOTAL_EXPR = "ROUND(attendance*0.1 + midterm*0.3 + final*0.6, 2)" # công thức tính điểm tổng kết theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ
 GRADE_LABELS = ["Giỏi", "Khá", "Trung bình", "Cần cố gắng"]  # theo điểm tổng kết
+# Mã SV, mã môn (đã chuyển in hoa): chỉ chữ cái không dấu và chữ số, như SV001, INT1001.
+CODE_RE = re.compile(r"[A-Z0-9]+")
 
 class ApiError(Exception):
     def __init__(self, message, status=400):
@@ -145,7 +148,8 @@ def validate_student(data):
     class_name = text(data, "class_name")
     email = text(data, "email")
     errors = []
-    check_text(errors, "Mã SV", student_code, 20)
+    if check_text(errors, "Mã SV", student_code, 20) and not CODE_RE.fullmatch(student_code):
+        errors.append("Mã SV chỉ gồm chữ cái không dấu và chữ số (ví dụ SV001)")
     check_text(errors, "Họ tên", full_name, 100)
     check_text(errors, "Lớp", class_name, 50)
     if check_text(errors, "Email", email, 120) and "@" not in email:
@@ -215,7 +219,8 @@ def validate_subject(data):
     code = text(data, "subject_code").upper()
     name = text(data, "subject_name")
     errors = []
-    check_text(errors, "Mã môn", code, 20)
+    if check_text(errors, "Mã môn", code, 20) and not CODE_RE.fullmatch(code):
+        errors.append("Mã môn chỉ gồm chữ cái không dấu và chữ số (ví dụ INT1001)")
     check_text(errors, "Tên môn", name, 120)
     try:
         credits = int(text(data, "credits", "3"))
