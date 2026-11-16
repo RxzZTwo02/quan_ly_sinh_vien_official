@@ -17,6 +17,7 @@ Tài liệu lịch sử (giữ nguyên như lúc viết, **không** cập nhật
 | File | Nội dung |
 |---|---|
 | [ke-hoach-thay-doi-kien-truc.md](ke-hoach-thay-doi-kien-truc.md) | Kế hoạch tách front-end / back-end và chuyển SQLite → MySQL (09/11/2026). Một số chi tiết đã khác mã hiện tại, ví dụ script chép dữ liệu từ SQLite đã bị bỏ. |
+| [08-bao-cao-kiem-thu-2026-11-16.md](08-bao-cao-kiem-thu-2026-11-16.md) | Báo cáo kiểm thử phần Sinh viên (16/11/2026, commit `6543574`): 39 test case, 9 lỗi BUG-01 … BUG-09. Cách khắc phục ghi ở [07](07-han-che.md) mục 3. |
 
 ## Quy ước
 - Mã yêu cầu: `FR-xx` (chức năng), `NFR-xx` (phi chức năng), `BR-xx` (quy tắc nghiệp vụ).
