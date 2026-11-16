@@ -66,6 +66,32 @@ def keyword_filter(*columns):
             (like,) * len(columns))
 
 
+def check_text(errors, label, value, limit):
+    """Kiểm tra một ô chữ bắt buộc; ghi lỗi (nêu rõ ô nào, sai thế nào) vào `errors`.
+    Trả về True khi ô hợp lệ về độ dài, để bước kiểm tra định dạng sau đó chỉ chạy khi cần."""
+    if not value:
+        errors.append(f"{label} không được để trống")
+        return False
+    if len(value) > limit:
+        errors.append(f"{label} tối đa {limit} ký tự (đang có {len(value)})")
+        return False
+    return True
+
+
+def raise_if_invalid(errors, what):
+    """Có lỗi thì báo một câu liệt kê từng ô sai, ví dụ:
+    "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)." """
+    if errors:
+        raise ApiError(f"Thông tin {what} chưa hợp lệ: " + "; ".join(errors) + ".")
+
+
+def duplicate_error(exc, duplicate_message, other_message):
+    """IntegrityError khi thêm / sửa: trùng khóa UNIQUE thì 409 với câu báo trùng; lỗi khác thì 400."""
+    if exc.args and exc.args[0] == ER_DUP_ENTRY:
+        return ApiError(duplicate_message, 409)
+    return ApiError(other_message)
+
+
 # ---------------------------------------------------------------- xử lý chung
 
 @app.before_request
@@ -118,9 +144,13 @@ def validate_student(data):
     full_name = text(data, "full_name")
     class_name = text(data, "class_name")
     email = text(data, "email")
-    if (not all([student_code, full_name, class_name, email]) or len(student_code) > 20
-            or len(full_name) > 100 or len(class_name) > 50 or len(email) > 120 or "@" not in email):
-        raise ApiError("Vui lòng nhập đủ thông tin hợp lệ.")
+    errors = []
+    check_text(errors, "Mã SV", student_code, 20)
+    check_text(errors, "Họ tên", full_name, 100)
+    check_text(errors, "Lớp", class_name, 50)
+    if check_text(errors, "Email", email, 120) and "@" not in email:
+        errors.append("Email phải có ký tự @")
+    raise_if_invalid(errors, "sinh viên")
     return student_code, full_name, class_name, email
 
 
@@ -150,8 +180,8 @@ def create_student():
             cur.execute("INSERT INTO students(student_code,full_name,class_name,email) VALUES(%s,%s,%s,%s)",
                         values)
             new_id = cur.lastrowid
-    except pymysql.err.IntegrityError:
-        raise ApiError("Mã sinh viên đã tồn tại hoặc dữ liệu không hợp lệ.", 409)
+    except pymysql.err.IntegrityError as exc:
+        raise duplicate_error(exc, f"Mã sinh viên {values[0]} đã tồn tại.", "Dữ liệu sinh viên không hợp lệ.")
     return ok("Đã thêm sinh viên.", 201, id=new_id)
 
 
@@ -163,8 +193,8 @@ def update_student(student_id):
             affected = cur.execute(
                 "UPDATE students SET student_code=%s,full_name=%s,class_name=%s,email=%s WHERE id=%s",
                 (*values, student_id))
-    except pymysql.err.IntegrityError:
-        raise ApiError("Mã sinh viên đã tồn tại hoặc dữ liệu không hợp lệ.", 409)
+    except pymysql.err.IntegrityError as exc:
+        raise duplicate_error(exc, f"Mã sinh viên {values[0]} đã tồn tại.", "Dữ liệu sinh viên không hợp lệ.")
     if not affected:
         raise ApiError("Không tìm thấy sinh viên.", 404)
     return ok("Đã cập nhật sinh viên.")
@@ -184,12 +214,16 @@ def delete_student(student_id):
 def validate_subject(data):
     code = text(data, "subject_code").upper()
     name = text(data, "subject_name")
+    errors = []
+    check_text(errors, "Mã môn", code, 20)
+    check_text(errors, "Tên môn", name, 120)
     try:
         credits = int(text(data, "credits", "3"))
     except ValueError:
         credits = 0
-    if not code or not name or len(code) > 20 or len(name) > 120 or credits < 1 or credits > 10:
-        raise ApiError("Môn học cần có mã, tên và số tín chỉ từ 1 đến 10.")
+    if not 1 <= credits <= 10:
+        errors.append("Số tín chỉ phải là số nguyên từ 1 đến 10")
+    raise_if_invalid(errors, "môn học")
     return code, name, credits
 
 
@@ -218,8 +252,8 @@ def create_subject():
         with transaction() as cur:
             cur.execute("INSERT INTO subjects(subject_code,subject_name,credits) VALUES(%s,%s,%s)", values)
             new_id = cur.lastrowid
-    except pymysql.err.IntegrityError:
-        raise ApiError("Mã môn học đã tồn tại.", 409)
+    except pymysql.err.IntegrityError as exc:
+        raise duplicate_error(exc, f"Mã môn học {values[0]} đã tồn tại.", "Dữ liệu môn học không hợp lệ.")
     return ok("Đã thêm môn học.", 201, id=new_id)
 
 
@@ -231,8 +265,8 @@ def update_subject(subject_id):
             affected = cur.execute(
                 "UPDATE subjects SET subject_code=%s,subject_name=%s,credits=%s WHERE id=%s",
                 (*values, subject_id))
-    except pymysql.err.IntegrityError:
-        raise ApiError("Mã môn học đã tồn tại.", 409)
+    except pymysql.err.IntegrityError as exc:
+        raise duplicate_error(exc, f"Mã môn học {values[0]} đã tồn tại.", "Dữ liệu môn học không hợp lệ.")
     if not affected:
         raise ApiError("Không tìm thấy môn học.", 404)
     return ok("Đã cập nhật môn học.")

@@ -13,7 +13,8 @@
 - BR-01: Cả 4 trường bắt buộc; khoảng trắng đầu/cuối bị cắt bỏ.
 - BR-02: Mã SV tự chuyển thành **chữ in hoa**, tối đa 20 ký tự, **duy nhất**.
 - BR-03: Họ tên ≤ 100, lớp ≤ 50, email ≤ 120 ký tự; email phải chứa `@`.
-- BR-04: Trùng mã SV → báo lỗi "Mã sinh viên đã tồn tại…".
+- BR-04: Trùng mã SV → báo lỗi "Mã sinh viên <mã> đã tồn tại.".
+- BR-19: Nhập sai thì thông báo nêu **rõ ô nào sai và sai thế nào**, liệt kê mọi ô sai trong một câu, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)." Áp dụng cho Sinh viên và Môn học.
 
 ## 2. Môn học
 | Mã | Yêu cầu |
@@ -24,7 +25,7 @@
 | FR-23 | Sửa môn học: bấm **Sửa** đưa dữ liệu lên form (mã, tên, tín chỉ), bấm **Hủy** để thoát chế độ sửa. |
 
 **Quy tắc**
-- BR-05: Mã môn in hoa, ≤ 20 ký tự, duy nhất; tên môn ≤ 120 ký tự.
+- BR-05: Mã môn in hoa, ≤ 20 ký tự, duy nhất (trùng → "Mã môn học <mã> đã tồn tại."); tên môn ≤ 120 ký tự. Nhập sai thì báo rõ ô nào sai (BR-19).
 - BR-06: Số tín chỉ là số nguyên từ **1 đến 10**.
 - BR-16: Xóa môn học thì xóa kèm toàn bộ điểm của môn đó (cascade); thông báo kết quả nêu số bản ghi điểm đã xóa.
 

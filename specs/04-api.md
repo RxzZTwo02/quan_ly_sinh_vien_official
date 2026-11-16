@@ -53,8 +53,8 @@ Danh sách sinh viên, `id` giảm dần. `q` (tùy chọn) khớp `LIKE %q%` tr
 {"student_code": "sv011", "full_name": "Nguyễn Thị Thử", "class_name": "CNTT1", "email": "thu.nt@example.edu.vn"}
 ```
 - `201 {"message": "Đã thêm sinh viên.", "id": 11}` (mã lưu thành `SV011`)
-- `400 "Vui lòng nhập đủ thông tin hợp lệ."` — xem BR-01…BR-03
-- `409 "Mã sinh viên đã tồn tại hoặc dữ liệu không hợp lệ."`
+- `400 "Thông tin sinh viên chưa hợp lệ: <các lỗi>."`: liệt kê từng ô sai, cách nhau bằng `; ` (xem BR-01…BR-03, BR-19). Ví dụ `"Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."`
+- `409 "Mã sinh viên SV011 đã tồn tại."` (trùng mã; lỗi ràng buộc khác: `400 "Dữ liệu sinh viên không hợp lệ."`)
 
 ### `PUT /api/students/<id>`
 Body và kiểm tra như `POST`. `200 "Đã cập nhật sinh viên."` · `400` · `404` · `409`.
@@ -76,8 +76,8 @@ Danh sách môn học, sắp xếp theo `subject_name`. `q` (tùy chọn) khớp
 ```
 `credits` tùy chọn (mặc định 3), phải là số nguyên 1–10.
 - `201 {"message": "Đã thêm môn học.", "id": 6}` (mã lưu thành `INT1005`)
-- `400 "Môn học cần có mã, tên và số tín chỉ từ 1 đến 10."`
-- `409 "Mã môn học đã tồn tại."`
+- `400 "Thông tin môn học chưa hợp lệ: <các lỗi>."`, ví dụ `"Thông tin môn học chưa hợp lệ: Tên môn không được để trống; Số tín chỉ phải là số nguyên từ 1 đến 10."`
+- `409 "Mã môn học INT1005 đã tồn tại."`
 
 ### `GET /api/subjects/<id>`
 Một môn học. `404 "Không tìm thấy môn học."`
@@ -85,9 +85,9 @@ Một môn học. `404 "Không tìm thấy môn học."`
 ### `PUT /api/subjects/<id>`
 Body và kiểm tra giống `POST /api/subjects`.
 - `200 "Đã cập nhật môn học."` (kể cả khi dữ liệu không đổi)
-- `400 "Môn học cần có mã, tên và số tín chỉ từ 1 đến 10."`
+- `400 "Thông tin môn học chưa hợp lệ: <các lỗi>."`
 - `404 "Không tìm thấy môn học."`
-- `409 "Mã môn học đã tồn tại."`
+- `409 "Mã môn học <mã> đã tồn tại."`
 
 ### `DELETE /api/subjects/<id>`
 Xóa môn học và (cascade) mọi bản ghi điểm của môn đó. `deleted_grades` là số bản ghi điểm bị xóa theo.
