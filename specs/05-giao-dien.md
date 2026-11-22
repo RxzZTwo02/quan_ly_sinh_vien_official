@@ -104,7 +104,7 @@ Hàng nút dưới mỗi form, từ trái sang:
 |---|---|---|
 | **Thêm …** / **Lưu điểm** / **Lưu học phí** / **Lưu thay đổi** | Luôn | Gửi form |
 | **Hủy** | Đang sửa | Bỏ thay đổi, thoát chế độ sửa, form trở về thêm mới |
-| **Làm mới** | Chỉ khi **thêm mới** (đang sửa thì ẩn) | Làm trống mọi ô của form trước khi lưu thành dữ liệu chính thức, kể cả ô có giá trị mặc định (tín chỉ 3, điểm 8, đã đóng 0) và ô chọn. Không hỏi lại. Con trỏ về ô đầu tiên. |
+| **Làm mới** | Chỉ khi **thêm mới** (đang sửa thì ẩn) | Làm trống mọi ô của form trước khi lưu thành dữ liệu chính thức, kể cả ô có giá trị mặc định (tín chỉ 0, điểm 0, đã đóng 0) và ô chọn. Không hỏi lại. Con trỏ về ô đầu tiên. |
 | **Sửa** (xanh lá) | Luôn, nằm bên phải | Sửa dòng đang chọn trong bảng của mục |
 | **Xóa** (đỏ) | Luôn, nằm bên phải | Xóa dòng đang chọn, sau hộp xác nhận (mục 8) |
 
