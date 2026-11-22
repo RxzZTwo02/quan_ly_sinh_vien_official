@@ -28,7 +28,7 @@
 - Không có từ khóa nào thì các địa chỉ giữ dạng cũ, không có tham số rỗng.
 
 ### Thông báo (chống giả mạo, BUG-05)
-- Sau khi lưu / xóa, `call_and_redirect()` ghi thông báo của back-end vào session bằng `flash(…, "success" | "error")` rồi chuyển hướng về `/` (kèm các từ khóa đang tìm). `index()` đọc `get_flashed_messages(with_categories=True)`: mỗi thông báo hiện **một lần**, F5 không hiện lại.
+- Sau khi lưu / xóa, `call_and_redirect()` ghi thông báo của back-end vào session bằng `flash(…, "success" | "error")` rồi chuyển hướng về `/` (kèm các từ khóa đang tìm). Lỗi back-end có `field` (xem `04-api.md`) được flash với category `"error:<tên ô>"`; trang render hộp đỏ có thêm `data-field="<tên ô>"` để script hiện lỗi tại ô (mục 4). `index()` đọc `get_flashed_messages(with_categories=True)`: mỗi thông báo hiện **một lần**, F5 không hiện lại.
 - Trang chính **không** đọc thông báo từ URL. Trước đây `/?error=<chữ bất kỳ>` hiện thành hộp đỏ giống thông báo thật, nên có thể gửi link chứa thông báo giả (content spoofing).
 - Thông báo lỗi khác do chính server tạo khi tải trang (không tìm thấy bản ghi cần sửa, back-end tắt) vẫn hiện như cũ.
 
@@ -62,16 +62,16 @@ Mỗi mục 6–9 gồm form, hàng nút (xem "Hàng nút và chọn dòng" bên
    - Form "Thêm sinh viên" / "Cập nhật sinh viên": Mã SV, Họ tên, Lớp, Email (email dùng `type="email"`).
    - Ô tìm kiếm + nút **Tất cả**.
    - Bảng: Mã SV · Họ tên · Lớp · Email.
-7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, mặc định 3); khi sửa có dòng nhắc. Ô tìm kiếm (`q_subject`) + nút **Tất cả**. Bảng Mã môn · Tên môn · Tín chỉ. Nếu môn đã có điểm, hộp xác nhận xóa nêu số bản ghi điểm sẽ bị xóa theo.
+7. **Môn học** (`#subjects`): form Mã môn, Tên môn, Tín chỉ (1–10, ô hiện sẵn 0 nên phải nhập số tín chỉ thật); khi sửa có dòng nhắc. Ô tìm kiếm (`q_subject`) + nút **Tất cả**. Bảng Mã môn · Tên môn · Tín chỉ. Nếu môn đã có điểm, hộp xác nhận xóa nêu số bản ghi điểm sẽ bị xóa theo.
 8. **Bảng điểm** (`#grades`)
-   - Form: chọn sinh viên và chọn môn (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), học kỳ, 3 điểm (0–10, bước 0,1, mặc định 8); khi sửa có dòng nhắc.
+   - Form: chọn sinh viên và chọn môn (luôn đủ danh sách, không bị lọc theo ô tìm kiếm), chọn học kỳ (ô sổ xuống "Chọn học kỳ", `HK2-2026` … `HK1-2024`, BR-08), 3 điểm (0–10, bước 0,1, mặc định 0); khi sửa có dòng nhắc. Khi sửa bản ghi có học kỳ ngoài danh sách, ô học kỳ về "Chọn học kỳ" và phải chọn lại.
    - Ô tìm kiếm (`q_grade`) + nút **Tất cả**.
    - Bảng: Mã SV · Sinh viên · Môn học · Học kỳ · Chuyên cần · Giữa kỳ · Cuối kỳ · Tổng kết.
    - Ba cột điểm thành phần hiển thị gọn bằng bộ lọc `plain_number` (`9` thay vì `9.0`, giữ `8.5`). Cột Tổng kết luôn có 2 chữ số thập phân.
 9. **Học phí và công nợ** (`#tuition`)
-   - Form: chọn sinh viên (luôn đủ danh sách, như ở Bảng điểm), học kỳ, phải đóng (bước 1.000), đã đóng (mặc định 0), hạn đóng (ô ngày), ghi chú; khi sửa có dòng nhắc.
+   - Form: chọn sinh viên (luôn đủ danh sách, như ở Bảng điểm), chọn học kỳ (như ở Bảng điểm), phải đóng (bước 1.000, mặc định 0), đã đóng (bước 1.000, mặc định 0), **Ngày đóng học phí** (ô ngày, bắt buộc, BR-15), ghi chú; khi sửa có dòng nhắc.
    - Ô tìm kiếm (`q_tuition`) + nút **Tất cả**.
-   - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Hạn đóng (`—` nếu trống) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam).
+   - Bảng: Mã SV · Sinh viên · Học kỳ · Phải đóng · Đã đóng · Còn nợ · Ngày đóng (`—` nếu trống, chỉ gặp ở bản ghi cũ) · Trạng thái ("Đã hoàn thành" xanh / "Còn nợ" cam).
 10. **Chân trang**: công nghệ và liên kết `/health`.
 
 Các cột chữ tự do (Họ tên, Lớp, Email; Tên môn; cột Sinh viên và Môn học ở Bảng điểm; cột Sinh viên ở Học phí) có class `wrap`: chữ được xuống dòng, kể cả chuỗi dài không có khoảng trắng (`overflow-wrap: anywhere`, tối thiểu `12ch`), nên bảng không bị kéo rộng ra ngoài khung (BUG-07). Các cột mã, học kỳ, số, tiền giữ trên một dòng. Màn hình hẹp hơn bảng thì vẫn cuộn ngang trong khung bảng (`.table-wrap`).
@@ -128,6 +128,21 @@ Hàng nút dưới mỗi form, từ trái sang:
 ## 4. Kiểm tra phía trình duyệt
 Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc ở back-end. Ô Mã SV và Mã môn có thêm `pattern="\s*[A-Za-z0-9]+\s*"` (BR-02, BR-05; cho phép khoảng trắng hai đầu vì back-end tự cắt), kèm `title` giải thích để trình duyệt hiện khi nhập sai. Ô Email (`type="email"`) có thêm `pattern` theo BR-03, vì `type="email"` vẫn nhận `a@b` (không có dấu chấm). Ô Họ tên và Lớp cũng có `pattern` theo BR-20 (dùng `\p{L}`, `\p{N}`: trình duyệt hiện nay biên dịch `pattern` với cờ `v` nên hiểu được). Đây chỉ là hỗ trợ người dùng; **back-end mới là nơi kiểm tra chính thức**.
 
+**Bong bóng tiếng Việt.** Bong bóng kiểm tra mặc định của trình duyệt đi theo ngôn ngữ của trình duyệt (vd "Value must be less than or equal to 10."). Script (phần "Kiểm tra dữ liệu nhập") thay bằng câu tiếng Việt qua `setCustomValidity`, cho mọi ô của 4 form nhập liệu:
+
+| Trạng thái của ô | Câu hiện ra (ví dụ) |
+|---|---|
+| `valueMissing` | "Vui lòng nhập mã sinh viên." / "Vui lòng chọn học kỳ."; ô có `data-required-message` dùng câu đó, vd Ngày đóng học phí: "Phải nhập thời gian đã đóng học phí." |
+| `rangeUnderflow` / `rangeOverflow` | "Số tín chỉ phải lớn hơn hoặc bằng 1.", "Cuối kỳ phải nhỏ hơn hoặc bằng 10." |
+| `stepMismatch` | "Giữa kỳ chỉ được có tối đa 1 chữ số thập phân.", "Số tín chỉ phải là số nguyên.", "Học phí phải đóng phải là bội số của 1.000." |
+| `badInput` | "… phải là một số hợp lệ." / ô ngày: "… chưa nhập đủ hoặc không phải ngày có thật." |
+| `typeMismatch` / `patternMismatch` | "<Nhãn> không đúng định dạng." kèm nội dung `title` của ô |
+| Luật giữa các ô (`RULES`) | Học phí phải đóng < Đã đóng: "Số tiền phải đóng bắt buộc phải lớn hơn hoặc bằng số tiền đã đóng." |
+
+Nhãn lấy từ `<label>` của ô, bỏ phần trong ngoặc ở cuối ("(0–10)", "(VNĐ)"). Câu được tính lại khi người dùng sửa form (`input` / `change`), ngay trước khi trình duyệt hiện bong bóng (sự kiện `invalid`), khi tải trang, sau mỗi lần thay vùng dữ liệu, sau **Làm mới** và sau khi điền lại bản nháp.
+
+**Lỗi back-end tại ô.** Back-end trả lỗi có `field` (trùng học kỳ ở Bảng điểm / Học phí, phải đóng < đã đóng, thiếu ngày đóng học phí…) thì script không đưa lỗi đó lên hộp đỏ mà đặt nó làm câu kiểm tra của ô đó trên form vừa gửi rồi gọi `reportValidity()`: bong bóng hiện tại ô, con trỏ nằm ở ô, dữ liệu đã nhập được giữ. Câu này giữ tới khi người dùng sửa bất kỳ ô nào của form đó; bấm lưu lại mà chưa sửa gì thì trình duyệt chặn ngay, không gửi. Khi tắt JavaScript, lỗi vẫn hiện ở hộp đỏ như các lỗi khác.
+
 ## 5. Biểu đồ
 - Dữ liệu nhúng vào trang qua `<script type="application/json" id="dashboard-data">` (Jinja `tojson`).
 - Chart.js 4.4.9 tải từ `cdn.jsdelivr.net`; không tải được thì mỗi vùng biểu đồ hiện "Không tải được thư viện biểu đồ. Kiểm tra kết nối Internet."
@@ -142,7 +157,7 @@ Mã nguồn: khối `<script>` cuối `frontend/templates/index.html`. Phía ser
 3. Phân tích HTML trả về bằng `DOMParser`, rồi:
    - luôn thay vùng thông báo `#notices`;
    - nếu **thành công**: thay các vùng `#stats`, `#students`, `#subjects`, `#grades`, `#tuition`, cập nhật 3 biểu đồ, rồi chọn lại các dòng đang chọn còn tồn tại (`syncSelection`);
-   - nếu **có lỗi** (trang mới có `.notice.error`): chỉ hiện thông báo, **không** thay các vùng khác, nên form giữ nguyên dữ liệu đã nhập.
+   - nếu **có lỗi** (trang mới có `.notice.error`): chỉ hiện thông báo, **không** thay các vùng khác, nên form giữ nguyên dữ liệu đã nhập. Lỗi có `data-field` trùng một ô của form vừa gửi thì hiện thành bong bóng tại ô đó thay vì hộp đỏ (mục 4).
 4. Giữ vị trí cuộn: đo vị trí của vùng (`section`) chứa form/link vừa dùng trước và sau khi thay nội dung rồi `scrollBy` phần chênh lệch.
 5. Địa chỉ trình duyệt:
    - luôn bỏ `message`/`error` còn sót ở link cũ (server không còn đặt chúng lên URL);

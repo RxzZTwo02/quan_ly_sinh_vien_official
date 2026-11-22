@@ -22,12 +22,14 @@ Thiếu hoặc sai → `401 {"error": "Thiếu hoặc sai API key."}`. So sánh 
 | Mã | Ý nghĩa |
 |---|---|
 | 200 | Thành công |
-| 201 | Đã tạo (sinh viên, môn học) |
+| 201 | Đã tạo (sinh viên, môn học, bản ghi điểm, bản ghi học phí) |
 | 400 | Dữ liệu không hợp lệ, body không phải JSON, dữ liệu quá dài (`DataError`), khóa ngoại không tồn tại |
 | 401 | Sai API key |
 | 404 | Không tìm thấy bản ghi hoặc route |
 | 405 | Sai method |
-| 409 | Trùng mã sinh viên / mã môn học; khi sửa, trùng (SV, môn, học kỳ) của điểm hoặc (SV, học kỳ) của học phí |
+| 409 | Trùng mã sinh viên / mã môn học; khi thêm hoặc sửa, trùng (SV, môn, học kỳ) của điểm hoặc (SV, học kỳ) của học phí |
+
+Lỗi gắn với một ô cụ thể (học kỳ, các ô học phí, trùng điểm / học phí) có thêm khóa `field` là tên ô trong body gửi lên, ví dụ `{"error": "Phải nhập thời gian đã đóng học phí.", "field": "due_date"}`. Front-end dùng `field` để hiện lỗi thành bong bóng ngay tại ô đó.
 | 503 | Không kết nối được MySQL |
 
 ## 3. Endpoint
@@ -98,7 +100,7 @@ Xóa môn học và (cascade) mọi bản ghi điểm của môn đó. `deleted_
 ---
 
 ### `GET /api/grades?q=<từ khóa>`
-Bảng điểm kèm thông tin sinh viên, môn học và điểm tổng kết. Sắp xếp `semester DESC, student_code, subject_name`. `q` (tùy chọn) khớp `LIKE %q%` trên mã SV, họ tên, mã môn, tên môn, học kỳ; không có `q` thì trả đủ.
+Bảng điểm kèm thông tin sinh viên, môn học và điểm tổng kết. Sắp xếp học kỳ mới nhất trước (`RIGHT(semester,4) DESC, semester DESC`: năm giảm dần, HK2 trước HK1), rồi `student_code`, `subject_name`. `q` (tùy chọn) khớp `LIKE %q%` trên mã SV, họ tên, mã môn, tên môn, học kỳ; không có `q` thì trả đủ.
 ```json
 [{
   "id": 3, "student_id": 1, "subject_id": 3, "semester": "HK2-2025",
@@ -110,24 +112,27 @@ Bảng điểm kèm thông tin sinh viên, môn học và điểm tổng kết. 
 ```
 
 ### `POST /api/grades`
-Thêm mới, hoặc cập nhật nếu đã có bộ (`student_id`, `subject_id`, `semester`).
+Thêm mới. Bộ (`student_id`, `subject_id`, `semester`) đã có điểm thì báo trùng, **không** cập nhật bản ghi cũ (BR-17).
 ```json
-{"student_id": 2, "subject_id": 3, "semester": "HK2-2025", "attendance": 9, "midterm": 7.5, "final": 8}
+{"student_id": 2, "subject_id": 4, "semester": "HK2-2025", "attendance": 9, "midterm": 7.5, "final": 8}
 ```
-- `200 "Đã lưu điểm. Điểm tổng kết được tính theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ."`
+`semester` phải thuộc danh sách `HK2-2026` … `HK1-2024` (BR-08).
+- `201 {"message": "Đã lưu điểm. Điểm tổng kết được tính theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ.", "id": 19}`
+- `400 {"error": "Học kỳ phải chọn trong danh sách (HK1 hoặc HK2, năm 2024–2026).", "field": "semester"}`
 - `400 "Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ."`: cả khi điểm là `"nan"`, `"inf"`, `"-inf"`.
 - `400 "Sinh viên hoặc môn học không tồn tại."`
+- `409 {"error": "Một sinh viên không thể có nhiều bảng điểm ở cùng một học kỳ.", "field": "semester"}`
 
 ### `GET /api/grades/<id>`
 Một bản ghi điểm, cùng các trường như một phần tử của `GET /api/grades`. `404 "Không tìm thấy bản ghi điểm."`
 
 ### `PUT /api/grades/<id>`
-Sửa bản ghi điểm theo `id`; body và kiểm tra giống `POST /api/grades`. Khác `POST`: được đổi cả `student_id`, `subject_id`, `semester`, và **không** gộp vào bản ghi khác.
+Sửa bản ghi điểm theo `id`; body và kiểm tra giống `POST /api/grades`. Được đổi cả `student_id`, `subject_id`, `semester`, và **không** gộp vào bản ghi khác.
 - `200 "Đã cập nhật bản ghi điểm."`
-- `400 "Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ."`
+- `400` (học kỳ ngoài danh sách, điểm sai, như `POST`)
 - `400 "Sinh viên hoặc môn học không tồn tại."`
 - `404 "Không tìm thấy bản ghi điểm."`
-- `409 "Sinh viên này đã có điểm của môn học này trong học kỳ này."` (bộ ba mới trùng với bản ghi khác)
+- `409 {"error": "Một sinh viên không thể có nhiều bảng điểm ở cùng một học kỳ.", "field": "semester"}` (bộ ba mới trùng với bản ghi khác)
 
 ### `DELETE /api/grades/<id>`
 `200 "Đã xóa bản ghi điểm."` · `404 "Không tìm thấy bản ghi điểm."`
@@ -135,7 +140,7 @@ Sửa bản ghi điểm theo `id`; body và kiểm tra giống `POST /api/grades
 ---
 
 ### `GET /api/tuition?q=<từ khóa>`
-Học phí kèm thông tin sinh viên và số còn nợ. Sắp xếp `semester DESC, student_code`. `q` (tùy chọn) khớp `LIKE %q%` trên mã SV, họ tên, học kỳ; không có `q` thì trả đủ.
+Học phí kèm thông tin sinh viên và số còn nợ. Sắp xếp học kỳ mới nhất trước (như `/api/grades`), rồi `student_code`. `q` (tùy chọn) khớp `LIKE %q%` trên mã SV, họ tên, học kỳ; không có `q` thì trả đủ.
 ```json
 [{
   "id": 5, "student_id": 5, "semester": "HK2-2025",
@@ -146,18 +151,27 @@ Học phí kèm thông tin sinh viên và số còn nợ. Sắp xếp `semester 
 ```
 
 ### `POST /api/tuition`
-Thêm mới, hoặc cập nhật nếu đã có bộ (`student_id`, `semester`).
+Thêm mới. Bộ (`student_id`, `semester`) đã có học phí thì báo trùng, **không** cập nhật bản ghi cũ (BR-18).
 ```json
 {"student_id": 1, "semester": "HK2-2025", "amount_due": 9000000, "amount_paid": 0, "due_date": "2026-02-28", "note": "Học phí học kỳ"}
 ```
-`amount_paid`, `due_date`, `note` tùy chọn.
-- `amount_due` và `amount_paid`: `0 ≤ amount_paid ≤ amount_due < 1e13` (BR-13); `nan` / `inf` bị từ chối.
-- `due_date`: ngày có thật theo ISO 8601, được lưu dạng `YYYY-MM-DD` (BR-15). Ví dụ `"20261231"` lưu thành `"2026-12-31"`; `"2026-02-30"` hay `"31/12/2026"` bị từ chối.
+`amount_paid` (mặc định 0) và `note` tùy chọn. Các ô được kiểm tra lần lượt; lỗi đầu tiên được trả về kèm `field`:
+
+| `field` | Khi nào | `error` |
+|---|---|---|
+| `student_id` | thiếu / không phải số | `Cần chọn sinh viên.` |
+| `semester` | ngoài danh sách `HK2-2026` … `HK1-2024` (BR-08) | `Học kỳ phải chọn trong danh sách (HK1 hoặc HK2, năm 2024–2026).` |
+| `amount_due` / `amount_paid` | không phải số, âm, ≥ `1e13`, `nan` / `inf` | `Học phí phải đóng phải là một số.` / `… phải từ 0 đến dưới 10.000 tỷ đồng.` (tương tự `Số đã đóng …`) |
+| `amount_due` | `amount_paid > amount_due` (BR-13) | `Số tiền phải đóng bắt buộc phải lớn hơn hoặc bằng số tiền đã đóng.` |
+| `due_date` | thiếu hoặc rỗng (BR-15) | `Phải nhập thời gian đã đóng học phí.` |
+| `due_date` | không phải ngày có thật theo ISO 8601 (`"2026-02-30"`, `"31/12/2026"`); `"20261231"` hợp lệ, lưu thành `"2026-12-31"` | `Ngày đóng học phí phải là ngày có thật, dạng YYYY-MM-DD.` |
+| `note` | dài hơn 200 ký tự | `Ghi chú tối đa 200 ký tự (đang có N).` |
 
 Kết quả:
-- `200 "Đã lưu thông tin học phí."`
-- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng và hạn đóng dạng YYYY-MM-DD."`
+- `201 {"message": "Đã lưu thông tin học phí.", "id": 11}`
+- `400` như bảng trên
 - `400 "Sinh viên không tồn tại."`
+- `409 {"error": "Một sinh viên không thể đóng nhiều học phí trong cùng một học kỳ.", "field": "semester"}`
 
 ### `GET /api/tuition/<id>`
 Một bản ghi học phí, cùng các trường như một phần tử của `GET /api/tuition`. `404 "Không tìm thấy bản ghi học phí."`
@@ -165,10 +179,10 @@ Một bản ghi học phí, cùng các trường như một phần tử của `G
 ### `PUT /api/tuition/<id>`
 Sửa bản ghi học phí theo `id`; body và kiểm tra giống `POST /api/tuition`, được đổi cả `student_id`, `semester`.
 - `200 "Đã cập nhật thông tin học phí."`
-- `400 "Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng và hạn đóng dạng YYYY-MM-DD."`
+- `400` như bảng của `POST /api/tuition`
 - `400 "Sinh viên không tồn tại."`
 - `404 "Không tìm thấy bản ghi học phí."`
-- `409 "Sinh viên này đã có bản ghi học phí cho học kỳ này."`
+- `409 {"error": "Một sinh viên không thể đóng nhiều học phí trong cùng một học kỳ.", "field": "semester"}`
 
 ### `DELETE /api/tuition/<id>`
 `200 "Đã xóa bản ghi học phí."` · `404 "Không tìm thấy bản ghi học phí."`

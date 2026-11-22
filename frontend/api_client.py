@@ -13,10 +13,12 @@ if API_TOKEN:
 
 
 class ApiError(Exception):
-    def __init__(self, status, message):
+    """Lỗi từ back-end. `field`: tên ô bị sai do back-end chỉ ra (vd "semester"), hoặc None."""
+    def __init__(self, status, message, field=None):
         super().__init__(message)
         self.status = status
         self.message = message
+        self.field = field
 
 
 def _request(method, path, **kwargs):
@@ -30,8 +32,12 @@ def _request(method, path, **kwargs):
     except ValueError:
         body = {}
     if not response.ok:
-        message = body.get("error") if isinstance(body, dict) else None
-        raise ApiError(response.status_code, message or f"Back-end trả về lỗi HTTP {response.status_code}.")
+        if not isinstance(body, dict):
+            body = {}
+        message = body.get("error")
+        field = body.get("field")
+        raise ApiError(response.status_code, message or f"Back-end trả về lỗi HTTP {response.status_code}.",
+                       field if isinstance(field, str) else None)
     return body
 
 

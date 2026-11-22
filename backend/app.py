@@ -39,12 +39,21 @@ NAME_RE = re.compile(r"[^\W\d_](?:[^\W\d_]|[ '.\-])*")
 CLASS_RE = re.compile(r"[^\W_][\w .\-]*")
 # Email: <tên>@<miền>.<đuôi>, không có khoảng trắng và chỉ một dấu @ (ví dụ an@example.com).
 EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+# Học kỳ hợp lệ: HK1, HK2 của 3 năm học 2024–2026, mới nhất trước (HK2-2026 ... HK1-2024).
+# Giữ giống hằng SEMESTERS trong frontend/app.py (danh sách của ô chọn học kỳ).
+SEMESTERS = [f"HK{term}-{year}" for year in (2026, 2025, 2024) for term in (2, 1)]
+SEMESTER_ERROR = "Học kỳ phải chọn trong danh sách (HK1 hoặc HK2, năm 2024–2026)."
+# Sắp xếp học kỳ theo thời gian (năm giảm dần rồi HK2 trước HK1); sắp theo chữ thì HK2-2025 đứng trước HK1-2026.
+SEMESTER_ORDER = "RIGHT({col},4) DESC, {col} DESC"
+
 
 class ApiError(Exception):
-    def __init__(self, message, status=400):
+    """Lỗi trả về cho client. `field`: tên ô bị sai (vd "semester"), để giao diện báo ngay tại ô đó."""
+    def __init__(self, message, status=400, field=None):
         super().__init__(message)
         self.message = message
         self.status = status
+        self.field = field
 
 
 def ok(message=None, status=200, **data):
@@ -125,6 +134,8 @@ def check_api_token():
 
 @app.errorhandler(ApiError)
 def handle_api_error(exc):
+    if exc.field:
+        return jsonify(error=exc.message, field=exc.field), exc.status
     return jsonify(error=exc.message), exc.status
 
 
@@ -320,14 +331,16 @@ GRADE_SELECT = f"""SELECT g.*, s.student_code, s.full_name, sub.subject_code, su
 
 
 def validate_grade(data):
+    semester = text(data, "semester")
+    if semester not in SEMESTERS:
+        raise ApiError(SEMESTER_ERROR, field="semester")
     try:
         student_id = int(text(data, "student_id"))
         subject_id = int(text(data, "subject_id"))
-        semester = text(data, "semester")
         attendance = float(text(data, "attendance"))
         midterm = float(text(data, "midterm"))
         final = float(text(data, "final"))
-        if not semester or len(semester) > 20 or not all(0 <= x <= 10 for x in (attendance, midterm, final)):
+        if not all(0 <= x <= 10 for x in (attendance, midterm, final)):
             raise ValueError()
     except ValueError:
         raise ApiError("Điểm phải nằm trong khoảng 0–10 và cần chọn sinh viên, môn học, học kỳ.")
@@ -338,8 +351,8 @@ def grade_integrity_error(exc):
     code = exc.args[0] if exc.args else None
     if code == ER_NO_REFERENCED_ROW:
         return ApiError("Sinh viên hoặc môn học không tồn tại.")
-    if code == ER_DUP_ENTRY:
-        return ApiError("Sinh viên này đã có điểm của môn học này trong học kỳ này.", 409)
+    if code == ER_DUP_ENTRY:  # trùng (sinh viên, môn học, học kỳ): khóa uq_grades
+        return ApiError("Một sinh viên không thể có nhiều bảng điểm ở cùng một học kỳ.", 409, field="semester")
     return ApiError("Dữ liệu điểm không hợp lệ.")
 
 
@@ -348,8 +361,8 @@ def list_grades():
     where, params = keyword_filter("s.student_code", "s.full_name", "sub.subject_code",
                                    "sub.subject_name", "g.semester")
     with transaction() as cur:
-        cur.execute(GRADE_SELECT + where + " ORDER BY g.semester DESC, s.student_code, sub.subject_name",
-                    params)
+        cur.execute(GRADE_SELECT + where + " ORDER BY " + SEMESTER_ORDER.format(col="g.semester")
+                    + ", s.student_code, sub.subject_name", params)
         return jsonify(rows(cur))
 
 
@@ -368,12 +381,14 @@ def save_grade():
     values = validate_grade(payload())
     try:
         with transaction() as cur:
+            # Không ghi đè: bộ (sinh viên, môn học, học kỳ) đã có điểm thì báo trùng (409).
             cur.execute("""INSERT INTO grades(student_id,subject_id,semester,attendance,midterm,final)
-                VALUES(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
-                attendance=VALUES(attendance), midterm=VALUES(midterm), final=VALUES(final)""", values)
+                VALUES(%s,%s,%s,%s,%s,%s)""", values)
+            new_id = cur.lastrowid
     except pymysql.err.IntegrityError as exc:
         raise grade_integrity_error(exc)
-    return ok("Đã lưu điểm. Điểm tổng kết được tính theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ.")
+    return ok("Đã lưu điểm. Điểm tổng kết được tính theo 10% chuyên cần, 30% giữa kỳ, 60% cuối kỳ.",
+              201, id=new_id)
 
 
 @app.put("/api/grades/<int:grade_id>")
@@ -406,26 +421,47 @@ TUITION_SELECT = """SELECT t.*, s.student_code, s.full_name,
     FROM tuition t JOIN students s ON s.id=t.student_id"""
 
 
+def money(data, key, label, default=""):
+    """Đọc một ô số tiền: số thực trong [0, 10^13) (giới hạn của cột DECIMAL(15,2)).
+    Sai thì báo lỗi gắn với đúng ô đó. `nan` / `inf` bị từ chối vì không thỏa so sánh."""
+    try:
+        value = float(text(data, key, default) or default)
+    except ValueError:
+        raise ApiError(f"{label} phải là một số.", field=key)
+    if not 0 <= value < 1e13:
+        raise ApiError(f"{label} phải từ 0 đến dưới 10.000 tỷ đồng.", field=key)
+    return value
+
+
 def validate_tuition(data):
+    """Kiểm tra lần lượt từng ô; lỗi đầu tiên được báo kèm tên ô (`field`) để giao diện chỉ ra ô đó."""
     try:
         student_id = int(text(data, "student_id"))
-        semester = text(data, "semester")
-        due = float(text(data, "amount_due"))
-        paid = float(text(data, "amount_paid", "0") or "0")
-        due_date = text(data, "due_date")
-        note = text(data, "note")
-        if due_date: due_date = date.fromisoformat(due_date).isoformat()  # kiểm tra định dạng ngày
-        if (not semester or len(semester) > 20 or len(due_date) > 10 or len(note) > 200
-                or not (0 <= paid <= due < 1e13)):
-            raise ValueError()
     except ValueError:
-        raise ApiError("Học phí không hợp lệ; số đã đóng phải từ 0 đến số phải đóng và hạn đóng dạng YYYY-MM-DD.")
+        raise ApiError("Cần chọn sinh viên.", field="student_id")
+    semester = text(data, "semester")
+    if semester not in SEMESTERS:
+        raise ApiError(SEMESTER_ERROR, field="semester")
+    due = money(data, "amount_due", "Học phí phải đóng")
+    paid = money(data, "amount_paid", "Số đã đóng", "0")
+    if paid > due:
+        raise ApiError("Số tiền phải đóng bắt buộc phải lớn hơn hoặc bằng số tiền đã đóng.", field="amount_due")
+    due_date = text(data, "due_date")
+    if not due_date:
+        raise ApiError("Phải nhập thời gian đã đóng học phí.", field="due_date")
+    try:
+        due_date = date.fromisoformat(due_date).isoformat()  # ngày có thật, lưu dạng YYYY-MM-DD
+    except ValueError:
+        raise ApiError("Ngày đóng học phí phải là ngày có thật, dạng YYYY-MM-DD.", field="due_date")
+    note = text(data, "note")
+    if len(note) > 200:
+        raise ApiError(f"Ghi chú tối đa 200 ký tự (đang có {len(note)}).", field="note")
     return student_id, semester, due, paid, due_date, note
 
 
 def tuition_integrity_error(exc):
-    if exc.args and exc.args[0] == ER_DUP_ENTRY:
-        return ApiError("Sinh viên này đã có bản ghi học phí cho học kỳ này.", 409)
+    if exc.args and exc.args[0] == ER_DUP_ENTRY:  # trùng (sinh viên, học kỳ): khóa uq_tuition
+        return ApiError("Một sinh viên không thể đóng nhiều học phí trong cùng một học kỳ.", 409, field="semester")
     return ApiError("Sinh viên không tồn tại.")
 
 
@@ -433,7 +469,8 @@ def tuition_integrity_error(exc):
 def list_tuition():
     where, params = keyword_filter("s.student_code", "s.full_name", "t.semester")
     with transaction() as cur:
-        cur.execute(TUITION_SELECT + where + " ORDER BY t.semester DESC, s.student_code", params)
+        cur.execute(TUITION_SELECT + where + " ORDER BY " + SEMESTER_ORDER.format(col="t.semester")
+                    + ", s.student_code", params)
         return jsonify(rows(cur))
 
 
@@ -452,13 +489,13 @@ def save_tuition():
     values = validate_tuition(payload())
     try:
         with transaction() as cur:
+            # Không ghi đè: (sinh viên, học kỳ) đã có học phí thì báo trùng (409).
             cur.execute("""INSERT INTO tuition(student_id,semester,amount_due,amount_paid,due_date,note)
-                VALUES(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
-                amount_due=VALUES(amount_due), amount_paid=VALUES(amount_paid),
-                due_date=VALUES(due_date), note=VALUES(note)""", values)
+                VALUES(%s,%s,%s,%s,%s,%s)""", values)
+            new_id = cur.lastrowid
     except pymysql.err.IntegrityError as exc:
         raise tuition_integrity_error(exc)
-    return ok("Đã lưu thông tin học phí.")
+    return ok("Đã lưu thông tin học phí.", 201, id=new_id)
 
 
 @app.put("/api/tuition/<int:tuition_id>")

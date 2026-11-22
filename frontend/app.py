@@ -34,6 +34,11 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 EMPTY_CHART = {"gradeLabels": [], "gradeValues": [], "classLabels": [], "classValues": [],
                "tuitionDue": 0, "tuitionPaid": 0, "tuitionBalance": 0}
 
+# Danh sách của ô chọn học kỳ (Bảng điểm, Học phí): HK1, HK2 của 3 năm học 2024–2026, mới nhất trước.
+# Giữ giống hằng SEMESTERS trong backend/app.py (back-end chỉ nhận các học kỳ này).
+SEMESTERS = [f"HK{term}-{year}" for year in (2026, 2025, 2024) for term in (2, 1)]
+app.jinja_env.globals["semesters"] = SEMESTERS
+
 
 def csrf_token():
     if "csrf_token" not in session:
@@ -88,7 +93,8 @@ def call_and_redirect(func, *args):
     try:
         result = func(*args)
     except ApiError as exc:
-        flash(exc.message, "error")
+        # Lỗi gắn với một ô (vd trùng học kỳ): category "error:<tên ô>" để trang hiện lỗi ngay tại ô đó.
+        flash(exc.message, f"error:{exc.field}" if exc.field else "error")
     else:
         flash(result.get("message", "Thành công."), "success")
     return redirect(url_for("index", **searches))
@@ -166,14 +172,16 @@ def index():
     # Không đọc ?message= / ?error=: chỉ hiện thông báo do chính server tạo.
     flashed = get_flashed_messages(with_categories=True)
     messages = [text for kind, text in flashed if kind == "success"]
-    errors = [text for kind, text in flashed if kind != "success"]
+    # Lỗi: {"text", "field"}; field = tên ô bị sai (category "error:<tên ô>"), không có thì None.
+    errors = [{"text": text, "field": kind.partition(":")[2] or None}
+              for kind, text in flashed if kind != "success"]
     status = 200
     try:
         students = api.get("/api/students", {"q": keyword})
         all_students = api.get("/api/students") if keyword else students
         editing, edit_error = load_editing()
         if edit_error:
-            errors.append(edit_error)
+            errors.append({"text": edit_error, "field": None})
         subjects, all_subjects = search_list("subjects", subject_keyword)
         grades, all_grades = search_list("grades", grade_keyword)
         tuition = api.get("/api/tuition", {"q": tuition_keyword})
@@ -183,7 +191,7 @@ def index():
         all_subjects, all_grades = [], []
         stats = {"total": 0, "subject_count": 0, "grade_count": 0, "tuition_balance": 0,
                  "chart_data": EMPTY_CHART}
-        errors.append(exc.message)
+        errors.append({"text": exc.message, "field": None})
         status = 503 if exc.status == 503 else 502
     return render_template("index.html", students=students, all_students=all_students, keyword=keyword,
         subject_keyword=subject_keyword, grade_keyword=grade_keyword, tuition_keyword=tuition_keyword,

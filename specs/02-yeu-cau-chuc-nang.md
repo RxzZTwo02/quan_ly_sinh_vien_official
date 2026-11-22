@@ -21,7 +21,7 @@
 | Mã | Yêu cầu |
 |---|---|
 | FR-06 | Hiển thị danh mục môn học, sắp xếp theo tên môn. |
-| FR-07 | Thêm môn học gồm: mã môn, tên môn, số tín chỉ (mặc định 3). |
+| FR-07 | Thêm môn học gồm: mã môn, tên môn, số tín chỉ (ô nhập hiện sẵn 0, phải nhập 1–10; API không gửi `credits` thì mặc định 3). |
 | FR-21 | Xóa môn học sau khi người dùng xác nhận; hộp xác nhận báo số bản ghi điểm của môn sẽ bị xóa theo. |
 | FR-23 | Sửa môn học: bấm **Sửa** đưa dữ liệu lên form (mã, tên, tín chỉ), bấm **Hủy** để thoát chế độ sửa. |
 
@@ -33,33 +33,33 @@
 ## 3. Bảng điểm
 | Mã | Yêu cầu |
 |---|---|
-| FR-08 | Hiển thị bảng điểm kèm mã SV, họ tên, môn, học kỳ, 3 điểm thành phần và điểm tổng kết. Sắp xếp: học kỳ giảm dần → mã SV → tên môn. |
-| FR-09 | Lưu điểm cho một (sinh viên, môn học, học kỳ). Nếu bộ ba này đã có điểm thì **cập nhật** thay vì tạo mới. |
+| FR-08 | Hiển thị bảng điểm kèm mã SV, họ tên, môn, học kỳ, 3 điểm thành phần và điểm tổng kết. Sắp xếp: học kỳ mới nhất trước (năm giảm dần, HK2 trước HK1) → mã SV → tên môn. |
+| FR-09 | Thêm điểm cho một (sinh viên, môn học, học kỳ). Nếu bộ ba này đã có điểm thì **báo lỗi trùng** (BR-17), không ghi đè; muốn đổi điểm thì dùng Sửa (FR-24). |
 | FR-10 | Xóa một bản ghi điểm sau khi người dùng xác nhận. |
 | FR-24 | Sửa một bản ghi điểm: bấm **Sửa** đưa sinh viên, môn, học kỳ và 3 điểm lên form; có thể đổi cả sinh viên / môn / học kỳ. Bấm **Hủy** để thoát. |
 
 **Quy tắc**
 - BR-07: Điểm chuyên cần, giữa kỳ, cuối kỳ là số thực trong `[0, 10]`.
-- BR-08: Học kỳ bắt buộc, ≤ 20 ký tự, dạng tự do (giao diện gợi ý `HK1-2026`, dữ liệu mẫu dùng `HK1-2025`, `HK2-2025`).
+- BR-08: Học kỳ bắt buộc, chọn trong danh sách cố định gồm HK1 và HK2 của 3 năm 2024–2026, theo thứ tự `HK2-2026`, `HK1-2026`, `HK2-2025`, `HK1-2025`, `HK2-2024`, `HK1-2024` (hằng `SEMESTERS` trong `backend/app.py` và `frontend/app.py`). Giao diện dùng ô chọn sổ xuống; back-end từ chối giá trị ngoài danh sách. Áp dụng cho cả Bảng điểm và Học phí.
 - BR-09: **Điểm tổng kết** = `chuyên cần × 0,1 + giữa kỳ × 0,3 + cuối kỳ × 0,6`, làm tròn 2 chữ số. Được tính khi truy vấn, không lưu trong DB.
 - BR-10: **Xếp loại** theo điểm tổng kết **đã làm tròn** (đúng số hiển thị trong bảng): Giỏi ≥ 8; Khá ≥ 6,5; Trung bình ≥ 5; còn lại là "Cần cố gắng".
 - BR-11: Sinh viên hoặc môn học không tồn tại → báo lỗi.
-- BR-17: Khi **sửa** một bản ghi điểm sang bộ (sinh viên, môn học, học kỳ) đã thuộc về bản ghi khác → báo lỗi trùng, không gộp hay ghi đè bản ghi kia.
+- BR-17: Mỗi (sinh viên, môn học, học kỳ) có tối đa **một** bản ghi điểm; một sinh viên vẫn có điểm của nhiều môn trong cùng học kỳ. Khi **thêm** hoặc **sửa** thành bộ đã có → báo lỗi "Một sinh viên không thể có nhiều bảng điểm ở cùng một học kỳ." tại ô Học kỳ, không gộp hay ghi đè bản ghi kia.
 
 ## 4. Học phí
 | Mã | Yêu cầu |
 |---|---|
-| FR-11 | Hiển thị học phí: mã SV, họ tên, học kỳ, phải đóng, đã đóng, còn nợ, hạn đóng, trạng thái. Sắp xếp: học kỳ giảm dần → mã SV. |
-| FR-12 | Lưu học phí cho một (sinh viên, học kỳ); nếu đã có thì **cập nhật**. |
+| FR-11 | Hiển thị học phí: mã SV, họ tên, học kỳ, phải đóng, đã đóng, còn nợ, ngày đóng, trạng thái. Sắp xếp: học kỳ mới nhất trước → mã SV. |
+| FR-12 | Thêm học phí cho một (sinh viên, học kỳ); nếu đã có thì **báo lỗi trùng** (BR-18), không ghi đè. |
 | FR-25 | Sửa một bản ghi học phí: bấm **Sửa** đưa toàn bộ thông tin lên form; bấm **Hủy** để thoát. |
 | FR-26 | Xóa một bản ghi học phí sau khi người dùng xác nhận. |
 
 **Quy tắc**
 - BR-12: Mỗi sinh viên có tối đa **một** bản ghi học phí cho mỗi học kỳ.
-- BR-13: `0 ≤ đã đóng ≤ phải đóng < 10¹³` (giới hạn của cột `DECIMAL(15,2)`); để trống "đã đóng" thì coi là 0.
+- BR-13: `0 ≤ đã đóng ≤ phải đóng < 10¹³` (giới hạn của cột `DECIMAL(15,2)`); để trống "đã đóng" thì coi là 0. Hai ô mặc định là 0. Phải đóng < đã đóng → báo "Số tiền phải đóng bắt buộc phải lớn hơn hoặc bằng số tiền đã đóng." tại ô Học phí phải đóng.
 - BR-14: **Còn nợ** = `max(phải đóng − đã đóng, 0)`. Trạng thái "Đã hoàn thành" khi còn nợ = 0, ngược lại "Còn nợ".
-- BR-15: Hạn đóng tùy chọn. Nếu nhập thì phải là ngày có thật theo ISO 8601, được lưu dạng `YYYY-MM-DD` (ví dụ `20261231` lưu thành `2026-12-31`; `2026-02-30` hay `31/12/2026` bị từ chối). Giao diện dùng ô chọn ngày. Ghi chú ≤ 200 ký tự.
-- BR-18: Khi **sửa** một bản ghi học phí sang (sinh viên, học kỳ) đã có bản ghi khác → báo lỗi trùng.
+- BR-15: **Ngày đóng học phí** bắt buộc (để trống → "Phải nhập thời gian đã đóng học phí."), phải là ngày có thật theo ISO 8601, được lưu dạng `YYYY-MM-DD` (ví dụ `20261231` lưu thành `2026-12-31`; `2026-02-30` hay `31/12/2026` bị từ chối). Giao diện dùng ô chọn ngày. Cột trong DB vẫn tên `due_date`. Ghi chú ≤ 200 ký tự.
+- BR-18: Khi **thêm** hoặc **sửa** một bản ghi học phí thành (sinh viên, học kỳ) đã có bản ghi → báo lỗi "Một sinh viên không thể đóng nhiều học phí trong cùng một học kỳ." tại ô Học kỳ.
 
 ## 5. Dashboard
 | Mã | Yêu cầu |

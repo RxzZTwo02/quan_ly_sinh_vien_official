@@ -559,8 +559,9 @@
       {% for message in messages %}
       <div class="notice success" role="status">{{ message }}</div>
       {% endfor %}
+      {#- data-field: lỗi gắn với một ô của form (vd trùng học kỳ); script hiện lỗi đó ngay tại ô. #}
       {% for error in errors %}
-      <div class="notice error" role="alert">{{ error }}</div>
+      <div class="notice error" role="alert"{% if error.field %} data-field="{{ error.field }}"{% endif %}>{{ error.text }}</div>
       {% endfor %}
     </div>
 
@@ -836,8 +837,12 @@
           </div>
           <div>
             <label>Học kỳ</label>
-            <input name="semester" required maxlength="20" placeholder="Ví dụ: HK1-2026"
-                   value="{{ editing_grade.semester if editing_grade else '' }}">
+            <select name="semester" required>
+              <option value="">Chọn học kỳ</option>
+              {% for sem in semesters %}
+              <option value="{{ sem }}"{% if editing_grade and editing_grade.semester == sem %} selected{% endif %}>{{ sem }}</option>
+              {% endfor %}
+            </select>
           </div>
           <div>
             <label>Chuyên cần (0–10)</label>
@@ -949,13 +954,17 @@
           </div>
           <div>
             <label>Học kỳ</label>
-            <input name="semester" required maxlength="20" placeholder="Ví dụ: HK1-2026"
-                   value="{{ editing_tuition.semester if editing_tuition else '' }}">
+            <select name="semester" required>
+              <option value="">Chọn học kỳ</option>
+              {% for sem in semesters %}
+              <option value="{{ sem }}"{% if editing_tuition and editing_tuition.semester == sem %} selected{% endif %}>{{ sem }}</option>
+              {% endfor %}
+            </select>
           </div>
           <div>
             <label>Học phí phải đóng (VNĐ)</label>
-            <input type="number" name="amount_due" min="0" step="1000" required placeholder="Ví dụ: 8000000"
-                   value="{{ editing_tuition.amount_due | plain_number if editing_tuition else '' }}">
+            <input type="number" name="amount_due" min="0" step="1000" required
+                   value="{{ editing_tuition.amount_due | plain_number if editing_tuition else 0 }}">
           </div>
           <div>
             <label>Đã đóng (VNĐ)</label>
@@ -963,8 +972,9 @@
                    value="{{ editing_tuition.amount_paid | plain_number if editing_tuition else 0 }}">
           </div>
           <div>
-            <label>Hạn đóng</label>
-            <input type="date" name="due_date" value="{{ editing_tuition.due_date if editing_tuition else '' }}">
+            <label>Ngày đóng học phí</label>
+            <input type="date" name="due_date" required data-required-message="Phải nhập thời gian đã đóng học phí."
+                   value="{{ editing_tuition.due_date if editing_tuition else '' }}">
           </div>
           <div>
             <label>Ghi chú</label>
@@ -999,7 +1009,7 @@
               <th>Phải đóng</th>
               <th>Đã đóng</th>
               <th>Còn nợ</th>
-              <th>Hạn đóng</th>
+              <th>Ngày đóng</th>
               <th>Trạng thái</th>
               <th class="col-actions">Thao tác</th>
             </tr>
@@ -1297,12 +1307,19 @@
        * Gửi request rồi chỉ thay các vùng dữ liệu bằng bản mới. Nếu trang kết quả báo lỗi thì
        * chỉ hiện thông báo, giữ nguyên các form để người dùng sửa lại mà không phải nhập lại.
        * carry: thông báo hiện kèm phía trên (kết quả các lần lưu trước đó).
+       * anchorEl là form nhập liệu vừa gửi mà back-end báo lỗi tại một ô (vd trùng học kỳ): lỗi đó
+       * hiện thành bong bóng ngay tại ô, không đưa lên hộp thông báo đỏ.
        * Trả về URL trang kết quả khi thành công, null khi lỗi.
        */
       async function load(url, init, anchorEl, carry = []) {
         const page = await fetchPage(url, init);
-        setNotices([...carry, ...page.notices]);
-        if (page.failed) return null;
+        const entry = page.failed && anchorEl?.matches?.('main form[data-entry]') ? anchorEl : null;
+        const { rest, errors } = splitFieldErrors(entry, page.notices);
+        setNotices([...carry, ...rest]);
+        if (page.failed) {
+          if (entry) showFieldErrors(entry, errors);
+          return null;
+        }
 
         // Giữ vùng người dùng đang thao tác đứng yên trên màn hình sau khi thay nội dung.
         const anchorId = anchorEl?.closest('section[id]')?.id;
@@ -1315,6 +1332,7 @@
         }
         updateCharts(readChartData(page.doc));
         syncSelection();  // bảng vừa được thay: chọn lại các dòng còn tồn tại
+        refreshAllValidity();  // form vừa được thay: đặt lại câu kiểm tra tiếng Việt
 
         if (anchorId) {
           window.scrollBy(0, document.getElementById(anchorId).getBoundingClientRect().top - before);
@@ -1486,6 +1504,7 @@
           if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === value)) continue;
           el.value = value;
         }
+        refreshFormValidity(form);  // đổi giá trị bằng script không phát sự kiện input
       }
 
       /*
@@ -1541,11 +1560,15 @@
             form.setAttribute('aria-busy', 'true');
             const page = await fetchPage(form.action, { method: 'POST', body: new FormData(form) });
             form.removeAttribute('aria-busy');
-            carry.push(...page.notices);
+            const { rest, errors } = splitFieldErrors(form, page.notices);
+            carry.push(...rest);
             if (page.failed) {
               setNotices(carry);
               if (saved.length) await refreshKeeping(saved);
-              focusEntry(form.dataset.entry);
+              // refreshKeeping có thể đã thay form: báo lỗi tại ô trên form hiện đang hiển thị.
+              const current = entryForm(form.dataset.entry);
+              if (errors.length && current) showFieldErrors(current, errors);
+              else focusEntry(form.dataset.entry);
               return;
             }
             saved.push(form);
@@ -1553,6 +1576,111 @@
           if (await action(carry) === null) await refreshKeeping(saved);
         });
       }
+
+      // ===================================================== Kiểm tra dữ liệu nhập (tiếng Việt)
+      /*
+       * Bong bóng kiểm tra của trình duyệt (vd "Value must be less than or equal to 10.") đi theo
+       * ngôn ngữ của trình duyệt. Thay bằng câu tiếng Việt qua setCustomValidity; câu được tính lại
+       * mỗi khi form thay đổi và ngay trước khi trình duyệt hiện bong bóng (sự kiện invalid).
+       * Thứ tự ưu tiên: lỗi back-end báo cho ô (vd trùng học kỳ) → lỗi trình duyệt phát hiện
+       * (bắt buộc, khoảng giá trị, bước, định dạng) → luật riêng giữa các ô (RULES).
+       */
+      const serverErrors = new WeakMap();  // ô -> câu lỗi back-end, giữ tới khi form đó được sửa
+
+      const plainLabel = el => labelOf(el).replace(/\s*\([^)]*\)\s*$/, '');  // bỏ "(0–10)", "(VNĐ)"
+      const lowerFirst = s => s.charAt(0).toLocaleLowerCase('vi') + s.slice(1);
+      const formatNumber = n => new Intl.NumberFormat('vi-VN').format(n);
+
+      /* Câu tiếng Việt cho lỗi trình duyệt phát hiện ở ô; '' khi ô hợp lệ. */
+      function browserMessage(el) {
+        const v = el.validity;
+        const label = plainLabel(el);
+        if (v.badInput) {
+          return el.type === 'date' ? `${label} chưa nhập đủ hoặc không phải ngày có thật.`
+            : `${label} phải là một số hợp lệ.`;
+        }
+        if (v.valueMissing) {
+          return el.dataset.requiredMessage
+            || `Vui lòng ${el.tagName === 'SELECT' ? 'chọn' : 'nhập'} ${lowerFirst(label)}.`;
+        }
+        if (v.rangeUnderflow) return `${label} phải lớn hơn hoặc bằng ${formatNumber(el.min)}.`;
+        if (v.rangeOverflow) return `${label} phải nhỏ hơn hoặc bằng ${formatNumber(el.max)}.`;
+        if (v.stepMismatch) {
+          const step = Number(el.step) || 1;
+          if (step < 1) return `${label} chỉ được có tối đa ${el.step.split('.')[1]?.length ?? 0} chữ số thập phân.`;
+          return step === 1 ? `${label} phải là số nguyên.` : `${label} phải là bội số của ${formatNumber(step)}.`;
+        }
+        if (v.typeMismatch || v.patternMismatch) {
+          return `${label} không đúng định dạng.${el.title ? ` ${el.title}.` : ''}`;
+        }
+        if (v.tooLong) return `${label} tối đa ${el.maxLength} ký tự.`;
+        if (!v.valid && !v.customError) return `${label} chưa hợp lệ.`;
+        return '';
+      }
+
+      /* Luật giữa các ô (theo tên ô): trả về câu lỗi, '' khi hợp lệ. */
+      const RULES = {
+        amount_due: el => {
+          const paid = el.form.elements.amount_paid;
+          if (!paid || el.value === '' || paid.value === '') return '';
+          return Number(el.value) < Number(paid.value)
+            ? 'Số tiền phải đóng bắt buộc phải lớn hơn hoặc bằng số tiền đã đóng.' : '';
+        },
+      };
+
+      function refreshValidity(el) {
+        el.setCustomValidity('');  // xóa câu cũ để đọc đúng trạng thái của trình duyệt
+        el.setCustomValidity(serverErrors.get(el) || browserMessage(el) || RULES[el.name]?.(el) || '');
+      }
+
+      const refreshFormValidity = form => fieldsOf(form).forEach(refreshValidity);
+      const refreshAllValidity = () => entryForms().forEach(refreshFormValidity);
+
+      /*
+       * Tách các thông báo lỗi gắn với một ô của `form` (notice có data-field, vd trùng học kỳ) khỏi
+       * các thông báo còn lại. Trả về { rest, errors }; errors = [[tên ô, câu lỗi], ...].
+       */
+      function splitFieldErrors(form, nodes) {
+        const rest = [];
+        const errors = [];
+        for (const node of nodes) {
+          const name = node.dataset?.field;
+          if (form && name && fieldsOf(form).some(el => el.name === name)) {
+            errors.push([name, node.textContent.trim()]);
+          } else {
+            rest.push(node);
+          }
+        }
+        return { rest, errors };
+      }
+
+      /* Hiện lỗi back-end thành bong bóng tại ô; ô đầu tiên được đưa vào tầm nhìn và đặt con trỏ. */
+      function showFieldErrors(form, errors) {
+        const fields = [];
+        for (const [name, message] of errors) {
+          const el = fieldsOf(form).find(f => f.name === name);
+          if (!el) continue;
+          serverErrors.set(el, message);
+          refreshValidity(el);
+          fields.push(el);
+        }
+        fields[0]?.reportValidity();
+      }
+
+      // Ngay trước khi trình duyệt hiện bong bóng (bấm lưu, reportValidity): đặt câu tiếng Việt.
+      document.addEventListener('invalid', event => {
+        if (event.target.closest?.('main form[data-entry]')) refreshValidity(event.target);
+      }, true);
+
+      // Người dùng sửa form: bỏ lỗi back-end cũ của form đó và tính lại mọi ô (luật giữa các ô).
+      const onFormEdit = event => {
+        const form = event.target.closest?.('main form[data-entry]');
+        if (!form) return;
+        fieldsOf(form).forEach(el => serverErrors.delete(el));
+        refreshFormValidity(form);
+      };
+      document.addEventListener('input', onFormEdit);
+      document.addEventListener('change', onFormEdit);
 
       // ===================================================== Xác nhận xóa
       /*
@@ -1626,7 +1754,8 @@
         if (!form.matches('main form[data-entry]')) return;
         event.preventDefault();  // không trả về giá trị ban đầu như nút reset mặc định
         const fields = fieldsOf(form);
-        fields.forEach(el => { el.value = ''; });
+        fields.forEach(el => { el.value = ''; serverErrors.delete(el); });
+        refreshFormValidity(form);
         fields[0]?.focus();
       });
 
@@ -1696,6 +1825,7 @@
       initCharts(readChartData(document));
       decorateNotices();
       syncSelection();
+      refreshAllValidity();
       history.replaceState(null, '', shownPath + location.hash);
     })();
   </script>

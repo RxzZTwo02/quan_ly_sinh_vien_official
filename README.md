@@ -24,7 +24,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 | Sinh viên | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã, họ tên hoặc lớp. Tìm kiếm chỉ lọc bảng sinh viên; ô chọn sinh viên ở Bảng điểm và Học phí vẫn đủ danh sách. Xóa sinh viên thì xóa kèm điểm và học phí của sinh viên đó. Quy tắc nhập: xem [Quy tắc nhập liệu](#quy-tắc-nhập-liệu). |
 | Môn học | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã hoặc tên môn. Mã môn chỉ gồm chữ cái không dấu và chữ số (ví dụ `INT1001`). Xóa môn thì xóa kèm các bản ghi điểm của môn; hộp xác nhận báo trước số bản ghi sẽ mất. |
 | Bảng điểm | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên, môn học hoặc học kỳ; ô chọn môn ở form vẫn đủ danh sách. Điểm tổng kết tự tính: 10% chuyên cần + 30% giữa kỳ + 60% cuối kỳ, làm tròn 2 chữ số. Xếp loại Giỏi (≥ 8) / Khá (≥ 6,5) / Trung bình (≥ 5) / Cần cố gắng dựa trên đúng số đã làm tròn này. |
-| Học phí | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên hoặc học kỳ. Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. Hạn đóng (tùy chọn) phải là ngày có thật. |
+| Học phí | Thêm, sửa, xóa, tìm kiếm | Tìm theo mã SV, họ tên hoặc học kỳ. Tự tính số còn nợ và trạng thái *Đã hoàn thành* / *Còn nợ*. Số phải đóng phải lớn hơn hoặc bằng số đã đóng. Ngày đóng học phí bắt buộc và phải là ngày có thật. |
 | Dashboard | Xem | 4 thẻ KPI (tổng sinh viên, môn học, bản ghi điểm, học phí còn nợ) và 3 biểu đồ (tình hình học phí, phân loại kết quả học tập, sinh viên theo lớp). Biểu đồ phân loại luôn đủ 4 xếp loại, mỗi xếp loại một màu cố định. |
 
 **Cách thao tác**
@@ -33,8 +33,8 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Xóa**: chọn dòng rồi bấm **Xóa**. Luôn hỏi xác nhận trước khi xóa, bằng hộp thoại của chương trình. Hộp thoại nêu rõ bản ghi sẽ bị xóa và dữ liệu bị xóa theo (nếu có); bấm **Xóa** để xóa, **Hủy** để thôi.
 - **Làm mới** (chỉ khi thêm mới): làm trống mọi ô của form để nhập lại từ đầu. Nút **Tất cả** cạnh ô tìm kiếm chỉ bỏ kết quả tìm kiếm.
 - **Giữ kết quả tìm kiếm**: đã tìm ở một bảng thì kết quả được giữ khi bấm Sửa, Hủy, lưu, xóa hay tìm ở bảng khác; bản ghi đang sửa vẫn nằm trong danh sách kết quả, được tô vàng. Chỉ nút **Tất cả** của bảng đó mới đưa bảng về danh sách đầy đủ.
-- **Thêm điểm / học phí đã có**: nếu bộ *(sinh viên, môn, học kỳ)* đã có điểm, hoặc *(sinh viên, học kỳ)* đã có học phí, thì bản ghi cũ được **cập nhật**.
-- **Sửa thành bản ghi trùng**: khi **sửa** mà đổi sang bộ đã thuộc về một bản ghi khác, chương trình **báo trùng** và không ghi đè.
+- **Học kỳ**: chọn trong danh sách sổ xuống, từ `HK2-2026` xuống `HK1-2024` (HK1 và HK2 của 3 năm 2024–2026). Bảng điểm và bảng học phí xếp học kỳ mới nhất lên đầu.
+- **Không trùng điểm / học phí**: một sinh viên chỉ có một bản ghi điểm cho mỗi môn trong một học kỳ, và chỉ một bản ghi học phí cho mỗi học kỳ. Thêm mới hoặc sửa thành bộ đã có thì chương trình **báo lỗi** ngay tại ô Học kỳ ("Một sinh viên không thể có nhiều bảng điểm ở cùng một học kỳ." / "Một sinh viên không thể đóng nhiều học phí trong cùng một học kỳ."), không ghi đè bản ghi cũ. Muốn đổi điểm / học phí đã có thì dùng **Sửa**.
 - **Tìm kiếm**: khớp một phần, không phân biệt hoa / thường. Mọi ký tự được tìm đúng như đã gõ, kể cả `%` và `_`.
 - **Nhập sai**: thông báo đỏ nêu rõ từng ô sai và sai thế nào, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."; form giữ nguyên dữ liệu để sửa lại. Trùng mã thì báo riêng, ví dụ "Mã sinh viên SV001 đã tồn tại.".
 - **Thông báo**: chỉ do chương trình tạo ra sau mỗi thao tác, hiện **một lần** (F5 không hiện lại). Thông báo không nằm trên địa chỉ trang, nên không ai gửi được link chứa thông báo giả.
@@ -50,7 +50,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Chữ dài**: họ tên, lớp, email, tên môn dài tự xuống dòng trong bảng, nên bảng không bị tràn ra ngoài màn hình.
 
 ### Quy tắc nhập liệu
-Back-end kiểm tra các quy tắc này cả khi gửi thẳng tới API; trình duyệt cũng báo sớm ngay trên ô nhập. Khoảng trắng đầu / cuối được tự cắt bỏ.
+Back-end kiểm tra các quy tắc này cả khi gửi thẳng tới API; trình duyệt cũng báo sớm ngay trên ô nhập, bằng bong bóng tiếng Việt (ví dụ "Cuối kỳ phải nhỏ hơn hoặc bằng 10."), không phụ thuộc ngôn ngữ của trình duyệt. Lỗi back-end gắn với một ô (trùng học kỳ, số phải đóng nhỏ hơn số đã đóng, thiếu ngày đóng học phí) cũng hiện thành bong bóng tại ô đó. Khoảng trắng đầu / cuối được tự cắt bỏ.
 
 | Ô | Quy tắc | Ví dụ hợp lệ | Bị từ chối |
 |---|---|---|---|
@@ -59,6 +59,9 @@ Back-end kiểm tra các quy tắc này cả khi gửi thẳng tới API; trình
 | Lớp | Tối đa 50 ký tự, bắt đầu bằng chữ hoặc số; chỉ chữ, số, khoảng trắng, `-` `_` `.` | `CNTT1`, `K65-CNTT` | `-A`, `A/B` |
 | Email | Tối đa 120 ký tự, dạng `tên@miền.đuôi`, không khoảng trắng | `an@example.com` | `@`, `a@`, `a@b`, `qa mail @ x y` |
 | Tên môn | Tối đa 120 ký tự, không giới hạn ký tự | `Lập trình C++` | *(để trống)* |
+| Học kỳ | Chọn trong danh sách `HK1` / `HK2` năm 2024–2026 | `HK1-2026`, `HK2-2024` | `HK3-2026`, `HK1-2023`, *(để trống)* |
+| Học phí phải đóng, Đã đóng | Số từ 0, bước 1.000 đ; phải đóng ≥ đã đóng | `8000000` / `5000000` | phải đóng `1000000`, đã đóng `2000000` |
+| Ngày đóng học phí | Bắt buộc, ngày có thật | `2026-02-28` | *(để trống)*, `2026-02-30` |
 
 Bản ghi đã lưu từ trước khi có các quy tắc này vẫn hiển thị bình thường; khi sửa bản ghi đó thì phải sửa các ô cho đúng quy tắc mới lưu được.
 
@@ -407,18 +410,18 @@ Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](
 | GET · PUT · DELETE | `/api/students/<id>` | Xem · sửa · xóa sinh viên (xóa kèm điểm, học phí) |
 | GET · POST | `/api/subjects` | Danh sách (`?q=` để tìm theo mã / tên môn) · thêm môn học |
 | GET · PUT · DELETE | `/api/subjects/<id>` | Xem · sửa · xóa môn học (xóa kèm điểm của môn) |
-| GET · POST | `/api/grades` | Bảng điểm (`?q=` để tìm theo mã SV / họ tên / mã, tên môn / học kỳ) · lưu điểm (trùng sinh viên + môn + học kỳ thì cập nhật) |
+| GET · POST | `/api/grades` | Bảng điểm (`?q=` để tìm theo mã SV / họ tên / mã, tên môn / học kỳ) · thêm điểm (trùng sinh viên + môn + học kỳ thì báo lỗi 409) |
 | GET · PUT · DELETE | `/api/grades/<id>` | Xem · sửa · xóa bản ghi điểm |
-| GET · POST | `/api/tuition` | Học phí (`?q=` để tìm theo mã SV / họ tên / học kỳ) · lưu học phí (trùng sinh viên + học kỳ thì cập nhật) |
+| GET · POST | `/api/tuition` | Học phí (`?q=` để tìm theo mã SV / họ tên / học kỳ) · thêm học phí (trùng sinh viên + học kỳ thì báo lỗi 409) |
 | GET · PUT · DELETE | `/api/tuition/<id>` | Xem · sửa · xóa bản ghi học phí |
 | GET | `/api/stats` | Số liệu cho thẻ KPI và biểu đồ |
 
 | Mã lỗi | Khi nào |
 |---|---|
-| 400 | Dữ liệu thiếu hoặc không hợp lệ (sai [quy tắc nhập liệu](#quy-tắc-nhập-liệu), số `nan` / `inf`, hạn đóng không phải ngày `YYYY-MM-DD` có thật), body không phải JSON, sinh viên / môn học được chọn không tồn tại |
+| 400 | Dữ liệu thiếu hoặc không hợp lệ (sai [quy tắc nhập liệu](#quy-tắc-nhập-liệu), số `nan` / `inf`, học kỳ ngoài danh sách, phải đóng nhỏ hơn đã đóng, thiếu ngày đóng học phí hoặc không phải ngày `YYYY-MM-DD` có thật), body không phải JSON, sinh viên / môn học được chọn không tồn tại. Lỗi điểm / học phí gắn với một ô có thêm khóa `field` (ví dụ `{"error": "...", "field": "due_date"}`) |
 | 401 | Thiếu hoặc sai `X-API-Key` (khi có đặt `API_TOKEN`) |
 | 404 | Không tìm thấy bản ghi |
-| 409 | Trùng mã sinh viên / mã môn học (ví dụ "Mã sinh viên SV001 đã tồn tại."); khi **sửa** điểm hoặc học phí, trùng với một bản ghi khác |
+| 409 | Trùng mã sinh viên / mã môn học (ví dụ "Mã sinh viên SV001 đã tồn tại."); khi **thêm** hoặc **sửa** điểm / học phí, trùng với một bản ghi đã có (`"field": "semester"`) |
 | 503 | Không kết nối được MySQL |
 
 Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng thái của cả front-end và back-end. Trang lỗi của front-end (400, 404, 405, 500) là trang tiếng Việt của chương trình, có link "Về trang chính".

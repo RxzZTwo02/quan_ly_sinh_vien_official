@@ -42,9 +42,9 @@ Quy tắc định dạng chỉ được kiểm tra ở back-end, **không** có 
 | `midterm` | DOUBLE | NOT NULL, DEFAULT 0, CHECK 0–10 |
 | `final` | DOUBLE | NOT NULL, DEFAULT 0, CHECK 0–10 |
 
-Khóa duy nhất `uq_grades (student_id, subject_id, semester)`:
-- khi thêm (`POST /api/grades`), dùng cho `INSERT … ON DUPLICATE KEY UPDATE`, nên bộ ba đã có điểm thì được cập nhật;
-- khi sửa (`PUT /api/grades/<id>`), `UPDATE` vi phạm khóa này (lỗi MySQL 1062) được trả về `409` (BR-17).
+Khóa duy nhất `uq_grades (student_id, subject_id, semester)`: cả khi thêm (`POST /api/grades`, `INSERT` thường, không ghi đè) lẫn khi sửa (`PUT /api/grades/<id>`), lệnh vi phạm khóa này (lỗi MySQL 1062) được trả về `409` (BR-17).
+
+`semester` chỉ nhận các giá trị trong danh sách `SEMESTERS` (BR-08); việc này được kiểm tra ở back-end, không có CHECK trong DB, nên dữ liệu cũ ngoài danh sách vẫn đọc được.
 
 ## 5. Bảng `tuition`
 | Cột | Kiểu | Ràng buộc |
@@ -57,11 +57,9 @@ Khóa duy nhất `uq_grades (student_id, subject_id, semester)`:
 | `due_date` | VARCHAR(10) | NOT NULL, DEFAULT `''` |
 | `note` | VARCHAR(200) | NOT NULL, DEFAULT `''` |
 
-Khóa duy nhất `uq_tuition (student_id, semester)`, dùng giống `uq_grades`:
-- `POST` thì cập nhật bản ghi đã có;
-- `PUT` trùng với bản ghi khác thì trả `409` (BR-18).
+Khóa duy nhất `uq_tuition (student_id, semester)`, dùng giống `uq_grades`: `POST` hoặc `PUT` trùng với bản ghi đã có thì trả `409` (BR-18).
 
-> Ràng buộc `amount_paid ≤ amount_due` chỉ được kiểm tra ở back-end, không có CHECK trong DB.
+> Ràng buộc `amount_paid ≤ amount_due` và "ngày đóng học phí bắt buộc" chỉ được kiểm tra ở back-end, không có CHECK trong DB. Cột `due_date` giữ tên cũ nhưng nay là **ngày đóng học phí** (BR-15); bản ghi cũ có `due_date = ''` vẫn hiển thị (`—`), khi sửa thì phải nhập ngày.
 
 ## 6. Giá trị tính toán (không lưu)
 | Giá trị | Biểu thức SQL |
