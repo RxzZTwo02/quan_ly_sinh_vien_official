@@ -29,7 +29,7 @@ Thiếu hoặc sai → `401 {"error": "Thiếu hoặc sai API key."}`. So sánh 
 | 405 | Sai method |
 | 409 | Trùng mã sinh viên / mã môn học; khi thêm hoặc sửa, trùng (SV, môn, học kỳ) của điểm hoặc (SV, học kỳ) của học phí |
 
-Lỗi gắn với một ô cụ thể (học kỳ, các ô học phí, trùng điểm / học phí) có thêm khóa `field` là tên ô trong body gửi lên, ví dụ `{"error": "Phải nhập thời gian đã đóng học phí.", "field": "due_date"}`. Front-end dùng `field` để hiện lỗi thành bong bóng ngay tại ô đó.
+Lỗi gắn với một ô cụ thể (trùng mã sinh viên / mã môn, học kỳ, các ô học phí, trùng điểm / học phí) có thêm khóa `field` là tên ô trong body gửi lên, ví dụ `{"error": "Phải nhập thời gian đã đóng học phí.", "field": "due_date"}`. Front-end dùng `field` để hiện lỗi thành bong bóng ngay tại ô đó.
 | 503 | Không kết nối được MySQL |
 
 ## 3. Endpoint
@@ -56,7 +56,7 @@ Danh sách sinh viên, `id` giảm dần. `q` (tùy chọn) khớp `LIKE %q%` tr
 ```
 - `201 {"message": "Đã thêm sinh viên.", "id": 11}` (mã lưu thành `SV011`)
 - `400 "Thông tin sinh viên chưa hợp lệ: <các lỗi>."`: liệt kê từng ô sai, cách nhau bằng `; ` (xem BR-01…BR-03, BR-19). Ví dụ `"Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."`
-- `409 "Mã sinh viên SV011 đã tồn tại."` (trùng mã; lỗi ràng buộc khác: `400 "Dữ liệu sinh viên không hợp lệ."`)
+- `409 {"error": "Mã sinh viên SV011 đã tồn tại.", "field": "student_code"}` (trùng mã; lỗi ràng buộc khác: `400 "Dữ liệu sinh viên không hợp lệ."`)
 
 ### `PUT /api/students/<id>`
 Body và kiểm tra như `POST`. `200 "Đã cập nhật sinh viên."` · `400` · `404` · `409`.
@@ -79,7 +79,7 @@ Danh sách môn học, sắp xếp theo `subject_name`. `q` (tùy chọn) khớp
 `credits` tùy chọn (mặc định 3), phải là số nguyên 1–10.
 - `201 {"message": "Đã thêm môn học.", "id": 6}` (mã lưu thành `INT1005`)
 - `400 "Thông tin môn học chưa hợp lệ: <các lỗi>."`, ví dụ `"Thông tin môn học chưa hợp lệ: Tên môn không được để trống; Số tín chỉ phải là số nguyên từ 1 đến 10."`
-- `409 "Mã môn học INT1005 đã tồn tại."`
+- `409 {"error": "Mã môn học INT1005 đã tồn tại.", "field": "subject_code"}`
 
 ### `GET /api/subjects/<id>`
 Một môn học. `404 "Không tìm thấy môn học."`
@@ -89,7 +89,7 @@ Body và kiểm tra giống `POST /api/subjects`.
 - `200 "Đã cập nhật môn học."` (kể cả khi dữ liệu không đổi)
 - `400 "Thông tin môn học chưa hợp lệ: <các lỗi>."`
 - `404 "Không tìm thấy môn học."`
-- `409 "Mã môn học <mã> đã tồn tại."`
+- `409 {"error": "Mã môn học <mã> đã tồn tại.", "field": "subject_code"}`
 
 ### `DELETE /api/subjects/<id>`
 Xóa môn học và (cascade) mọi bản ghi điểm của môn đó. `deleted_grades` là số bản ghi điểm bị xóa theo.

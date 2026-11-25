@@ -141,7 +141,7 @@ Các ô nhập có `required`, `maxlength`, `min`/`max` tương ứng quy tắc 
 
 Nhãn lấy từ `<label>` của ô, bỏ phần trong ngoặc ở cuối ("(0–10)", "(VNĐ)"). Câu được tính lại khi người dùng sửa form (`input` / `change`), ngay trước khi trình duyệt hiện bong bóng (sự kiện `invalid`), khi tải trang, sau mỗi lần thay vùng dữ liệu, sau **Làm mới** và sau khi điền lại bản nháp.
 
-**Lỗi back-end tại ô.** Back-end trả lỗi có `field` (trùng học kỳ ở Bảng điểm / Học phí, phải đóng < đã đóng, thiếu ngày đóng học phí…) thì script không đưa lỗi đó lên hộp đỏ mà đặt nó làm câu kiểm tra của ô đó trên form vừa gửi rồi gọi `reportValidity()`: bong bóng hiện tại ô, con trỏ nằm ở ô, dữ liệu đã nhập được giữ. Câu này giữ tới khi người dùng sửa bất kỳ ô nào của form đó; bấm lưu lại mà chưa sửa gì thì trình duyệt chặn ngay, không gửi. Khi tắt JavaScript, lỗi vẫn hiện ở hộp đỏ như các lỗi khác.
+**Lỗi back-end tại ô.** Back-end trả lỗi có `field` (trùng mã sinh viên / mã môn, trùng học kỳ ở Bảng điểm / Học phí, phải đóng < đã đóng, thiếu ngày đóng học phí…) thì script không đưa lỗi đó lên hộp đỏ mà đặt nó làm câu kiểm tra của ô đó trên form vừa gửi rồi gọi `reportValidity()`: bong bóng hiện tại ô, con trỏ nằm ở ô, dữ liệu đã nhập được giữ. Câu này giữ tới khi người dùng sửa bất kỳ ô nào của form đó; bấm lưu lại mà chưa sửa gì thì trình duyệt chặn ngay, không gửi. Khi tắt JavaScript, lỗi vẫn hiện ở hộp đỏ như các lỗi khác.
 
 ## 5. Biểu đồ
 - Dữ liệu nhúng vào trang qua `<script type="application/json" id="dashboard-data">` (Jinja `tojson`).

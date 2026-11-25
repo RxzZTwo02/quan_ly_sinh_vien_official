@@ -75,7 +75,7 @@ Khóa duy nhất `uq_tuition (student_id, semester)`, dùng giống `uq_grades`:
 - PyMySQL, `DictCursor`, `autocommit=False`, `connect_timeout=5`.
 - Cờ `CLIENT.FOUND_ROWS`: `UPDATE` trả về số dòng **khớp** điều kiện. Vì vậy bấm **Lưu thay đổi** mà không đổi gì (ở cả 4 mục) vẫn được coi là thành công, không bị nhầm thành 404.
 - Lỗi `IntegrityError` được phân loại theo mã lỗi MySQL (hằng số trong `db.py`) ở cả 4 bảng:
-  - `1062` (`ER_DUP_ENTRY`, trùng khóa UNIQUE) → `409`. Sinh viên và môn học báo kèm mã bị trùng, ví dụ "Mã sinh viên SV001 đã tồn tại." (hàm `duplicate_error` trong `backend/app.py`);
+  - `1062` (`ER_DUP_ENTRY`, trùng khóa UNIQUE) → `409`. Sinh viên và môn học báo kèm mã bị trùng và ô bị trùng (`field`), ví dụ "Mã sinh viên SV001 đã tồn tại." (hàm `duplicate_error` trong `backend/app.py`);
   - `1452` (`ER_NO_REFERENCED_ROW`, khóa ngoại trỏ tới bản ghi không tồn tại) và các lỗi khác → `400`.
 - Mỗi request mở một kết nối mới qua `db.transaction()`: commit khi thành công, rollback khi lỗi, luôn đóng kết nối. Không dùng connection pool.
 - Khởi động: thử kết nối `DB_CONNECT_RETRIES` lần, cách nhau `DB_CONNECT_DELAY` giây (Docker đặt 30 lần).

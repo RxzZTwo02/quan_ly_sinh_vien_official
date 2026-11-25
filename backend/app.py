@@ -113,10 +113,11 @@ def raise_if_invalid(errors, what):
         raise ApiError(f"Thông tin {what} chưa hợp lệ: " + "; ".join(errors) + ".")
 
 
-def duplicate_error(exc, duplicate_message, other_message):
-    """IntegrityError khi thêm / sửa: trùng khóa UNIQUE thì 409 với câu báo trùng; lỗi khác thì 400."""
+def duplicate_error(exc, duplicate_message, other_message, field):
+    """IntegrityError khi thêm / sửa: trùng khóa UNIQUE thì 409 với câu báo trùng, gắn với ô `field`
+    (ô mã) để giao diện báo ngay tại ô đó; lỗi khác thì 400."""
     if exc.args and exc.args[0] == ER_DUP_ENTRY:
-        return ApiError(duplicate_message, 409)
+        return ApiError(duplicate_message, 409, field=field)
     return ApiError(other_message)
 
 
@@ -217,7 +218,8 @@ def create_student():
                         values)
             new_id = cur.lastrowid
     except pymysql.err.IntegrityError as exc:
-        raise duplicate_error(exc, f"Mã sinh viên {values[0]} đã tồn tại.", "Dữ liệu sinh viên không hợp lệ.")
+        raise duplicate_error(exc, f"Mã sinh viên {values[0]} đã tồn tại.", "Dữ liệu sinh viên không hợp lệ.",
+                              "student_code")
     return ok("Đã thêm sinh viên.", 201, id=new_id)
 
 
@@ -230,7 +232,8 @@ def update_student(student_id):
                 "UPDATE students SET student_code=%s,full_name=%s,class_name=%s,email=%s WHERE id=%s",
                 (*values, student_id))
     except pymysql.err.IntegrityError as exc:
-        raise duplicate_error(exc, f"Mã sinh viên {values[0]} đã tồn tại.", "Dữ liệu sinh viên không hợp lệ.")
+        raise duplicate_error(exc, f"Mã sinh viên {values[0]} đã tồn tại.", "Dữ liệu sinh viên không hợp lệ.",
+                              "student_code")
     if not affected:
         raise ApiError("Không tìm thấy sinh viên.", 404)
     return ok("Đã cập nhật sinh viên.")
@@ -290,7 +293,8 @@ def create_subject():
             cur.execute("INSERT INTO subjects(subject_code,subject_name,credits) VALUES(%s,%s,%s)", values)
             new_id = cur.lastrowid
     except pymysql.err.IntegrityError as exc:
-        raise duplicate_error(exc, f"Mã môn học {values[0]} đã tồn tại.", "Dữ liệu môn học không hợp lệ.")
+        raise duplicate_error(exc, f"Mã môn học {values[0]} đã tồn tại.", "Dữ liệu môn học không hợp lệ.",
+                              "subject_code")
     return ok("Đã thêm môn học.", 201, id=new_id)
 
 
@@ -303,7 +307,8 @@ def update_subject(subject_id):
                 "UPDATE subjects SET subject_code=%s,subject_name=%s,credits=%s WHERE id=%s",
                 (*values, subject_id))
     except pymysql.err.IntegrityError as exc:
-        raise duplicate_error(exc, f"Mã môn học {values[0]} đã tồn tại.", "Dữ liệu môn học không hợp lệ.")
+        raise duplicate_error(exc, f"Mã môn học {values[0]} đã tồn tại.", "Dữ liệu môn học không hợp lệ.",
+                              "subject_code")
     if not affected:
         raise ApiError("Không tìm thấy môn học.", 404)
     return ok("Đã cập nhật môn học.")

@@ -36,7 +36,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Học kỳ**: chọn trong danh sách sổ xuống, từ `HK2-2026` xuống `HK1-2024` (HK1 và HK2 của 3 năm 2024–2026). Bảng điểm và bảng học phí xếp học kỳ mới nhất lên đầu.
 - **Không trùng điểm / học phí**: một sinh viên chỉ có một bản ghi điểm cho mỗi môn trong một học kỳ, và chỉ một bản ghi học phí cho mỗi học kỳ. Thêm mới hoặc sửa thành bộ đã có thì chương trình **báo lỗi** ngay tại ô Học kỳ ("Một sinh viên không thể có nhiều bảng điểm ở cùng một học kỳ." / "Một sinh viên không thể đóng nhiều học phí trong cùng một học kỳ."), không ghi đè bản ghi cũ. Muốn đổi điểm / học phí đã có thì dùng **Sửa**.
 - **Tìm kiếm**: khớp một phần, không phân biệt hoa / thường. Mọi ký tự được tìm đúng như đã gõ, kể cả `%` và `_`.
-- **Nhập sai**: thông báo đỏ nêu rõ từng ô sai và sai thế nào, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."; form giữ nguyên dữ liệu để sửa lại. Trùng mã thì báo riêng, ví dụ "Mã sinh viên SV001 đã tồn tại.".
+- **Nhập sai**: thông báo đỏ nêu rõ từng ô sai và sai thế nào, ví dụ "Thông tin sinh viên chưa hợp lệ: Họ tên không được để trống; Lớp tối đa 50 ký tự (đang có 51)."; form giữ nguyên dữ liệu để sửa lại. Trùng mã thì báo bằng bong bóng ngay tại ô Mã sinh viên / Mã môn, ví dụ "Mã sinh viên SV001 đã tồn tại.".
 - **Thông báo**: chỉ do chương trình tạo ra sau mỗi thao tác, hiện **một lần** (F5 không hiện lại). Thông báo không nằm trên địa chỉ trang, nên không ai gửi được link chứa thông báo giả.
 - **Không tải lại trang**: bảng, thẻ KPI và biểu đồ cập nhật tại chỗ, vị trí cuộn được giữ nguyên, thông báo nổi ở đầu màn hình. Trình duyệt tắt JavaScript vẫn dùng được, khi đó trang tải lại như bình thường, Sửa / Xóa nằm ở cột **Thao tác** trên từng dòng, và nút **Xóa** sẽ xóa ngay, không có hộp xác nhận.
 - **Không mất dữ liệu đang nhập dở**:
@@ -50,7 +50,7 @@ Mã nguồn: https://github.com/RxzZTwo02/quan_ly_sinh_vien_official
 - **Chữ dài**: họ tên, lớp, email, tên môn dài tự xuống dòng trong bảng, nên bảng không bị tràn ra ngoài màn hình.
 
 ### Quy tắc nhập liệu
-Back-end kiểm tra các quy tắc này cả khi gửi thẳng tới API; trình duyệt cũng báo sớm ngay trên ô nhập, bằng bong bóng tiếng Việt (ví dụ "Cuối kỳ phải nhỏ hơn hoặc bằng 10."), không phụ thuộc ngôn ngữ của trình duyệt. Lỗi back-end gắn với một ô (trùng học kỳ, số phải đóng nhỏ hơn số đã đóng, thiếu ngày đóng học phí) cũng hiện thành bong bóng tại ô đó. Khoảng trắng đầu / cuối được tự cắt bỏ.
+Back-end kiểm tra các quy tắc này cả khi gửi thẳng tới API; trình duyệt cũng báo sớm ngay trên ô nhập, bằng bong bóng tiếng Việt (ví dụ "Cuối kỳ phải nhỏ hơn hoặc bằng 10."), không phụ thuộc ngôn ngữ của trình duyệt. Lỗi back-end gắn với một ô (trùng mã sinh viên / mã môn, trùng học kỳ, số phải đóng nhỏ hơn số đã đóng, thiếu ngày đóng học phí) cũng hiện thành bong bóng tại ô đó. Khoảng trắng đầu / cuối được tự cắt bỏ.
 
 | Ô | Quy tắc | Ví dụ hợp lệ | Bị từ chối |
 |---|---|---|---|
@@ -421,7 +421,7 @@ Chi tiết từng endpoint, body mẫu và thông báo lỗi: [specs/04-api.md](
 | 400 | Dữ liệu thiếu hoặc không hợp lệ (sai [quy tắc nhập liệu](#quy-tắc-nhập-liệu), số `nan` / `inf`, học kỳ ngoài danh sách, phải đóng nhỏ hơn đã đóng, thiếu ngày đóng học phí hoặc không phải ngày `YYYY-MM-DD` có thật), body không phải JSON, sinh viên / môn học được chọn không tồn tại. Lỗi điểm / học phí gắn với một ô có thêm khóa `field` (ví dụ `{"error": "...", "field": "due_date"}`) |
 | 401 | Thiếu hoặc sai `X-API-Key` (khi có đặt `API_TOKEN`) |
 | 404 | Không tìm thấy bản ghi |
-| 409 | Trùng mã sinh viên / mã môn học (ví dụ "Mã sinh viên SV001 đã tồn tại."); khi **thêm** hoặc **sửa** điểm / học phí, trùng với một bản ghi đã có (`"field": "semester"`) |
+| 409 | Trùng mã sinh viên / mã môn học (ví dụ "Mã sinh viên SV001 đã tồn tại.", `"field": "student_code"` / `"subject_code"`); khi **thêm** hoặc **sửa** điểm / học phí, trùng với một bản ghi đã có (`"field": "semester"`) |
 | 503 | Không kết nối được MySQL |
 
 Front-end có thêm `GET /health` (http://127.0.0.1:5000/health), báo trạng thái của cả front-end và back-end. Trang lỗi của front-end (400, 404, 405, 500) là trang tiếng Việt của chương trình, có link "Về trang chính".
